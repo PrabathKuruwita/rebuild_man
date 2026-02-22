@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 #Middleware stack
 MIDDLEWARE = [ 
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS - must be before CommonMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -82,11 +83,19 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rebuild_db',
         'USER': 'postgres',
-        'PASSWORD': 'admin1234',    # this must match the docker-compose file
-        'HOST': 'localhost',       # Works for both Local and Docker (if Docker is forwarding ports)
+        'PASSWORD': 'admin1234',
+        'HOST': 'localhost',
         'PORT': '5433',
     }
 }
+
+# Uncomment below to use SQLite
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation
@@ -110,6 +119,19 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
+
+# CORS Settings
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',  # Next.js dev server
+]
+CORS_ALLOW_CREDENTIALS = True
+
+# Media files (uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LANGUAGE_CODE = 'en-us'
 
