@@ -16,7 +16,7 @@ from .serializers import (
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
 
     # Custom action to get hierarchy (Org -> Sections -> Needs)
     @action(detail=True, methods=['get'])
@@ -30,14 +30,14 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 class SectionViewSet(viewsets.ModelViewSet):
     queryset = Section.objects.all()
     serializer_class = SectionSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
 
 
 # 3. Needs ViewSet
 class NeedItemViewSet(viewsets.ModelViewSet):
     queryset = NeedItem.objects.all()
     serializer_class = NeedItemSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
 
     # Filter needs by priority (e.g., /api/needs/?priority=CRITICAL)
     def get_queryset(self):

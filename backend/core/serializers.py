@@ -19,7 +19,7 @@ class SectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Section
-        fields = ['id', 'name', 'head_of_section', 'needs']
+        fields = ['id', 'organization', 'name', 'head_of_section', 'needs']
 
 # 4. Organization Serializer (Includes sections inside it)
 class OrganizationSerializer(serializers.ModelSerializer):

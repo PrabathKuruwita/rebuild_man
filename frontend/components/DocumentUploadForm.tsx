@@ -92,6 +92,7 @@ export default function DocumentUploadForm({ onUpload }: DocumentUploadFormProps
           accept=".pdf"
           onChange={handleFileSelect}
           className="hidden"
+          aria-label="Upload PDF document"
         />
         
         {file ? (

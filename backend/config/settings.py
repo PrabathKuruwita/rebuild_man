@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-3z55ai11+0pf5gb5_fb8g9^69zpj6e*3fvttevtwt9-6+j_k^e
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -80,20 +80,20 @@ WSGI_APPLICATION = 'config.wsgi.application'  # WSGI application path
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'rebuild_db',
-        'USER': 'postgres',
-        'PASSWORD': 'admin1234',
-        'HOST': 'localhost',
-        'PORT': '5433',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
-# Uncomment below to use SQLite
+# PostgreSQL config (use this in production)
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'rebuild_db',
+#         'USER': 'postgres',
+#         'PASSWORD': 'admin1234',
+#         'HOST': 'localhost',
+#         'PORT': '5433',
 #     }
 # }
 

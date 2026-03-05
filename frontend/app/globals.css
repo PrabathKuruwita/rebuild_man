@@ -5,7 +5,7 @@
   --color-foreground: #171717;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  
+
   /* Gray color scale */
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
@@ -17,7 +17,7 @@
   --color-gray-700: #374151;
   --color-gray-800: #1f2937;
   --color-gray-900: #111827;
-  
+
   /* Blue color scale */
   --color-blue-50: #eff6ff;
   --color-blue-100: #dbeafe;
@@ -25,7 +25,7 @@
   --color-blue-500: #3b82f6;
   --color-blue-600: #2563eb;
   --color-blue-700: #1d4ed8;
-  
+
   /* Red color scale */
   --color-red-50: #fef2f2;
   --color-red-100: #fee2e2;
@@ -36,7 +36,7 @@
   --color-red-600: #dc2626;
   --color-red-700: #b91c1c;
   --color-red-800: #991b1b;
-  
+
   /* Yellow color scale */
   --color-yellow-50: #fefce8;
   --color-yellow-100: #fef9c3;
@@ -45,7 +45,7 @@
   --color-yellow-600: #ca8a04;
   --color-yellow-700: #a16207;
   --color-yellow-800: #854d0e;
-  
+
   /* Green color scale */
   --color-green-50: #f0fdf4;
   --color-green-100: #dcfce7;
@@ -54,11 +54,23 @@
   --color-green-600: #16a34a;
   --color-green-700: #15803d;
   --color-green-800: #166534;
-  
+
   /* Purple color scale */
   --color-purple-50: #faf5ff;
   --color-purple-100: #f3e8ff;
   --color-purple-600: #9333ea;
+
+  /* Amber color scale */
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-800: #92400e;
+
+  /* Ring colors */
+  --color-red-300: #fca5a5;
+  --color-yellow-300: #fde047;
+  --color-green-300: #86efac;
+  --color-blue-300: #93c5fd;
 }
 
 /* Force light mode for consistent appearance */
@@ -73,11 +85,14 @@ body {
 }
 
 /* Ensure form elements have proper text colors */
-input, select, textarea {
+input,
+select,
+textarea {
   color: #111827; /* gray-900 */
 }
 
-input::placeholder, textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: #9ca3af; /* gray-400 */
 }
 
@@ -113,4 +128,20 @@ input::placeholder, textarea::placeholder {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Slide-in animation for side panel */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }

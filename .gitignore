@@ -1,18 +1,50 @@
 # Root level gitignore
 
-# Environment variables
+# ─── Environment Variables ──────────────────────────────────────────────────
 .env
 .env.local
 .env.*.local
+.env.production
 
-# IDE
+# ─── Python / Django (Backend) ──────────────────────────────────────────────
+backend/venv/
+backend/env/
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.pyd
+backend/db.sqlite3
+backend/db.sqlite3-journal
+backend/media/
+backend/staticfiles/
+backend/static/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+
+# ─── Node.js / Next.js (Frontend) ───────────────────────────────────────────
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.pnp
+frontend/.pnp.*
+frontend/coverage/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.yarn/
+
+# ─── IDE / Editor ───────────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
+# ─── OS ─────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 .DS_Store?
@@ -22,10 +54,10 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# Logs
+# ─── Logs ───────────────────────────────────────────────────────────────────
 *.log
 logs/
 
-# Temporary files
+# ─── Temporary Files ────────────────────────────────────────────────────────
 *.tmp
 *.temp
