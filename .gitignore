@@ -1,31 +1,273 @@
-# Root level gitignore
+# Root level gitignore for Full Stack Django + Next.js Project
 
-# Environment variables
+# ============================================================================
+# Python / Django (Backend)
+# ============================================================================
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+*.pyo
+
+# Virtual Environments - CRITICAL TO IGNORE
+venv/
+env/
+ENV/
+.venv/
+.venv
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static/
+*.pot
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.Python
+
+# Testing / Coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+
+# Flask/Jupyter/IPython
+instance/
+.webassets-cache
+.ipynb_checkpoints
+profile_default/
+ipython_config.py
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Cython
+cython_debug/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================================================
+# Node.js / Next.js (Frontend)
+# ============================================================================
+
+# Dependencies - CRITICAL TO IGNORE
+node_modules/
+/.pnp
+.pnp.*
+.pnp.js
+
+# Next.js
+.next/
+out/
+/.next/
+/out/
+
+# Production builds
+/build
+/dist
+
+# Testing
+/coverage
+.nyc_output
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+.yarn-integrity
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# Optional npm cache
+.npm
+
+# Optional eslint/stylelint cache
+.eslintcache
+.stylelintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Parcel cache
+.cache/
+.parcel-cache
+
+# Nuxt.js
+.nuxt
+
+# Gatsby
+public
+
+# ============================================================================
+# Environment Variables & Configs
+# ============================================================================
+
 .env
 .env.local
 .env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+.env*
 
-# IDE
+# ============================================================================
+# IDE & Editors
+# ============================================================================
+
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# OS
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.iml
 .DS_Store
-Thumbs.db
+
+# ============================================================================
+# Operating Systems
+# ============================================================================
+
+# macOS
+.DS_Store
 .DS_Store?
 ._*
+.AppleDouble
+.LSOverride
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Desktop.ini
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
 
-# Logs
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================================================
+# Docker
+# ============================================================================
+
+docker-compose.override.yml
+.dockerignore
+
+# ============================================================================
+# Logs & Temporary Files
+# ============================================================================
+
 *.log
 logs/
-
-# Temporary files
 *.tmp
 *.temp
+*.bak
+*~.nib
+*.swp
+*.swo
+
+# ============================================================================
+# Backup files
+# ============================================================================
+
+*.bak
+*.gho
+*.ori
+*.orig
+*.old

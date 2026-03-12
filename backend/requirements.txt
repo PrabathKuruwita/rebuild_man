@@ -1,0 +1,31 @@
+# Core Django
+Django==5.1.4
+psycopg2-binary==2.9.10
+
+# Django REST Framework
+djangorestframework==3.15.2
+
+# CORS handling
+django-cors-headers==4.6.0
+
+# Image processing (for document uploads)
+Pillow==11.0.0
+
+# PDF processing
+PyPDF2==3.0.1
+
+# OCR capabilities
+pytesseract==0.3.13
+
+# AI/ML for document processing
+google-generativeai==0.8.3
+
+# Environment variables
+python-decouple==3.8
+
+# Celery for async tasks (optional, for background AI processing)
+celery==5.4.0
+redis==5.2.1
+
+# Additional utilities
+python-dateutil==2.9.0
