@@ -7,8 +7,10 @@ import StatsCard from '@/components/StatsCard';
 import NeedCard from '@/components/NeedCard';
 import OrganizationCard from '@/components/OrganizationCard';
 import { PageLoading } from '@/components/LoadingSpinner';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [criticalNeeds, setCriticalNeeds] = useState<NeedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,34 +69,46 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 mt-1">Overview of all organizational needs</p>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {user?.role === 'ADMIN' || user?.role === 'ORG_ADMIN'
+            ? 'Dashboard'
+            : "What's Needed Right Now"}
+        </h1>
+        <p className="text-gray-500 mt-1">
+          {user?.role === 'ADMIN' || user?.role === 'ORG_ADMIN'
+            ? 'Overview of all organizational needs'
+            : 'Browse organizations and find ways to contribute'}
+        </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <StatsCard
-          title="Organizations"
-          value={totalOrganizations}
-          subtitle="Active organizations"
-          color="blue"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          }
-        />
-        <StatsCard
-          title="Sections"
-          value={totalSections}
-          subtitle="Departments tracked"
-          color="purple"
-          icon={
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-          }
-        />
+      <div className={`grid gap-6 sm:grid-cols-2 ${user?.role === 'DONOR' ? 'lg:grid-cols-2' : 'lg:grid-cols-4'} mb-8`}>
+        {(user?.role === 'ADMIN' || user?.role === 'ORG_ADMIN') && (
+          <>
+            <StatsCard
+              title="Organizations"
+              value={totalOrganizations}
+              subtitle="Active organizations"
+              color="blue"
+              icon={
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              }
+            />
+            <StatsCard
+              title="Sections"
+              value={totalSections}
+              subtitle="Departments tracked"
+              color="purple"
+              icon={
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              }
+            />
+          </>
+        )}
         <StatsCard
           title="Total Needs"
           value={totalNeeds}
@@ -142,43 +156,45 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Organizations Section */}
+      {/* Organizations Section - Visible to Everyone */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Organizations</h2>
-            <p className="text-sm text-gray-500">Browse organizations and their needs</p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Organizations</h2>
+              <p className="text-sm text-gray-500">Browse organizations and their needs</p>
+            </div>
+            {(user?.role === 'ADMIN' || user?.role === 'ORG_ADMIN') && (
+              <Link 
+                href="/organizations"
+                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                Manage →
+              </Link>
+            )}
           </div>
-          <Link 
-            href="/organizations"
-            className="text-sm font-medium text-blue-600 hover:text-blue-700"
-          >
-            View All →
-          </Link>
+          
+          {organizations.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {organizations.slice(0, 6).map((org) => (
+                <OrganizationCard key={org.id} organization={org} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Organizations Yet</h3>
+              <p className="text-gray-500 mb-4">Get started by adding your first organization</p>
+              <Link 
+                href="/organizations/new"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Add Organization
+              </Link>
+            </div>
+          )}
         </div>
-        
-        {organizations.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {organizations.slice(0, 6).map((org) => (
-              <OrganizationCard key={org.id} organization={org} />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Organizations Yet</h3>
-            <p className="text-gray-500 mb-4">Get started by adding your first organization</p>
-            <Link 
-              href="/organizations/new"
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Add Organization
-            </Link>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

@@ -4,12 +4,16 @@ import { useEffect, useState } from 'react';
 import { DocumentUpload, getDocuments, statusColors } from '@/lib/api';
 import DocumentUploadForm from '@/components/DocumentUploadForm';
 import { PageLoading } from '@/components/LoadingSpinner';
+import { useAdminGuard } from '@/lib/useAuthGuard';
 
 export default function DocumentsPage() {
+  const { authorized, isLoading: authLoading } = useAdminGuard();
   const [documents, setDocuments] = useState<DocumentUpload[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!authorized) return;
+
     async function fetchDocuments() {
       try {
         const docs = await getDocuments();
@@ -21,7 +25,11 @@ export default function DocumentsPage() {
       }
     }
     fetchDocuments();
-  }, []);
+  }, [authorized]);
+
+  if (authLoading || !authorized) {
+    return <PageLoading />;
+  }
 
   const handleUpload = async (file: File) => {
     // In a real app, you'd call the API here

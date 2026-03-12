@@ -1,18 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Organization, createOrganization, getOrganizations } from '@/lib/api';
+import { Organization, getOrganization, updateOrganization } from '@/lib/api';
 import { useAdminGuard } from '@/lib/useAuthGuard';
 import { PageLoading } from '@/components/LoadingSpinner';
 
-export default function NewOrganizationPage() {
+export default function EditOrganizationPage() {
   const { authorized, isLoading: authLoading } = useAdminGuard();
   const router = useRouter();
+  const params = useParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [checkingOrg, setCheckingOrg] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     registration_number: '',
@@ -26,21 +27,6 @@ export default function NewOrganizationPage() {
     established_year: '',
   });
 
-  useEffect(() => {
-    if (!authorized) return;
-    getOrganizations().then((orgs) => {
-      if (orgs.length > 0) {
-        router.replace(`/organizations/${orgs[0].id}`);
-      } else {
-        setCheckingOrg(false);
-      }
-    }).catch(() => setCheckingOrg(false));
-  }, [authorized, router]);
-
-  if (authLoading || !authorized || checkingOrg) {
-    return <PageLoading />;
-  }
-
   const districts = [
     'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
     'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kilinochchi', 'Mannar',
@@ -49,29 +35,49 @@ export default function NewOrganizationPage() {
     'Monaragala', 'Ratnapura', 'Kegalle'
   ];
 
+  useEffect(() => {
+    if (!authorized) return;
+    const id = Number(params.id);
+    getOrganization(id)
+      .then((org) => {
+        setFormData({
+          name: org.name,
+          registration_number: org.registration_number,
+          address: org.address || '',
+          district: org.district,
+          org_type: org.org_type || 'HOSPITAL',
+          description: org.description || '',
+          phone: org.phone || '',
+          email_contact: org.email_contact || '',
+          website: org.website || '',
+          established_year: org.established_year ? String(org.established_year) : '',
+        });
+      })
+      .catch(() => setError('Failed to load organization'))
+      .finally(() => setLoading(false));
+  }, [authorized, params.id]);
+
+  if (authLoading || !authorized || loading) return <PageLoading />;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-
     try {
-      await createOrganization({
+      await updateOrganization(Number(params.id), {
         ...formData,
         org_type: formData.org_type as Organization['org_type'],
         established_year: formData.established_year ? Number(formData.established_year) : undefined,
       });
       router.push('/organizations');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create organization');
+      setError(err instanceof Error ? err.message : 'Failed to update organization');
       setIsSubmitting(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   return (
@@ -79,14 +85,14 @@ export default function NewOrganizationPage() {
       {/* Breadcrumb */}
       <nav className="flex mb-6 text-sm">
         <Link href="/organizations" className="text-gray-500 hover:text-gray-700">
-          Organizations
+          Organization
         </Link>
         <span className="mx-2 text-gray-400">/</span>
-        <span className="text-gray-900 font-medium">New Organization</span>
+        <span className="text-gray-900 font-medium">Edit Organization</span>
       </nav>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Add New Organization</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Organization</h1>
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
@@ -282,10 +288,10 @@ export default function NewOrganizationPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Creating...
+                  Saving...
                 </span>
               ) : (
-                'Create Organization'
+                'Save Changes'
               )}
             </button>
             <Link

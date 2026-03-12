@@ -9,6 +9,14 @@ export interface User {
   email: string;
   role: 'ADMIN' | 'ORG_ADMIN' | 'DONOR';
   phone_number: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+export interface AuthResponse {
+  access: string;
+  refresh: string;
+  user?: User; // Optional because standard JWT response might only have tokens, but we'll try to include user or fetch it separately
 }
 
 export interface NeedItem {
@@ -37,6 +45,12 @@ export interface Organization {
   registration_number: string;
   address?: string;
   district: string;
+  org_type?: 'HOSPITAL' | 'CLINIC' | 'SCHOOL' | 'NGO' | 'CHARITY' | 'GOVERNMENT' | 'OTHER';
+  description?: string;
+  phone?: string;
+  email_contact?: string;
+  website?: string;
+  established_year?: number;
   sections: Section[];
 }
 
@@ -52,20 +66,97 @@ export interface DocumentUpload {
 
 // API Functions
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  // Get token from localStorage if available
+  let token: string | null = null;
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem('accessToken');
+  }
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...(options?.headers as HeadersInit),
+  };
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
     ...options,
+    headers,
   });
 
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    if (response.status === 401 && typeof window !== 'undefined') {
+       // Optional: Trigger logout or redirect if 401
+    }
+    const errorText = await response.text();
+    let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+    try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.detail) {
+          errorMessage = errorJson.detail;
+        } else {
+          // Django REST Framework returns field-level errors like {"password": ["Too common."]}
+          const messages: string[] = [];
+          for (const [field, errors] of Object.entries(errorJson)) {
+            if (Array.isArray(errors)) {
+              messages.push(`${field}: ${(errors as string[]).join(', ')}`);
+            } else if (typeof errors === 'string') {
+              messages.push(`${field}: ${errors}`);
+            }
+          }
+          if (messages.length > 0) {
+            errorMessage = messages.join('\n');
+          }
+        }
+    } catch {}
+    throw new Error(errorMessage);
+  }
+
+  // Handle 204 No Content
+  if (response.status === 204) {
+      return {} as T;
   }
 
   return response.json();
 }
+
+// --- AUTH FUNCTIONS (Phase 2: Real Backend) ---
+
+export async function loginUser(username: string, password: string): Promise<AuthResponse> {
+    return fetchAPI<AuthResponse>('/auth/login/', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+    });
+}
+
+export async function registerUser(data: any): Promise<AuthResponse> {
+    return fetchAPI<AuthResponse>('/auth/register/', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
+export async function getCurrentUser(): Promise<User> {
+    return fetchAPI<User>('/auth/me/', {
+        method: 'GET',
+    });
+}
+
+export async function updateCurrentUser(data: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    phone_number?: string;
+    current_password?: string;
+    new_password?: string;
+    new_password2?: string;
+}): Promise<User> {
+    return fetchAPI<User>('/auth/me/', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+    });
+}
+
+// --- END AUTH FUNCTIONS ---
 
 // Organizations
 export const getOrganizations = () => fetchAPI<Organization[]>('/organizations/');
@@ -73,6 +164,10 @@ export const getOrganization = (id: number) => fetchAPI<Organization>(`/organiza
 export const getOrganizationHierarchy = (id: number) => fetchAPI<Organization>(`/organizations/${id}/hierarchy/`);
 export const createOrganization = (data: Partial<Organization>) => 
   fetchAPI<Organization>('/organizations/', { method: 'POST', body: JSON.stringify(data) });
+export const updateOrganization = (id: number, data: Partial<Organization>) =>
+  fetchAPI<Organization>(`/organizations/${id}/`, { method: 'PATCH', body: JSON.stringify(data) });
+export const deleteOrganization = (id: number) =>
+  fetchAPI<void>(`/organizations/${id}/`, { method: 'DELETE' });
 
 // Sections
 export const getSections = () => fetchAPI<Section[]>('/sections/');
@@ -99,8 +194,17 @@ export const uploadDocument = async (file: File, organizationId: number, userId:
   formData.append('organization', organizationId.toString());
   formData.append('uploaded_by', userId.toString());
 
+  // Get token for authenticated upload
+  let token: string | null = null;
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem('accessToken');
+  }
+
   const response = await fetch(`${API_BASE_URL}/documents/`, {
     method: 'POST',
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
     body: formData,
   });
 
