@@ -1,5 +1,5 @@
 "use client";
-
+// This page is rendered client-side because it needs to read URL query parameters and handle form state.
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
