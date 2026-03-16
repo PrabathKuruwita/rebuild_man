@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "./AuthContext";
 
@@ -8,19 +8,15 @@ export function useAuthGuard() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!user && pathname !== "/login") {
-        setAuthorized(false);
-        router.push("/login");
-      } else {
-        setAuthorized(true);
-      }
+    if (isLoading) return;
+    if (!user && pathname !== "/login") {
+      router.push("/login");
     }
   }, [user, isLoading, router, pathname]);
 
+  const authorized = !!user;
   return { authorized, isLoading };
 }
 
@@ -32,21 +28,18 @@ export function useAdminGuard() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!user && pathname !== "/login") {
-        setAuthorized(false);
-        router.push("/login");
-      } else if (user && user.role === "DONOR") {
-        setAuthorized(false);
-        router.push("/");
-      } else if (user) {
-        setAuthorized(true);
-      }
+    if (isLoading) return;
+    if (!user && pathname !== "/login") {
+      router.push("/login");
+      return;
+    }
+    if (user && user.role === "DONOR") {
+      router.push("/");
     }
   }, [user, isLoading, router, pathname]);
 
+  const authorized = !!user && user.role !== "DONOR";
   return { authorized, isLoading };
 }
