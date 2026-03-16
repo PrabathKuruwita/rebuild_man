@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/lib/AuthContext";
 import {
   Organization,
   NeedItem,
@@ -19,6 +20,8 @@ import EditSectionModal from "@/components/EditSectionModal";
 import { PageLoading } from "@/components/LoadingSpinner";
 
 export default function OrganizationDetailPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN" || user?.role === "ORG_ADMIN";
   const params = useParams();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,10 +43,9 @@ export default function OrganizationDetailPage() {
       const id = Number(params.id);
       const org = await getOrganization(id);
       setOrganization(org);
+      setError(null);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load organization",
-      );
+      setError(err instanceof Error ? err.message : "Failed to load organization");
     } finally {
       setLoading(false);
     }
@@ -65,11 +67,8 @@ export default function OrganizationDetailPage() {
           <p className="text-red-600 mb-4">
             {error || "The requested organization does not exist"}
           </p>
-          <Link
-            href="/organizations"
-            className="text-blue-600 hover:text-blue-700"
-          >
-            ← Back to Organizations
+          <Link href="/organizations" className="text-blue-600 hover:text-blue-700">
+            Back to Organizations
           </Link>
         </div>
       </div>
@@ -104,7 +103,7 @@ export default function OrganizationDetailPage() {
       await deleteNeed(needId);
       setDeleteNeedConfirm(null);
       setLoading(true);
-      fetchOrganization();
+      await fetchOrganization();
     } catch {
       alert("Failed to delete need. Please try again.");
     } finally {
@@ -116,7 +115,7 @@ export default function OrganizationDetailPage() {
     try {
       await deleteSection(sectionId);
       setLoading(true);
-      fetchOrganization();
+      await fetchOrganization();
     } catch {
       alert("Failed to delete section. Please try again.");
     }
@@ -127,10 +126,7 @@ export default function OrganizationDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex mb-6 text-sm">
-          <Link
-            href="/organizations"
-            className="text-gray-500 hover:text-gray-700"
-          >
+          <Link href="/organizations" className="text-gray-500 hover:text-gray-700">
             Organizations
           </Link>
           <span className="mx-2 text-gray-400">/</span>
@@ -216,9 +212,7 @@ export default function OrganizationDetailPage() {
                 <p className="text-sm text-gray-500">Total Needs</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-red-600">
-                  {criticalNeeds}
-                </p>
+                <p className="text-3xl font-bold text-red-600">{criticalNeeds}</p>
                 <p className="text-sm text-gray-500">Critical</p>
               </div>
             </div>
@@ -228,28 +222,28 @@ export default function OrganizationDetailPage() {
         {/* Sections */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">
-              Sections & Needs
-            </h2>
-            <button
-              onClick={() => setShowAddSection(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <h2 className="text-xl font-bold text-gray-900">Sections & Needs</h2>
+            {isAdmin && (
+              <button
+                onClick={() => setShowAddSection(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Add Section
-            </button>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                Add Section
+              </button>
+            )}
           </div>
 
           {organization.sections && organization.sections.length > 0 ? (
@@ -259,22 +253,35 @@ export default function OrganizationDetailPage() {
                   key={section.id}
                   section={section}
                   defaultOpen={index === 0}
-                  onAddNeed={() =>
-                    setAddNeedForSection({
-                      orgId: organization.id,
-                      sectionId: section.id,
-                    })
+                  onAddNeed={
+                    isAdmin
+                      ? () =>
+                          setAddNeedForSection({
+                            orgId: organization.id,
+                            sectionId: section.id,
+                          })
+                      : undefined
                   }
-                  onEditNeed={(needId) => {
-                    const n = findNeedById(needId);
-                    if (n) setEditNeed(n);
-                  }}
-                  onDeleteNeed={(needId) => {
-                    const n = findNeedById(needId);
-                    if (n) setDeleteNeedConfirm(n);
-                  }}
-                  onEditSection={() => setEditSection(section)}
-                  onDeleteSection={() => handleDeleteSection(section.id)}
+                  onEditNeed={
+                    isAdmin
+                      ? (needId) => {
+                          const n = findNeedById(needId);
+                          if (n) setEditNeed(n);
+                        }
+                      : undefined
+                  }
+                  onDeleteNeed={
+                    isAdmin
+                      ? (needId) => {
+                          const n = findNeedById(needId);
+                          if (n) setDeleteNeedConfirm(n);
+                        }
+                      : undefined
+                  }
+                  onEditSection={isAdmin ? () => setEditSection(section) : undefined}
+                  onDeleteSection={
+                    isAdmin ? () => handleDeleteSection(section.id) : undefined
+                  }
                 />
               ))}
             </div>
@@ -296,22 +303,22 @@ export default function OrganizationDetailPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 No Sections Yet
               </h3>
-              <p className="text-gray-500 mb-4">
-                Add sections to organize your needs
-              </p>
-              <button
-                onClick={() => setShowAddSection(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Add First Section
-              </button>
+              <p className="text-gray-500 mb-4">Add sections to organize your needs</p>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowAddSection(true)}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Add First Section
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
 
       {/* Edit Need Modal */}
-      {editNeed && (
+      {isAdmin && editNeed && (
         <EditNeedModal
           need={editNeed}
           onClose={() => setEditNeed(null)}
@@ -324,7 +331,7 @@ export default function OrganizationDetailPage() {
       )}
 
       {/* Delete Need Confirmation */}
-      {deleteNeedConfirm && (
+      {isAdmin && deleteNeedConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
             <div className="flex items-center gap-3 mb-4">
@@ -345,14 +352,11 @@ export default function OrganizationDetailPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Delete Need</h3>
-                <p className="text-sm text-gray-500">
-                  This action cannot be undone.
-                </p>
+                <p className="text-sm text-gray-500">This action cannot be undone.</p>
               </div>
             </div>
             <p className="text-sm text-gray-700 mb-6">
-              Are you sure you want to delete{" "}
-              <strong>&ldquo;{deleteNeedConfirm.name}&rdquo;</strong>?
+              Are you sure you want to delete <strong>&ldquo;{deleteNeedConfirm.name}&rdquo;</strong>?
             </p>
             <div className="flex gap-3">
               <button
@@ -366,7 +370,7 @@ export default function OrganizationDetailPage() {
                 disabled={deletingNeed}
                 className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
               >
-                {deletingNeed ? "Deleting…" : "Delete"}
+                {deletingNeed ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
@@ -374,7 +378,7 @@ export default function OrganizationDetailPage() {
       )}
 
       {/* Edit Section Modal */}
-      {editSection && (
+      {isAdmin && editSection && (
         <EditSectionModal
           section={editSection}
           onClose={() => setEditSection(null)}
@@ -387,7 +391,7 @@ export default function OrganizationDetailPage() {
       )}
 
       {/* Add Section Modal */}
-      {showAddSection && organization && (
+      {isAdmin && showAddSection && organization && (
         <AddSectionModal
           organizationId={organization.id}
           onClose={() => setShowAddSection(false)}
@@ -399,7 +403,7 @@ export default function OrganizationDetailPage() {
       )}
 
       {/* Add Need Form (pre-filled to specific section) */}
-      {addNeedForSection && (
+      {isAdmin && addNeedForSection && (
         <ManualNeedEntryForm
           initialOrgId={addNeedForSection.orgId}
           initialSectionId={addNeedForSection.sectionId}

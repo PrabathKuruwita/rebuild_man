@@ -37,6 +37,11 @@ frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/.yarn/
 
+# Python virtual environments
+.venv/
+venv/
+env/
+
 # ─── IDE / Editor ───────────────────────────────────────────────────────────
 .vscode/
 .idea/

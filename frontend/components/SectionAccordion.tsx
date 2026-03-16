@@ -181,27 +181,29 @@ export default function SectionAccordion({
       {isOpen && (
         <div className="px-6 pb-6 border-t border-gray-100">
           {/* Add Need button */}
-          <div className="flex justify-end mt-4 mb-3">
-            <button
-              onClick={onAddNeed}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-            >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          {onAddNeed && (
+            <div className="flex justify-end mt-4 mb-3">
+              <button
+                onClick={onAddNeed}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Add Need
-            </button>
-          </div>
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                Add Need
+              </button>
+            </div>
+          )}
 
           {section.needs && section.needs.length > 0 ? (
             <div className="grid gap-4 mt-4 sm:grid-cols-2 lg:grid-cols-3">

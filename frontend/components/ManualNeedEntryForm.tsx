@@ -5,7 +5,6 @@ import {
   getOrganizations,
   createNeed,
   Organization,
-  priorityLabels,
   unitLabels,
 } from "@/lib/api";
 
