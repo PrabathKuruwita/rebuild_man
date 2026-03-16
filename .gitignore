@@ -5,6 +5,11 @@
 .env.local
 .env.*.local
 
+# Python virtual environments
+.venv/
+venv/
+env/
+
 # IDE
 .vscode/
 .idea/
