@@ -1,7 +1,19 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { User, loginUser, registerUser, getCurrentUser, type RegisterPayload } from "./api";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import {
+  User,
+  loginUser,
+  registerUser,
+  getCurrentUser,
+  type RegisterPayload,
+} from "./api";
 import type { AuthResponse } from "./api";
 import { useRouter } from "next/navigation";
 
@@ -96,7 +108,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, setUser }}>
+    <AuthContext.Provider
+      value={{ user, token, isLoading, login, register, logout, setUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

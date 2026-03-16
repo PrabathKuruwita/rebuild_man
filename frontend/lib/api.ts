@@ -54,7 +54,14 @@ export interface Organization {
   registration_number: string;
   address?: string;
   district: string;
-  org_type?: 'HOSPITAL' | 'CLINIC' | 'SCHOOL' | 'NGO' | 'CHARITY' | 'GOVERNMENT' | 'OTHER';
+  org_type?:
+    | "HOSPITAL"
+    | "CLINIC"
+    | "SCHOOL"
+    | "NGO"
+    | "CHARITY"
+    | "GOVERNMENT"
+    | "OTHER";
   description?: string;
   phone?: string;
   email_contact?: string;
@@ -74,7 +81,10 @@ export interface DocumentUpload {
 }
 
 // API Functions
-async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
+async function fetchAPI<T>(
+  endpoint: string,
+  options?: RequestInit,
+): Promise<T> {
   // Add bearer token automatically when available.
   let token: string | null = null;
   if (typeof window !== "undefined") {
@@ -93,36 +103,36 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
   });
 
   if (!response.ok) {
-    if (response.status === 401 && typeof window !== 'undefined') {
-       // Optional: Trigger logout or redirect if 401
+    if (response.status === 401 && typeof window !== "undefined") {
+      // Optional: Trigger logout or redirect if 401
     }
     const errorText = await response.text();
     let errorMessage = `API Error: ${response.status} ${response.statusText}`;
     try {
-        const errorJson = JSON.parse(errorText);
-        if (errorJson.detail) {
-          errorMessage = errorJson.detail;
-        } else {
-          // Django REST Framework returns field-level errors like {"password": ["Too common."]}
-          const messages: string[] = [];
-          for (const [field, errors] of Object.entries(errorJson)) {
-            if (Array.isArray(errors)) {
-              messages.push(`${field}: ${(errors as string[]).join(', ')}`);
-            } else if (typeof errors === 'string') {
-              messages.push(`${field}: ${errors}`);
-            }
-          }
-          if (messages.length > 0) {
-            errorMessage = messages.join('\n');
+      const errorJson = JSON.parse(errorText);
+      if (errorJson.detail) {
+        errorMessage = errorJson.detail;
+      } else {
+        // Django REST Framework returns field-level errors like {"password": ["Too common."]}
+        const messages: string[] = [];
+        for (const [field, errors] of Object.entries(errorJson)) {
+          if (Array.isArray(errors)) {
+            messages.push(`${field}: ${(errors as string[]).join(", ")}`);
+          } else if (typeof errors === "string") {
+            messages.push(`${field}: ${errors}`);
           }
         }
+        if (messages.length > 0) {
+          errorMessage = messages.join("\n");
+        }
+      }
     } catch {}
     throw new Error(errorMessage);
   }
 
   // Handle 204 No Content
   if (response.status === 204) {
-      return {} as T;
+    return {} as T;
   }
 
   return response.json();
@@ -130,52 +140,65 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
 // --- AUTH FUNCTIONS (Phase 2: Real Backend) ---
 
-export async function loginUser(username: string, password: string): Promise<AuthResponse> {
-    return fetchAPI<AuthResponse>('/auth/login/', {
-        method: 'POST',
-        body: JSON.stringify({ username, password }),
-    });
+export async function loginUser(
+  username: string,
+  password: string,
+): Promise<AuthResponse> {
+  return fetchAPI<AuthResponse>("/auth/login/", {
+    method: "POST",
+    body: JSON.stringify({ username, password }),
+  });
 }
 
-export async function registerUser(data: RegisterPayload): Promise<AuthResponse> {
-    return fetchAPI<AuthResponse>('/auth/register/', {
-        method: 'POST',
-        body: JSON.stringify(data),
-    });
+export async function registerUser(
+  data: RegisterPayload,
+): Promise<AuthResponse> {
+  return fetchAPI<AuthResponse>("/auth/register/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
 
 export async function getCurrentUser(): Promise<User> {
-    return fetchAPI<User>('/auth/me/', {
-        method: 'GET',
-    });
+  return fetchAPI<User>("/auth/me/", {
+    method: "GET",
+  });
 }
 
 export async function updateCurrentUser(data: {
-    first_name?: string;
-    last_name?: string;
-    email?: string;
-    phone_number?: string;
-    current_password?: string;
-    new_password?: string;
-    new_password2?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone_number?: string;
+  current_password?: string;
+  new_password?: string;
+  new_password2?: string;
 }): Promise<User> {
-    return fetchAPI<User>('/auth/me/', {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-    });
+  return fetchAPI<User>("/auth/me/", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
 }
 
 // --- END AUTH FUNCTIONS ---
 
 // Organizations
-export const getOrganizations = () => fetchAPI<Organization[]>("/organizations/");
-export const getOrganization = (id: number) => fetchAPI<Organization>(`/organizations/${id}/`);
+export const getOrganizations = () =>
+  fetchAPI<Organization[]>("/organizations/");
+export const getOrganization = (id: number) =>
+  fetchAPI<Organization>(`/organizations/${id}/`);
 export const getOrganizationHierarchy = (id: number) =>
   fetchAPI<Organization>(`/organizations/${id}/hierarchy/`);
 export const createOrganization = (data: Partial<Organization>) =>
-  fetchAPI<Organization>("/organizations/", { method: "POST", body: JSON.stringify(data) });
+  fetchAPI<Organization>("/organizations/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 export const updateOrganization = (id: number, data: Partial<Organization>) =>
-  fetchAPI<Organization>(`/organizations/${id}/`, { method: "PATCH", body: JSON.stringify(data) });
+  fetchAPI<Organization>(`/organizations/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
 export const deleteOrganization = (id: number) =>
   fetchAPI<void>(`/organizations/${id}/`, { method: "DELETE" });
 
@@ -225,8 +248,8 @@ export const uploadDocument = async (
 
   // Get token for authenticated upload
   let token: string | null = null;
-  if (typeof window !== 'undefined') {
-    token = localStorage.getItem('accessToken');
+  if (typeof window !== "undefined") {
+    token = localStorage.getItem("accessToken");
   }
 
   const response = await fetch(`${API_BASE_URL}/documents/`, {

@@ -253,7 +253,9 @@ export default function OrganizationsPage() {
                 </div>
               </div>
               <p className="text-gray-700 mb-6">
-                Are you sure you want to delete <strong>{organization?.name}</strong>? All sections and needs will be permanently removed.
+                Are you sure you want to delete{" "}
+                <strong>{organization?.name}</strong>? All sections and needs
+                will be permanently removed.
               </p>
               <div className="flex justify-end gap-3">
                 <button

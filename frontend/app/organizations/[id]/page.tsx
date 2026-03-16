@@ -45,7 +45,9 @@ export default function OrganizationDetailPage() {
       setOrganization(org);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load organization");
+      setError(
+        err instanceof Error ? err.message : "Failed to load organization",
+      );
     } finally {
       setLoading(false);
     }
@@ -67,7 +69,10 @@ export default function OrganizationDetailPage() {
           <p className="text-red-600 mb-4">
             {error || "The requested organization does not exist"}
           </p>
-          <Link href="/organizations" className="text-blue-600 hover:text-blue-700">
+          <Link
+            href="/organizations"
+            className="text-blue-600 hover:text-blue-700"
+          >
             Back to Organizations
           </Link>
         </div>
@@ -126,7 +131,10 @@ export default function OrganizationDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex mb-6 text-sm">
-          <Link href="/organizations" className="text-gray-500 hover:text-gray-700">
+          <Link
+            href="/organizations"
+            className="text-gray-500 hover:text-gray-700"
+          >
             Organizations
           </Link>
           <span className="mx-2 text-gray-400">/</span>
@@ -212,7 +220,9 @@ export default function OrganizationDetailPage() {
                 <p className="text-sm text-gray-500">Total Needs</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-red-600">{criticalNeeds}</p>
+                <p className="text-3xl font-bold text-red-600">
+                  {criticalNeeds}
+                </p>
                 <p className="text-sm text-gray-500">Critical</p>
               </div>
             </div>
@@ -222,7 +232,9 @@ export default function OrganizationDetailPage() {
         {/* Sections */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Sections & Needs</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Sections & Needs
+            </h2>
             {isAdmin && (
               <button
                 onClick={() => setShowAddSection(true)}
@@ -278,7 +290,9 @@ export default function OrganizationDetailPage() {
                         }
                       : undefined
                   }
-                  onEditSection={isAdmin ? () => setEditSection(section) : undefined}
+                  onEditSection={
+                    isAdmin ? () => setEditSection(section) : undefined
+                  }
                   onDeleteSection={
                     isAdmin ? () => handleDeleteSection(section.id) : undefined
                   }
@@ -303,7 +317,9 @@ export default function OrganizationDetailPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 No Sections Yet
               </h3>
-              <p className="text-gray-500 mb-4">Add sections to organize your needs</p>
+              <p className="text-gray-500 mb-4">
+                Add sections to organize your needs
+              </p>
               {isAdmin && (
                 <button
                   onClick={() => setShowAddSection(true)}
@@ -352,11 +368,14 @@ export default function OrganizationDetailPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Delete Need</h3>
-                <p className="text-sm text-gray-500">This action cannot be undone.</p>
+                <p className="text-sm text-gray-500">
+                  This action cannot be undone.
+                </p>
               </div>
             </div>
             <p className="text-sm text-gray-700 mb-6">
-              Are you sure you want to delete <strong>&ldquo;{deleteNeedConfirm.name}&rdquo;</strong>?
+              Are you sure you want to delete{" "}
+              <strong>&ldquo;{deleteNeedConfirm.name}&rdquo;</strong>?
             </p>
             <div className="flex gap-3">
               <button
