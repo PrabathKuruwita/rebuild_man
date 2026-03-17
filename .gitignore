@@ -180,6 +180,10 @@ public
 *.env
 .env*
 
+# EXCEPTION: Keep .env.example (template file, safe to commit)
+!.env.example
+!backend/.env.example
+
 # ============================================================================
 # IDE & Editors
 # ============================================================================
