@@ -15,11 +15,27 @@ class User(AbstractUser):
 
 # 2. ORGANIZATION (The Hospital or Company)
 class Organization(models.Model):
+    ORG_TYPE_CHOICES = (
+        ('HOSPITAL',   'Hospital'),
+        ('CLINIC',     'Clinic'),
+        ('SCHOOL',     'School'),
+        ('NGO',        'NGO'),
+        ('CHARITY',    'Charity'),
+        ('GOVERNMENT', 'Government'),
+        ('OTHER',      'Other'),
+    )
+
     name = models.CharField(max_length=200)  # e.g., "National Hospital Colombo"
     registration_number = models.CharField(max_length=50, unique=True)
     address = models.TextField()
     district = models.CharField(max_length=50)
-    
+
+    org_type = models.CharField(max_length=20, choices=ORG_TYPE_CHOICES, default='HOSPITAL')
+    description = models.TextField(blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    email_contact = models.EmailField(blank=True)
+    website = models.URLField(blank=True)
+    established_year = models.IntegerField(null=True, blank=True)
 
     # Link an admin user to this organization
     admin_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="managed_orgs")

@@ -29,3 +29,7 @@ redis==5.2.1
 
 # Additional utilities
 python-dateutil==2.9.0
+asgiref==3.11.1
+djangorestframework-simplejwt==5.5.1
+sqlparse==0.5.5
+tzdata==2025.3
