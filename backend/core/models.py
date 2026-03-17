@@ -93,6 +93,7 @@ class DocumentUpload(models.Model):
         ('FAILED', 'Failed'),
     )
 
+    id = models.AutoField(primary_key=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     file = models.FileField(upload_to='needs_pdfs/')

@@ -7,9 +7,9 @@ from .models import User, Organization, Section, NeedItem, DocumentUpload
 class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'role', 'is_staff')
     list_filter = ('role', 'is_staff')
-    fieldsets = UserAdmin.fieldsets + (
+    fieldsets = list(UserAdmin.fieldsets) + [
         ('Custom Fields', {'fields': ('role', 'phone_number')}),
-    )
+    ]
 
 
 # 2. Register Organization

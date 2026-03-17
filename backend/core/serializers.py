@@ -106,3 +106,49 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = DocumentUpload
         fields = '__all__'
+        read_only_fields = ['uploaded_by', 'uploaded_at', 'status', 'ai_extracted_json']
+    
+    def validate_file(self, value):
+        """
+        Validate the uploaded file.
+        """
+        # Check if file exists
+        if not value:
+            raise serializers.ValidationError(
+                "No file was uploaded. Please attach a PDF file."
+            )
+        
+        # Check file extension
+        if not value.name.lower().endswith('.pdf'):
+            raise serializers.ValidationError(
+                f"Invalid file type: '{value.name}'. Only PDF files are supported. "
+                f"Please upload a file with .pdf extension."
+            )
+        
+        # Check file size (max 10MB)
+        max_size = 10 * 1024 * 1024  # 10MB in bytes
+        if value.size > max_size:
+            raise serializers.ValidationError(
+                f"File too large: {value.size / (1024*1024):.1f}MB. "
+                f"Maximum file size is 10MB. Please upload a smaller file."
+            )
+        
+        # Check minimum file size (at least 1KB)
+        min_size = 1024  # 1KB
+        if value.size < min_size:
+            raise serializers.ValidationError(
+                "File too small. The PDF appears to be empty or corrupted. "
+                "Please upload a valid PDF document."
+            )
+        
+        return value
+    
+    def validate_organization(self, value):
+        """
+        Validate the organization exists.
+        """
+        if not value:
+            raise serializers.ValidationError(
+                "Organization is required. Please specify which organization this document belongs to."
+            )
+        return value

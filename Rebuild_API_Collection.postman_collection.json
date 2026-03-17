@@ -1,0 +1,668 @@
+{
+  "info": {
+    "_postman_id": "rebuild-api-collection",
+    "name": "Rebuild Backend API - Complete Testing",
+    "description": "Complete API testing collection for Rebuild disaster relief management system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "superuser",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "password123",
+      "type": "string"
+    },
+    {
+      "key": "org_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "section_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "need_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "document_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. ORGANIZATIONS",
+      "item": [
+        {
+          "name": "1.1 Get All Organizations (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_url}}/api/organizations/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", ""]
+            }
+          }
+        },
+        {
+          "name": "1.2 Create Organization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Colombo General Hospital\",\n  \"registration_number\": \"CGH-001\",\n  \"address\": \"123 Hospital Avenue, Colombo 7\",\n  \"district\": \"Colombo\",\n  \"admin_user\": 1\n}"
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/organizations/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", ""]
+            }
+          }
+        },
+        {
+          "name": "1.3 Get Organization Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_url}}/api/organizations/{{org_id}}/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "1.4 Get Organization Hierarchy (Full Tree)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_url}}/api/organizations/{{org_id}}/hierarchy/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", "hierarchy", ""]
+            }
+          }
+        },
+        {
+          "name": "1.5 Update Organization",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Colombo General Hospital (Updated)\",\n  \"registration_number\": \"CGH-001\",\n  \"address\": \"123 Hospital Avenue, Colombo 7\",\n  \"district\": \"Colombo\",\n  \"admin_user\": 1\n}"
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/organizations/{{org_id}}/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "1.6 Delete Organization",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/organizations/{{org_id}}/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. SECTIONS",
+      "item": [
+        {
+          "name": "2.1 Create Section",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organization\": 1,\n  \"name\": \"Emergency Ward\",\n  \"head_of_section\": \"Dr. Nimal Silva\"\n}"
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/sections/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sections", ""]
+            }
+          }
+        },
+        {
+          "name": "2.2 Get All Sections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_url}}/api/sections/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sections", ""]
+            }
+          }
+        },
+        {
+          "name": "2.3 Get Section Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_url}}/api/sections/{{section_id}}/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sections", "{{section_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "2.4 Update Section",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organization\": 1,\n  \"name\": \"Emergency Ward (Updated)\",\n  \"head_of_section\": \"Dr. Chandrika Perera\"\n}"
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/sections/{{section_id}}/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sections", "{{section_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "2.5 Delete Section",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/sections/{{section_id}}/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sections", "{{section_id}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. NEEDS",
+      "item": [
+        {
+          "name": "3.1 Create Need Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"section\": 1,\n  \"name\": \"Saline Bottles (0.9% NaCl 500ml)\",\n  \"priority\": \"CRITICAL\",\n  \"quantity_required\": 200,\n  \"unit\": \"UNIT\",\n  \"description\": \"Emergency IV fluid therapy\"\n}"
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/needs/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "needs", ""]
+            }
+          }
+        },
+        {
+          "name": "3.2 Get All Needs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_url}}/api/needs/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "needs", ""]
+            }
+          }
+        },
+        {
+          "name": "3.3 Filter Needs - CRITICAL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_url}}/api/needs/?priority=CRITICAL",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "needs", ""],
+              "query": [
+                {
+                  "key": "priority",
+                  "value": "CRITICAL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.4 Filter Needs - ESSENTIAL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_url}}/api/needs/?priority=ESSENTIAL",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "needs", ""],
+              "query": [
+                {
+                  "key": "priority",
+                  "value": "ESSENTIAL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.5 Filter Needs - NICE",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_url}}/api/needs/?priority=NICE",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "needs", ""],
+              "query": [
+                {
+                  "key": "priority",
+                  "value": "NICE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3.6 Get Need Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://{{base_url}}/api/needs/{{need_id}}/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "needs", "{{need_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "3.7 Update Need (Track Donations)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"section\": 1,\n  \"name\": \"Saline Bottles (0.9% NaCl 500ml)\",\n  \"priority\": \"CRITICAL\",\n  \"quantity_required\": 200,\n  \"quantity_received\": 150,\n  \"unit\": \"UNIT\",\n  \"description\": \"Emergency IV fluid therapy\"\n}"
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/needs/{{need_id}}/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "needs", "{{need_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "3.8 Delete Need",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/needs/{{need_id}}/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "needs", "{{need_id}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. DOCUMENTS & AI PROCESSING",
+      "item": [
+        {
+          "name": "4.1 Upload PDF Document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "organization",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/documents/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "documents", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Upload returns 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var data = pm.response.json();",
+                  "if (data && data.id) {",
+                  "    pm.environment.set('document_id', String(data.id));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.2 Get Document Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/documents/{{document_id}}/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "documents", "{{document_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "4.3 Process Document with AI (Gemini)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/documents/{{document_id}}/process_with_ai/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "documents", "{{document_id}}", "process_with_ai", ""]
+            }
+          }
+        },
+        {
+          "name": "4.4 Approve and Create Needs",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/documents/{{document_id}}/approve_and_create_needs/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "documents", "{{document_id}}", "approve_and_create_needs", ""]
+            }
+          }
+        },
+        {
+          "name": "4.5 List All Documents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://{{base_url}}/api/documents/",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "documents", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
