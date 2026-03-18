@@ -8,7 +8,7 @@ A full-stack web application for tracking organisational needs, managing section
 
 | Layer    | Technology                                                   |
 | -------- | ------------------------------------------------------------ |
-| Backend  | Django 5.x · Django REST Framework · SQLite                  |
+| Backend  | Django 6.x · Django REST Framework · PostgreSQL (Docker)     |
 | Frontend | Next.js 15 · TypeScript · Tailwind CSS v4                    |
 | Auth     | Django session / token (role-based: Admin, Org Admin, Donor) |
 
@@ -42,6 +42,7 @@ rebuild_man_project/
 
 - Python 3.12+
 - Node.js 18+
+- Docker Desktop
 - Git
 
 ---
@@ -50,6 +51,9 @@ rebuild_man_project/
 
 ```bash
 cd backend
+
+# Start PostgreSQL via Docker
+docker compose up -d
 
 # Create and activate virtual environment
 python -m venv venv
@@ -69,6 +73,16 @@ python manage.py runserver
 ```
 
 The API will be available at `http://localhost:8000/api/`.
+
+Database defaults are configured for Docker PostgreSQL:
+
+- Host: `localhost`
+- Port: `5433`
+- Database: `rebuild_db`
+- User: `postgres`
+- Password: `admin1234`
+
+You can override these via environment variables (`USE_POSTGRES`, `POSTGRES_*`). See `backend/.env.example`.
 
 ---
 
