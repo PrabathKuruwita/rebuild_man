@@ -131,7 +131,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # CORS Settings
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',  # Next.js dev server
+    'http://localhost:3000',  # Next.js dev server (localhost)
+    'http://127.0.0.1:3000',  # Next.js dev server (127.0.0.1)
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
@@ -183,7 +184,7 @@ DEFAULT_FROM_EMAIL = 'noreply@needtracker.local'
 # EMAIL_HOST_PASSWORD = 'your_app_password'   # Gmail App Password
 # DEFAULT_FROM_EMAIL = 'your@gmail.com'
 
-FRONTEND_URL = 'http://localhost:3000'
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 # ─────────────────────────────────────────────────────────────────────────────
 
 # DRF Settings
