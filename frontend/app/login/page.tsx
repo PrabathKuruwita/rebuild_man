@@ -370,7 +370,7 @@ export default function LoginPage() {
             {error && (
               <div className="rounded-md bg-red-50 p-4">
                 <div className="flex">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <svg
                       className="h-5 w-5 text-red-400"
                       viewBox="0 0 20 20"

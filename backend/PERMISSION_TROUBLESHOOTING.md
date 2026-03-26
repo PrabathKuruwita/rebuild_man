@@ -98,7 +98,7 @@ from core.models import User, Organization
 org_admin = User.objects.create_user(
     username='orgadmin',
     email='orgadmin@example.com',
-    password='orgadmin123',
+    password='your-secure-password',  # Use a strong password
     role='ORG_ADMIN'
 )
 
@@ -115,7 +115,7 @@ from core.models import User
 donor = User.objects.create_user(
     username='donor',
     email='donor@example.com',
-    password='donor123',
+    password='your-secure-password',  # Use a strong password
     role='DONOR'
 )
 ```

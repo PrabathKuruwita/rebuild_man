@@ -8,6 +8,7 @@ import os
 from typing import Dict, List, Optional
 import PyPDF2
 import google.generativeai as genai
+from google.generativeai.types import GenerationConfig
 from django.conf import settings
 
 
@@ -109,12 +110,12 @@ If no clear sections are identified, use "General Needs" as the section name.
         
         try:
             # Configure generation settings for better JSON output
-            generation_config = {
-                "temperature": 0.3,  # Lower temperature for more consistent output
-                "top_p": 0.8,
-                "top_k": 40,
-                "max_output_tokens": 8192,
-            }
+            generation_config = GenerationConfig(
+                temperature=0.3,  # Lower temperature for more consistent output
+                top_p=0.8,
+                top_k=40,
+                max_output_tokens=8192,
+            )
             
             response = self.model.generate_content(
                 prompt,

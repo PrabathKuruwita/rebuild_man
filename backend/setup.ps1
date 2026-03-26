@@ -28,7 +28,7 @@ if (-Not (Test-Path ".env")) {
     Write-Host "⚙️  Creating .env file from template..." -ForegroundColor Yellow
     Copy-Item ".env.example" ".env"
     Write-Host "✅ .env file created" -ForegroundColor Green
-    Write-Host "⚠️  IMPORTANT: Edit .env and add your OPENAI_API_KEY!`n" -ForegroundColor Red
+    Write-Host "⚠️  IMPORTANT: Edit .env and add your GEMINI_API_KEY!`n" -ForegroundColor Red
 } else {
     Write-Host "✅ .env file already exists`n" -ForegroundColor Green
 }
@@ -56,7 +56,7 @@ Write-Host "🎉 Setup Complete!" -ForegroundColor Green
 Write-Host "================================`n" -ForegroundColor Cyan
 
 Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "1. Edit .env and add your OPENAI_API_KEY" -ForegroundColor White
+Write-Host "1. Edit .env and add your GEMINI_API_KEY from https://makersuite.google.com/app/apikey" -ForegroundColor White
 Write-Host "2. Create a superuser: python manage.py createsuperuser" -ForegroundColor White
 Write-Host "3. Start the server: python manage.py runserver" -ForegroundColor White
 Write-Host "4. Visit http://localhost:8000/admin/`n" -ForegroundColor White

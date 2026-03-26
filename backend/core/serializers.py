@@ -29,7 +29,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         if new_password or new_password2 or current_password:
             if not current_password:
                 raise serializers.ValidationError({'current_password': 'Current password is required to set a new password.'})
-            if not self.instance.check_password(current_password):
+            if not self.instance or not self.instance.check_password(current_password):
                 raise serializers.ValidationError({'current_password': 'Current password is incorrect.'})
             if new_password != new_password2:
                 raise serializers.ValidationError({'new_password2': 'New passwords do not match.'})

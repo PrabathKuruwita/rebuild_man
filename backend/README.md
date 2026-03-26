@@ -8,7 +8,7 @@ A Django REST Framework backend for disaster relief and donation management syst
 - ✅ **Media Files Setup** - File upload support for documents
 - ✅ **REST Framework Configuration** - Pagination, filtering, and authentication
 - ✅ **Role-Based Permissions** - Admin, Org Admin, and Donor roles
-- ✅ **AI/OCR Integration** - Automated document processing with OpenAI
+- ✅ **AI/OCR Integration** - Automated document processing with Google Gemini
 - ✅ **PostgreSQL Database** - Running via Docker Compose
 - ✅ **Environment Variables** - Secure configuration management
 
@@ -16,7 +16,7 @@ A Django REST Framework backend for disaster relief and donation management syst
 
 - Python 3.10+
 - PostgreSQL (via Docker)
-- OpenAI API Key (for AI document processing)
+- Google Gemini API Key (for AI document processing) - Get it free from https://makersuite.google.com/app/apikey
 
 ## 🛠️ Installation
 
@@ -57,8 +57,9 @@ DB_USER=postgres
 DB_PASSWORD=admin1234
 DB_HOST=localhost
 DB_PORT=5433
-OPENAI_API_KEY=your-openai-api-key-here
+GEMINI_API_KEY=your-gemini-api-key-here
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+FRONTEND_URL=http://localhost:3000
 ```
 
 ### 5. Start PostgreSQL with Docker
@@ -142,7 +143,7 @@ The API will be available at: `http://localhost:8000`
 
 ## 🤖 AI Document Processing
 
-The system uses OpenAI's GPT model to extract structured data from uploaded PDF documents.
+The system uses Google Gemini's AI model to extract structured data from uploaded PDF documents.
 
 ### Workflow:
 
@@ -258,8 +259,8 @@ python manage.py migrate
 ### Issue: Database connection error
 **Solution**: Ensure Docker PostgreSQL is running: `docker-compose up -d`
 
-### Issue: OpenAI API error
-**Solution**: Check your `OPENAI_API_KEY` in `.env` file
+### Issue: Gemini API error
+**Solution**: Check your `GEMINI_API_KEY` in `.env` file. Get a free key from https://makersuite.google.com/app/apikey
 
 ### Issue: Permission denied errors
 **Solution**: Ensure your user has the correct role (Admin/Org Admin)
