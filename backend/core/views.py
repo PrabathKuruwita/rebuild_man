@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny, IsAuthenticated
 from .models import Organization, Section, NeedItem, DocumentUpload
-from .permissions import IsAdminOrReadOnly, IsOrgAdminOrReadOnly, IsOwnerOrAdmin, IsDonorOrReadOnly
+from .permissions import IsAdminOrReadOnly, IsOrgAdminOrReadOnly, IsOwnerOrAdmin, IsDonorOrReadOnly, IsAdminUser
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny, IsAuthenticated, BasePermission
 from .models import Organization, Section, NeedItem, DocumentUpload
@@ -33,21 +33,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsOrgAdminOrReadOnly]  # Changed to allow org admins to edit their own org
 User = get_user_model()
 
-
-# --- Custom Permissions ---
-
-class IsAdminOrReadOnly(BasePermission):
-    """Allow read access to anyone (including anonymous), but write access only to ADMIN / ORG_ADMIN."""
-    def has_permission(self, request, view):
-        if request.method in ('GET', 'HEAD', 'OPTIONS'):
-            return True
-        return request.user and request.user.is_authenticated and request.user.role in ('ADMIN', 'ORG_ADMIN')
-
-
-class IsAdminUser(BasePermission):
-    """Full access for ADMIN / ORG_ADMIN only."""
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated and request.user.role in ('ADMIN', 'ORG_ADMIN')
 
 # --- Auth Views ---
 
@@ -185,7 +170,6 @@ class SectionViewSet(viewsets.ModelViewSet):
     queryset = Section.objects.all()
     serializer_class = SectionSerializer
     permission_classes = [IsOrgAdminOrReadOnly]
-    permission_classes = [IsAdminOrReadOnly]
 
 
 # 3. Needs ViewSet
@@ -193,7 +177,6 @@ class NeedItemViewSet(viewsets.ModelViewSet):
     queryset = NeedItem.objects.all()
     serializer_class = NeedItemSerializer
     permission_classes = [IsOrgAdminOrReadOnly]
-    permission_classes = [IsAdminOrReadOnly]
 
     # Filter needs by priority (e.g., /api/needs/?priority=CRITICAL)
     def get_queryset(self):

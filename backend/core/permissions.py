@@ -6,7 +6,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     Custom permission to only allow admins to edit objects.
     Read-only access for everyone else.
     """
-    def has_permission(self, request, _view) -> bool:
+    def has_permission(self, request, view) -> bool:
         # Read permissions are allowed for any request
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -20,7 +20,7 @@ class IsOrgAdminOrReadOnly(permissions.BasePermission):
     Organization admins can edit their own organization's data.
     Read-only for others.
     """
-    def has_permission(self, request, _view) -> bool:
+    def has_permission(self, request, view) -> bool:
         # Read permissions are allowed for any request
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -28,7 +28,7 @@ class IsOrgAdminOrReadOnly(permissions.BasePermission):
         # Write permissions for authenticated users with admin roles
         return request.user and request.user.is_authenticated and request.user.role in ['ADMIN', 'ORG_ADMIN']
     
-    def has_object_permission(self, request, _view, obj) -> bool:
+    def has_object_permission(self, request, view, obj) -> bool:
         # Read permissions are allowed for any request
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -52,7 +52,7 @@ class IsOwnerOrAdmin(permissions.BasePermission):
     """
     Object owner or admin can edit.
     """
-    def has_object_permission(self, request, _view, obj) -> bool:
+    def has_object_permission(self, request, view, obj) -> bool:
         # Read permissions are allowed for any request
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -68,11 +68,17 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         return False
 
 
+class IsAdminUser(permissions.BasePermission):
+    """Full access for ADMIN / ORG_ADMIN only."""
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and request.user.role in ('ADMIN', 'ORG_ADMIN')
+
+
 class IsDonorOrReadOnly(permissions.BasePermission):
     """
     Authenticated donors can create entries.
     """
-    def has_permission(self, request, _view) -> bool:
+    def has_permission(self, request, view) -> bool:
         # Read permissions are allowed for any request
         if request.method in permissions.SAFE_METHODS:
             return True
