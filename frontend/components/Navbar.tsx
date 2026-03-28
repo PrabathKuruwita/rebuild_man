@@ -204,7 +204,9 @@ export default function Navbar() {
                       onClick={() => setShowProfile((v) => !v)}
                       className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-semibold hover:bg-indigo-200 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     >
-                      {user.username.charAt(0).toUpperCase()}
+                      {user && user.username && user.username.charAt(0)
+                        ? user.username.charAt(0).toUpperCase()
+                        : ""}
                     </button>
 
                     {/* Profile panel */}
