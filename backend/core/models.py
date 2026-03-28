@@ -12,6 +12,18 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='DONOR')
     phone_number = models.CharField(max_length=15, blank=True)
 
+    def save(self, *args, **kwargs):
+        """
+        Ensure that superusers always have the correct admin role.
+        This prevents accidental downgrading of admin accounts if they're
+        created through the registration endpoint instead of the management command.
+        """
+        # If this is a superuser, ensure role is ADMIN (not DONOR or ORG_ADMIN)
+        if self.is_superuser and self.role != 'ADMIN':
+            self.role = 'ADMIN'
+        
+        super().save(*args, **kwargs)
+
 
 # 2. ORGANIZATION (The Hospital or Company)
 class Organization(models.Model):
@@ -93,6 +105,7 @@ class DocumentUpload(models.Model):
         ('FAILED', 'Failed'),
     )
 
+    id = models.AutoField(primary_key=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     file = models.FileField(upload_to='needs_pdfs/')

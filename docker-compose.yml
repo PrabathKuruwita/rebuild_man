@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: rebuild_db
+    environment:
+      POSTGRES_DB: rebuild_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rebuild_network
+
+  # Django Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rebuild_backend
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      DEBUG: "True"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,backend,backend:8000"
+      DATABASE_URL: "postgresql://postgres:admin1234@db:5432/rebuild_db"
+      POSTGRES_DB: rebuild_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin1234
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      SECRET_KEY: "your-secret-key-change-in-production"
+      FRONTEND_URL: "http://localhost:3000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - rebuild_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/organizations/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rebuild_frontend
+    environment:
+      NEXT_PUBLIC_API_URL: "http://backend:8000/api"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - rebuild_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+
+networks:
+  rebuild_network:
+    driver: bridge

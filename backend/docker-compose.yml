@@ -1,7 +1,6 @@
 services:
   db:
-    image: postgres:18-alpine
-    restart: unless-stopped
+    image: postgres:15
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-rebuild_db}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
