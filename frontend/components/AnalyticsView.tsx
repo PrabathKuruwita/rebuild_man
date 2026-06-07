@@ -23,7 +23,7 @@ export default function AnalyticsView({ fulfillmentRate, donationRate, sectionMe
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-slate-900">Overall Fulfillment Rate</h3>
+            <h3 className="font-bold text-slate-900">Overall Received Rate</h3>
             <span className="text-2xl font-black text-blue-600">{fulfillmentRate}%</span>
           </div>
           <div className="h-4 bg-slate-100 rounded-full overflow-hidden">

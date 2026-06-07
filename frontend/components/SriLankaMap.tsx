@@ -25,7 +25,7 @@ export default function SriLankaMap({ organizations: _organizations = [] }: SriL
   ];
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-xl overflow-hidden relative">
+    <div className="w-full h-full bg-linear-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-xl overflow-hidden relative">
       {/* Sri Lanka Map SVG */}
       <svg
         viewBox="0 0 100 120"
@@ -139,7 +139,7 @@ export default function SriLankaMap({ organizations: _organizations = [] }: SriL
         {/* Top Badge */}
         <div className="flex justify-between items-start">
           <div />
-          <div className="bg-gradient-to-r from-green-400 to-emerald-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
+          <div className="bg-linear-to-r from-green-400 to-emerald-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
             SRI LANKA COVERAGE
           </div>
         </div>

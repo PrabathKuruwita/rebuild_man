@@ -5,14 +5,125 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { registerOrgAdmin } from "@/lib/api";
+import {
+  LogIn,
+  HandHeart,
+  Building2,
+  User,
+  Mail,
+  Lock,
+  Phone,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  CheckCircle2,
+  ArrowRight,
+} from "lucide-react";
+
+type Mode = "login" | "register" | "org-admin";
+
+const modes: {
+  id: Mode;
+  label: string;
+  icon: React.ElementType;
+  tagline: string;
+}[] = [
+  { id: "login", label: "Sign In", icon: LogIn, tagline: "Already a member" },
+  {
+    id: "register",
+    label: "Donor Register",
+    icon: HandHeart,
+    tagline: "Start giving today",
+  },
+  {
+    id: "org-admin",
+    label: "Organization Register",
+    icon: Building2,
+    tagline: "List your hospital",
+  },
+];
+
+const ORG_TYPE_OPTIONS = [
+  { value: "HOSPITAL", label: "Hospital" },
+  { value: "CLINIC", label: "Clinic" },
+  { value: "SCHOOL", label: "School" },
+  { value: "NGO", label: "NGO" },
+  { value: "CHARITY", label: "Charity" },
+  { value: "GOVERNMENT", label: "Government" },
+  { value: "OTHER", label: "Other" },
+];
+
+const PasswordInput = ({
+  id,
+  value,
+  onChange,
+  placeholder = "••••••••",
+}: {
+  id: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+}) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+      <input
+        id={id}
+        type={show ? "text" : "password"}
+        required
+        placeholder={placeholder}
+        className="block w-full pl-9 pr-10 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 border bg-white"
+        value={value}
+        onChange={onChange}
+      />
+      <button
+        type="button"
+        onClick={() => setShow((s) => !s)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+        aria-label={show ? "Hide password" : "Show password"}
+        tabIndex={-1}
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+};
+
+const IconInput = ({
+  id,
+  type = "text",
+  placeholder,
+  icon: Icon,
+  value,
+  onChange,
+}: {
+  id: string;
+  type?: string;
+  placeholder: string;
+  icon: React.ElementType;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) => (
+  <div className="relative">
+    <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+    <input
+      id={id}
+      type={type}
+      required
+      placeholder={placeholder}
+      className="block w-full pl-9 pr-3 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 border bg-white"
+      value={value}
+      onChange={onChange}
+    />
+  </div>
+);
 
 export default function LoginContent() {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<
-    "login" | "register" | "org-admin"
-  >("login");
+  const [activeTab, setActiveTab] = useState<Mode>("login");
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register: authRegister } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   // Common form states
@@ -30,30 +141,28 @@ export default function LoginContent() {
   const [selectedOrgName, setSelectedOrgName] = useState("");
   const [selectedOrgType, setSelectedOrgType] = useState("");
 
-  // Organization type options
-  const ORG_TYPE_OPTIONS = [
-    { value: "HOSPITAL", label: "Hospital" },
-    { value: "CLINIC", label: "Clinic" },
-    { value: "SCHOOL", label: "School" },
-    { value: "NGO", label: "NGO" },
-    { value: "CHARITY", label: "Charity" },
-    { value: "GOVERNMENT", label: "Government" },
-    { value: "OTHER", label: "Other" },
-  ];
-
-  // Password visibility toggles
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   useEffect(() => {
-    const tab = (searchParams.get("tab") as "login" | "register" | "org-admin") || "login";
-    if (activeTab !== tab) {
-      setTimeout(() => setActiveTab(tab), 0);
-    }
-    if (error !== null) {
-      setTimeout(() => setError(null), 0);
-    }
-  }, [searchParams, activeTab, error]);
+    const tab = (searchParams.get("tab") as Mode) || "login";
+    queueMicrotask(() => {
+      setActiveTab(tab);
+      setError(null);
+    });
+  }, [searchParams]);
+
+  const handleTabChange = (tab: Mode) => {
+    setActiveTab(tab);
+    setError(null);
+    // Reset form fields when switching tabs
+    setUsername("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setPhoneNumber("");
+    setFirstName("");
+    setLastName("");
+    setSelectedOrgName("");
+    setSelectedOrgType("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,12 +176,14 @@ export default function LoginContent() {
         if (password !== confirmPassword) {
           throw new Error("Passwords do not match");
         }
-        await register({
+        await authRegister({
           username,
           email,
           password,
           password2: confirmPassword,
           phone_number: phoneNumber,
+          first_name: firstName,
+          last_name: lastName,
         });
       } else if (activeTab === "org-admin") {
         if (password !== confirmPassword) {
@@ -102,16 +213,7 @@ export default function LoginContent() {
         alert(
           "Registration submitted! Awaiting system administrator approval.",
         );
-        setUsername("");
-        setEmail("");
-        setPassword("");
-        setConfirmPassword("");
-        setPhoneNumber("");
-        setFirstName("");
-        setLastName("");
-        setSelectedOrgName("");
-        setSelectedOrgType("");
-        setActiveTab("login");
+        handleTabChange("login");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -120,486 +222,612 @@ export default function LoginContent() {
     }
   };
 
-  const handleTabChange = (tab: "login" | "register" | "org-admin") => {
-    setActiveTab(tab);
-    setError(null);
-    // Reset form fields when switching tabs
-    setUsername("");
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
-    setPhoneNumber("");
-    setFirstName("");
-    setLastName("");
-    setSelectedOrgName("");
-    setSelectedOrgType("");
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-              />
-            </svg>
-          </div>
-        </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          {activeTab === "login" && "Welcome back"}
-          {activeTab === "register" && "Join as a Donor"}
-          {activeTab === "org-admin" && "Register as Organization Admin"}
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          {activeTab === "login" && "Sign in to your account"}
-          {activeTab === "register" &&
-            "Create a donor account to see what needs helping"}
-          {activeTab === "org-admin" &&
-            "Register your organization and manage its needs"}
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center sm:px-6 lg:px-8">
+      <main className="relative flex-grow flex flex-col justify-center">
+        {/* Decorative top background */}
+        <div className="absolute inset-x-0 top-0 h-96 bg-gradient-to-b from-blue-100/60 to-transparent pointer-events-none" />
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100">
-          {/* Tab Selector */}
-          <div className="flex border-b border-gray-200 mb-6">
-            {(["login", "register", "org-admin"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                className={`flex-1 py-2 px-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                {tab === "login" && "Sign In"}
-                {tab === "register" && "Donor"}
-                {tab === "org-admin" && "Org Admin"}
-              </button>
-            ))}
+        <section className="container mx-auto px-4 relative py-12">
+          {/* Header Text */}
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/60 px-3 py-1 text-xs font-medium text-gray-500 backdrop-blur">
+              <ShieldCheck className="h-3.5 w-3.5 text-green-500" />
+              Secure access to NeedTracker
+            </span>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl text-gray-900">
+              Sign in or join the donation network
+            </h1>
+            <p className="mt-3 text-gray-500">
+              Choose how you want to continue — sign in to your account,
+              register as a donor, or list your organization.
+            </p>
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Error Message */}
-            {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="h-5 w-5 text-red-400"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">Error</h3>
-                    <div className="mt-2 text-sm text-red-700">
-                      <p>{error}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+          {/* Mode selector */}
+          <div className="mx-auto mt-8 max-w-3xl">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {modes.map((m) => {
+                const Icon = m.icon;
+                const active = activeTab === m.id;
 
-            {/* Username */}
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Username
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  className="block w-full pl-10 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 p-2 border"
-                  placeholder="johndoe"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-            </div>
+                // Active colors based on tab
+                let activeBorderColor = "border-blue-600";
+                let activeBgColor = "bg-blue-50";
+                let activeIconBg = "bg-blue-600";
+                let activeCheckColor = "text-blue-600";
 
-            {/* Email - for register and org-admin tabs */}
-            {(activeTab === "register" || activeTab === "org-admin") && (
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Email Address
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg
-                      className="h-5 w-5 text-gray-400"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                    </svg>
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    className="block w-full pl-10 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 p-2 border"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
+                if (m.id === "register") {
+                  activeBorderColor = "border-green-600";
+                  activeBgColor = "bg-green-50";
+                  activeIconBg = "bg-green-600";
+                  activeCheckColor = "text-green-600";
+                } else if (m.id === "org-admin") {
+                  activeBorderColor = "border-orange-600";
+                  activeBgColor = "bg-orange-50";
+                  activeIconBg = "bg-orange-600";
+                  activeCheckColor = "text-orange-600";
+                }
 
-            {/* Phone - for register and org-admin tabs */}
-            {(activeTab === "register" || activeTab === "org-admin") && (
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Phone Number
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg
-                      className="h-5 w-5 text-gray-400"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                    </svg>
-                  </div>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    className="block w-full pl-10 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 p-2 border"
-                    placeholder="+94 77 123 4567"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* First Name - org-admin only */}
-            {(activeTab === "register" || activeTab === "org-admin") && (
-              <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  First Name
-                </label>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="John"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-              </div>
-            )}
-
-            {/* Last Name - org-admin only */}
-            {(activeTab === "register" || activeTab === "org-admin") && (
-              <div>
-                <label
-                  htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Last Name
-                </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Doe"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                />
-              </div>
-            )}
-
-            {/* Organization & Organization Type - org-admin only */}
-            {activeTab === "org-admin" && (
-              <>
-                <div>
-                  <label
-                    htmlFor="organization"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Organization Name
-                  </label>
-                  <input
-                    id="organization"
-                    name="organization"
-                    type="text"
-                    required
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Type the name of your organization"
-                    value={selectedOrgName}
-                    onChange={(e) => setSelectedOrgName(e.target.value)}
-                  />
-                </div>
-
-                {/* Organization Type - independent dropdown */}
-                <div>
-                  <label
-                    htmlFor="orgType"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Organization Type
-                  </label>
-                  <select
-                    id="orgType"
-                    name="orgType"
-                    required
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    value={selectedOrgType}
-                    onChange={(e) => setSelectedOrgType(e.target.value)}
-                  >
-                    <option value="">-- Select organization type --</option>
-                    {ORG_TYPE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
-
-            {/* Password */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  className="block w-full pl-10 pr-10 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 p-2 border"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                  tabIndex={-1}
-                >
-                  {showPassword ? (
-                    <svg
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                      <path
-                        fillRule="evenodd"
-                        d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z"
-                        clipRule="evenodd"
-                      />
-                      <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Confirm Password - for register and org-admin tabs */}
-            {(activeTab === "register" || activeTab === "org-admin") && (
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Confirm Password
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg
-                      className="h-5 w-5 text-gray-400"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    required
-                    className="block w-full pl-10 pr-10 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 p-2 border"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
+                return (
                   <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                    tabIndex={-1}
+                    key={m.id}
+                    onClick={() => handleTabChange(m.id)}
+                    className={`group flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
+                      active
+                        ? `${activeBorderColor} ${activeBgColor} shadow-sm`
+                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                    }`}
                   >
-                    {showConfirmPassword ? (
-                      <svg
-                        className="h-5 w-5"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                        <path
-                          fillRule="evenodd"
-                          d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="h-5 w-5"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z"
-                          clipRule="evenodd"
-                        />
-                        <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-                      </svg>
+                    <span
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+                        active
+                          ? `${activeIconBg} text-white`
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-gray-900">
+                        {m.label}
+                      </span>
+                      <span className="block truncate text-xs text-gray-500">
+                        {m.tagline}
+                      </span>
+                    </span>
+                    {active && (
+                      <CheckCircle2
+                        className={`ml-auto h-4 w-4 shrink-0 ${activeCheckColor}`}
+                      />
                     )}
                   </button>
-                </div>
-              </div>
-            )}
-
-            {/* Remember me - login tab only */}
-            {activeTab === "login" && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="remember-me"
-                    className="ml-2 block text-sm text-gray-900"
-                  >
-                    Remember me
-                  </label>
-                </div>
-
-                <div className="text-sm">
-                  <Link
-                    href="/forgot-password"
-                    className="font-medium text-blue-600 hover:text-blue-500"
-                  >
-                    Forgot your password?
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
-              >
-                {loading
-                  ? "Processing..."
-                  : activeTab === "login"
-                    ? "Sign In"
-                    : "Register"}
-              </button>
+                );
+              })}
             </div>
-          </form>
-        </div>
-      </div>
+          </div>
+
+          {/* Main content grid */}
+          <div className="mx-auto mt-8 grid max-w-5xl gap-8 lg:grid-cols-[1fr_320px] lg:items-start">
+            {/* Active Card Container */}
+            <div className="w-full max-w-xl mx-auto lg:mx-0">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-fade-in-up">
+                <form onSubmit={handleSubmit} className="p-6 sm:p-8">
+                  {/* Common Error Display */}
+                  {error && (
+                    <div className="rounded-md bg-red-50 p-4 mb-6">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg
+                            className="h-5 w-5 text-red-400"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-red-800">
+                            Error
+                          </h3>
+                          <div className="mt-1 text-sm text-red-700">
+                            <p>{error}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SignIn View */}
+                  {activeTab === "login" && (
+                    <>
+                      <div className="mb-6">
+                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                          <LogIn className="h-6 w-6" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                          Welcome back
+                        </h2>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Sign in to manage your donations and track impact.
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label
+                            htmlFor="username"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                          >
+                            Username
+                          </label>
+                          <IconInput
+                            id="username"
+                            placeholder="jane_doe"
+                            icon={User}
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label
+                              htmlFor="password"
+                              className="block text-sm font-medium text-gray-700"
+                            >
+                              Password
+                            </label>
+                            <Link
+                              href="/forgot-password"
+                              className="text-xs font-medium text-blue-600 hover:text-blue-500"
+                            >
+                              Forgot password?
+                            </Link>
+                          </div>
+                          <PasswordInput
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 pb-2">
+                          <input
+                            id="remember"
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                          />
+                          <label
+                            htmlFor="remember"
+                            className="text-sm text-gray-600"
+                          >
+                            Remember me
+                          </label>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+                        >
+                          {loading ? "Signing in..." : "Sign In"}{" "}
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+
+                        <p className="text-center text-sm text-gray-500 pt-2">
+                          New here?{" "}
+                          <button
+                            type="button"
+                            onClick={() => handleTabChange("register")}
+                            className="font-medium text-blue-600 hover:underline"
+                          >
+                            Create an account
+                          </button>
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Donor Register View */}
+                  {activeTab === "register" && (
+                    <>
+                      <div className="mb-6">
+                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-green-600 shadow-sm">
+                          <HandHeart className="h-6 w-6" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                          Join as a Donor
+                        </h2>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Create your free donor account and start contributing
+                          to verified hospital needs.
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label
+                              htmlFor="donorFirstName"
+                              className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                              Donor first name
+                            </label>
+                            <input
+                              id="donorFirstName"
+                              type="text"
+                              required
+                              placeholder="John"
+                              className="block w-full px-3 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 border bg-white"
+                              value={firstName}
+                              onChange={(e) => setFirstName(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="donorLastName"
+                              className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                              Donor last name
+                            </label>
+                            <input
+                              id="donorLastName"
+                              type="text"
+                              required
+                              placeholder="Doe"
+                              className="block w-full px-3 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 border bg-white"
+                              value={lastName}
+                              onChange={(e) => setLastName(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="reg-username"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                          >
+                            Donor username
+                          </label>
+                          <IconInput
+                            id="reg-username"
+                            placeholder="john_doe"
+                            icon={User}
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="email"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                          >
+                            Email address
+                          </label>
+                          <IconInput
+                            id="email"
+                            type="email"
+                            placeholder="you@example.com"
+                            icon={Mail}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="phone"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                          >
+                            Phone number
+                          </label>
+                          <IconInput
+                            id="phone"
+                            type="tel"
+                            placeholder="+94 77 123 4567"
+                            icon={Phone}
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label
+                              htmlFor="reg-password"
+                              className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                              Password
+                            </label>
+                            <PasswordInput
+                              id="reg-password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="confirmPassword"
+                              className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                              Confirm
+                            </label>
+                            <PasswordInput
+                              id="confirmPassword"
+                              value={confirmPassword}
+                              onChange={(e) =>
+                                setConfirmPassword(e.target.value)
+                              }
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2 rounded-lg bg-gray-50 p-3 border border-gray-100">
+                          <input
+                            id="terms"
+                            type="checkbox"
+                            required
+                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-600"
+                          />
+                          <label
+                            htmlFor="terms"
+                            className="text-xs text-gray-500 leading-relaxed"
+                          >
+                            I agree to NeedTracker&apos;s Terms of Service and
+                            Privacy Policy.
+                          </label>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+                        >
+                          {loading ? "Creating..." : "Create Donor Account"}{" "}
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Org Admin Register View */}
+                  {activeTab === "org-admin" && (
+                    <>
+                      <div className="mb-6">
+                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100 text-orange-600 shadow-sm">
+                          <Building2 className="h-6 w-6" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                          Register Your Organization
+                        </h2>
+                        <p className="mt-1 text-sm text-gray-500">
+                          For hospitals & medical organizations. Verification
+                          required after submission.
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label
+                            htmlFor="orgName"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                          >
+                            Organization name
+                          </label>
+                          <IconInput
+                            id="orgName"
+                            placeholder="National Hospital Colombo"
+                            icon={Building2}
+                            value={selectedOrgName}
+                            onChange={(e) => setSelectedOrgName(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="orgType"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                          >
+                            Organization type
+                          </label>
+                          <select
+                            id="orgType"
+                            required
+                            className="block w-full pl-3 pr-10 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 border bg-white text-gray-900"
+                            value={selectedOrgType}
+                            onChange={(e) => setSelectedOrgType(e.target.value)}
+                          >
+                            <option value="" disabled>
+                              Select organization type
+                            </option>
+                            {ORG_TYPE_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label
+                              htmlFor="firstName"
+                              className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                              Admin first name
+                            </label>
+                            <input
+                              id="firstName"
+                              type="text"
+                              required
+                              placeholder="Jane"
+                              className="block w-full px-3 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 border bg-white"
+                              value={firstName}
+                              onChange={(e) => setFirstName(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="lastName"
+                              className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                              Admin last name
+                            </label>
+                            <input
+                              id="lastName"
+                              type="text"
+                              required
+                              placeholder="Smith"
+                              className="block w-full px-3 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 border bg-white"
+                              value={lastName}
+                              onChange={(e) => setLastName(e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="orgUsername"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                          >
+                            Admin username
+                          </label>
+                          <IconInput
+                            id="orgUsername"
+                            placeholder="jane_smith"
+                            icon={User}
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label
+                              htmlFor="orgEmail"
+                              className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                              Official email
+                            </label>
+                            <IconInput
+                              id="orgEmail"
+                              type="email"
+                              placeholder="admin@hospital.lk"
+                              icon={Mail}
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="orgPhone"
+                              className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                              Phone
+                            </label>
+                            <IconInput
+                              id="orgPhone"
+                              type="tel"
+                              placeholder="+94 11 269 1111"
+                              icon={Phone}
+                              value={phoneNumber}
+                              onChange={(e) => setPhoneNumber(e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label
+                              htmlFor="orgPassword"
+                              className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                              Password
+                            </label>
+                            <PasswordInput
+                              id="orgPassword"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label
+                              htmlFor="orgConfirm"
+                              className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                              Confirm
+                            </label>
+                            <PasswordInput
+                              id="orgConfirm"
+                              value={confirmPassword}
+                              onChange={(e) =>
+                                setConfirmPassword(e.target.value)
+                              }
+                            />
+                          </div>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-600 disabled:opacity-50 transition-colors mt-2"
+                        >
+                          {loading
+                            ? "Submitting..."
+                            : "Submit for Verification"}{" "}
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </form>
+              </div>
+            </div>
+
+            {/* Trust Panel sidebar */}
+            <aside className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden sticky top-24 hidden lg:block">
+              <div className="p-6">
+                <h3 className="text-base font-semibold text-gray-900">
+                  Why NeedTracker?
+                </h3>
+                <ul className="mt-4 space-y-4 text-sm">
+                  <li className="flex gap-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                    <span className="text-gray-600">
+                      Verified hospitals and transparent needs.
+                    </span>
+                  </li>
+                  <li className="flex gap-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                    <span className="text-gray-600">
+                      Real-time tracking of every donation.
+                    </span>
+                  </li>
+                  <li className="flex gap-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                    <span className="text-gray-600">
+                      Bank-level encryption for your data.
+                    </span>
+                  </li>
+                </ul>
+                <div className="mt-6 rounded-lg bg-gray-50 p-4 border border-gray-100">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Trusted by
+                  </p>
+                  <p className="mt-1 text-xl font-bold text-gray-900">
+                    120+ hospitals
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    across the country
+                  </p>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

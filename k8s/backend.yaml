@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: rikili001
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: backend }
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  template:
+    metadata:
+      labels: { app: backend }
+    spec:
+      containers:
+        - name: backend
+          image: ravindudilhan/rebuild-backend:latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 8000 }]
+          env:
+            - name: DB_NAME
+              value: rebuild_db
+            - name: DB_USER
+              value: postgres
+            - name: DB_HOST
+              value: postgres
+            - name: DB_PORT
+              value: "5432"
+            - name: DEBUG
+              value: "False"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: DB_PASSWORD
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: SECRET_KEY
+            - name: EMAIL_HOST_USER
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: EMAIL_HOST_USER
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: EMAIL_HOST_PASSWORD
+            - name: DEFAULT_FROM_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: DEFAULT_FROM_EMAIL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: rikili001
+spec:
+  selector: { app: backend }
+  ports: [{ port: 8000 }]

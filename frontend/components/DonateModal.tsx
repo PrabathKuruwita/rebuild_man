@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { NeedItem } from "@/lib/api";
+import { Donation, NeedItem } from "@/lib/api";
 import { Loader2, X } from "lucide-react";
 
 export interface DonationFormData {
@@ -21,6 +21,7 @@ export interface DonationFormData {
   governmentOfficerName: string;
   governmentOfficerDesignation: string;
   governmentOfficerContact: string;
+  governmentEmail: string;
 }
 
 interface DonateModalProps {
@@ -58,6 +59,7 @@ export default function DonateModal({
   const [governmentOfficerDesignation, setGovernmentOfficerDesignation] =
     useState("");
   const [governmentOfficerContact, setGovernmentOfficerContact] = useState("");
+  const [governmentEmail, setGovernmentEmail] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -86,7 +88,7 @@ export default function DonateModal({
     try {
       const { createDonation } = await import("@/lib/api");
 
-      const donationData: Record<string, unknown> = {
+      const donationData: Partial<Donation> = {
         need_item: needItem.id,
         quantity: quantity,
         status: "PENDING",
@@ -109,6 +111,7 @@ export default function DonateModal({
         donationData.government_officer_designation =
           governmentOfficerDesignation;
         donationData.government_officer_contact = governmentOfficerContact;
+        donationData.government_email = governmentEmail;
       }
 
       await createDonation(donationData);
@@ -130,19 +133,26 @@ export default function DonateModal({
         setDonorOrganization("");
         setDonorAddress("");
         setDonorContact("");
+        setGovernmentDepartment("");
+        setGovernmentProgram("");
+        setGovernmentOfficerName("");
+        setGovernmentOfficerDesignation("");
+        setGovernmentOfficerContact("");
+        setGovernmentEmail("");
         setSuccess(false);
         onSuccess();
         onClose();
       }, 3000);
     } catch (err: unknown) {
       setIsLoading(false);
-      const errorMessage = err instanceof Error ? err.message : "";
-      if (errorMessage.includes("401")) {
+      const message =
+        err instanceof Error ? err.message : "Failed to create donation";
+      if (message.includes("401")) {
         setError("Your session has expired. Please sign in again.");
-      } else if (errorMessage.includes("credentials")) {
+      } else if (message.includes("credentials")) {
         setError("Authentication failed. Please sign in again.");
       } else {
-        setError(errorMessage || "Failed to create donation");
+        setError(message);
       }
     }
   };
@@ -156,7 +166,15 @@ export default function DonateModal({
             <h2 className="text-2xl font-bold text-gray-900">
               Make a Donation
             </h2>
-            <p className="text-gray-600 mt-1">{needItem.name}</p>
+            <p className="text-gray-800 font-medium mt-1">{needItem.name}</p>
+            {needItem.section_detail && (
+              <p className="text-gray-500 text-sm mt-0.5">
+                {needItem.section_detail.organization_name}{" "}
+                {needItem.section_detail.name
+                  ? `• ${needItem.section_detail.name}`
+                  : ""}
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -386,6 +404,13 @@ export default function DonateModal({
                       onChange={(e) =>
                         setGovernmentOfficerContact(e.target.value)
                       }
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={governmentEmail}
+                      onChange={(e) => setGovernmentEmail(e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>

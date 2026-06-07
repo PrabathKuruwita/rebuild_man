@@ -53,13 +53,15 @@ export default function NeedCard({
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900">{need.name}</h3>
-            {organizationName && (
-              <p className="text-xs text-gray-700 font-medium">
-                {organizationName}
+            {(organizationName || need.section_detail?.organization_name) && (
+              <p className="text-xs text-gray-700 font-medium mt-0.5">
+                {organizationName || need.section_detail?.organization_name}
+                {(sectionName || need.section_detail?.name) && (
+                  <span className="text-gray-500 font-normal">
+                    {` • ${sectionName || need.section_detail?.name}`}
+                  </span>
+                )}
               </p>
-            )}
-            {showSection && sectionName && (
-              <p className="text-sm text-gray-500">{sectionName}</p>
             )}
           </div>
           <div className="flex items-center gap-2">

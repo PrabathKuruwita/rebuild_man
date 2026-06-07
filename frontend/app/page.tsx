@@ -17,7 +17,14 @@ export default function Home() {
       const orgs = await getOrganizations();
       setOrganizations(orgs);
     } catch (err) {
-      console.error(err instanceof Error ? err.message : "Failed to load data");
+      console.warn(
+        "Backend API not available. Start with: python manage.py runserver",
+        err instanceof Error ? err.message : "Failed to load data"
+      );
+      // Continue without backend data - allow UI testing
+      setOrganizations([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -25,7 +32,6 @@ export default function Home() {
     async function loadData() {
       setLoading(true);
       await fetchData();
-      setLoading(false);
     }
     loadData();
   }, []);
@@ -66,8 +72,8 @@ export default function Home() {
               <p className="text-sm lg:text-base text-blue-100/80 leading-relaxed max-w-lg">
                 NeedTracker connects generous donors with verified hospitals and
                 healthcare organizations across Sri Lanka. Browse real, urgent
-                needs from saline bottles to medical equipment — and
-                contribute in minutes.
+                needs from saline bottles to medical equipment — and contribute
+                in minutes.
               </p>
 
               <div className="flex flex-wrap items-center gap-4">
@@ -125,8 +131,16 @@ export default function Home() {
               </div>
 
               <div className="flex items-center gap-2 text-blue-100/70 text-sm font-medium">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 4.946-2.397 9.126-6 11.773-3.603-2.647-6-6.827-6-11.773 0-.68.056-1.35.166-2.001zm8.354 1.313a1 1 0 00-1.414 1.414L11.586 10l-2.474 2.474a1 1 0 101.414 1.414L13 11.414l2.474 2.474a1 1 0 001.414-1.414L14.414 10l2.474-2.474a1 1 0 00-1.414-1.414L13 8.586l-2.48-2.274z" clipRule="evenodd" />
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 4.946-2.397 9.126-6 11.773-3.603-2.647-6-6.827-6-11.773 0-.68.056-1.35.166-2.001zm8.354 1.313a1 1 0 00-1.414 1.414L11.586 10l-2.474 2.474a1 1 0 101.414 1.414L13 11.414l2.474 2.474a1 1 0 001.414-1.414L14.414 10l2.474-2.474a1 1 0 00-1.414-1.414L13 8.586l-2.48-2.274z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 100% transparent - Every donation tracked end-to-end
               </div>
@@ -134,15 +148,12 @@ export default function Home() {
 
             {/* Right Column: Featured Image Card */}
             <div className="relative animate-fade-in group lg:ml-auto">
-              <div className="absolute -inset-4 bg-white/10 rounded-[32px] blur-2xl group-hover:bg-white/20 transition-all duration-500"></div>
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20">
-                <Image
-                  src="/images/hero-donation.jpg"
+              <div className="absolute -inset-4 bg-white/10 rounded-4xl blur-2xl group-hover:bg-white/20 transition-all duration-500"></div>
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 aspect-video bg-slate-800 flex items-center justify-center">
+                <img
+                  src="https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=800&q=80"
                   alt="Hospital Donation Need"
-                  width={800}
-                  height={500}
-                  className="w-full h-auto object-cover"
-                  priority
+                  className="w-full h-full object-cover"
                 />
                 {/* Urgent Need Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 p-8 bg-linear-to-t from-slate-900 via-slate-900/80 to-transparent">
@@ -223,8 +234,8 @@ export default function Home() {
               Helping hospitals in three simple steps
             </h2>
             <p className="text-sm text-slate-500 max-w-xl mx-auto leading-relaxed">
-              A transparent platform built for donors, hospitals and the patients
-              they serve.
+              A transparent platform built for donors, hospitals and the
+              patients they serve.
             </p>
           </div>
 
@@ -234,33 +245,63 @@ export default function Home() {
                 title: "1. Browse Verified Needs",
                 desc: "Hospitals post real-time requests for medicines, equipment and supplies.",
                 icon: (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
-                )
+                ),
               },
               {
                 title: "2. Choose & Donate",
                 desc: "Pick a cause that matters to you and donate items or funds securely.",
                 icon: (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
-                )
+                ),
               },
               {
                 title: "3. Track Your Impact",
                 desc: "Follow your donation from confirmation to delivery at the hospital.",
                 icon: (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
                   </svg>
-                )
-              }
+                ),
+              },
             ].map((step, i) => (
               <div
                 key={i}
-                className="bg-white p-8 rounded-[24px] shadow-sm hover:shadow-xl transition-all duration-500 border border-slate-100 group"
+                className="bg-white p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-500 border border-slate-100 group"
               >
                 <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform">
                   {step.icon}
@@ -300,7 +341,9 @@ export default function Home() {
                     />
                   </svg>
                 </div>
-                <h2 className="text-3xl font-bold text-white">I want to donate</h2>
+                <h2 className="text-3xl font-bold text-white">
+                  I want to donate
+                </h2>
                 <p className="text-blue-100/70 text-base leading-relaxed">
                   Create a free donor account and start contributing to verified
                   hospital needs today.
@@ -427,7 +470,9 @@ export default function Home() {
               <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-white text-[20px] font-black">
                 N
               </div>
-              <span className="text-slate-300 font-bold text-lg">NeedTracker — Sri Lanka</span>
+              <span className="text-slate-300 font-bold text-lg">
+                NeedTracker — Sri Lanka
+              </span>
             </div>
 
             <p className="text-slate-500 text-sm order-3 md:order-2">
@@ -435,10 +480,30 @@ export default function Home() {
             </p>
 
             <nav className="flex items-center gap-6 order-5 md:order-3">
-              <Link href="/about" className="text-slate-400 hover:text-white text-sm font-medium">About</Link>
-              <Link href="/privacy" className="text-slate-400 hover:text-white text-sm font-medium">Privacy</Link>
-              <Link href="/terms" className="text-slate-400 hover:text-white text-sm font-medium">Terms</Link>
-              <Link href="/contact" className="text-slate-400 hover:text-white text-sm font-medium">Contact</Link>
+              <Link
+                href="/about"
+                className="text-slate-400 hover:text-white text-sm font-medium"
+              >
+                About
+              </Link>
+              <Link
+                href="/privacy"
+                className="text-slate-400 hover:text-white text-sm font-medium"
+              >
+                Privacy
+              </Link>
+              <Link
+                href="/terms"
+                className="text-slate-400 hover:text-white text-sm font-medium"
+              >
+                Terms
+              </Link>
+              <Link
+                href="/contact"
+                className="text-slate-400 hover:text-white text-sm font-medium"
+              >
+                Contact
+              </Link>
             </nav>
           </div>
         </div>

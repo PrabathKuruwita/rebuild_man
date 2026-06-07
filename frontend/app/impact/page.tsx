@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Donation, NeedItem, Organization, getDonations, getNeeds, getOrganizations } from "@/lib/api";
+import {
+  Donation,
+  NeedItem,
+  Organization,
+  getDonations,
+  getNeeds,
+  getOrganizations,
+} from "@/lib/api";
 import { PageLoading } from "@/components/LoadingSpinner";
 
 type MonthlyImpact = {
@@ -38,13 +45,18 @@ export default function ImpactPage() {
       // Check if user is authenticated for donation data
       const isAuthenticated = !!localStorage.getItem("accessToken");
 
-      const promises: [Promise<unknown>, Promise<unknown>, Promise<unknown> | null] = [
+      const promises: [
+        Promise<Organization[]>,
+        Promise<NeedItem[]>,
+        Promise<Donation[]> | null,
+      ] = [
         getOrganizations(),
         getNeeds(),
-        isAuthenticated ? getDonations() : null
+        isAuthenticated ? getDonations() : null,
       ];
 
-      const [orgResult, needsResult, donationResult] = await Promise.allSettled(promises);
+      const [orgResult, needsResult, donationResult] =
+        await Promise.allSettled(promises);
 
       const organizationsLoaded = orgResult.status === "fulfilled";
       const needsLoaded = needsResult.status === "fulfilled";
@@ -66,15 +78,21 @@ export default function ImpactPage() {
       } else {
         setDonations([]);
         if (!isAuthenticated) {
-          setWarning("Sign in to see your personalized donation history. Showing global impact data.");
+          setWarning(
+            "Sign in to see your personalized donation history. Showing global impact data.",
+          );
         } else if (donationResult && donationResult.status === "rejected") {
-          setWarning("Donation history could not be loaded for this account. Showing impact based on available data.");
+          setWarning(
+            "Donation history could not be loaded for this account. Showing impact based on available data.",
+          );
         }
       }
 
       if (!organizationsLoaded && !needsLoaded) {
-        const orgError = orgResult.status === "rejected" ? String(orgResult.reason) : "";
-        const needError = needsResult.status === "rejected" ? String(needsResult.reason) : "";
+        const orgError =
+          orgResult.status === "rejected" ? String(orgResult.reason) : "";
+        const needError =
+          needsResult.status === "rejected" ? String(needsResult.reason) : "";
         setError(orgError || needError || "Failed to load impact analytics");
       }
 
@@ -99,10 +117,17 @@ export default function ImpactPage() {
         .filter(Boolean),
     );
 
-    const totalRequired = needs.reduce((sum, n) => sum + n.quantity_required, 0);
-    const totalReceived = needs.reduce((sum, n) => sum + n.quantity_received, 0);
+    const totalRequired = needs.reduce(
+      (sum, n) => sum + n.quantity_required,
+      0,
+    );
+    const totalReceived = needs.reduce(
+      (sum, n) => sum + n.quantity_received,
+      0,
+    );
     const fulfilledNeedsCount = needs.filter(
-      (n) => n.quantity_required > 0 && n.quantity_received >= n.quantity_required,
+      (n) =>
+        n.quantity_required > 0 && n.quantity_received >= n.quantity_required,
     ).length;
 
     const needMap = new Map<number, NeedItem>();
@@ -122,10 +147,15 @@ export default function ImpactPage() {
     const districtTotals = new Map<string, number>();
     for (const donation of successfulDonations) {
       const district = districtByNeed.get(donation.need_item) || "Unknown";
-      districtTotals.set(district, (districtTotals.get(district) || 0) + donation.quantity);
+      districtTotals.set(
+        district,
+        (districtTotals.get(district) || 0) + donation.quantity,
+      );
     }
 
-    const districtImpact: DistrictImpact[] = Array.from(districtTotals.entries())
+    const districtImpact: DistrictImpact[] = Array.from(
+      districtTotals.entries(),
+    )
       .map(([district, value]) => ({ district, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 6);
@@ -161,7 +191,10 @@ export default function ImpactPage() {
       .filter((n) => n.quantity_required > 0)
       .map((n) => ({
         name: n.name,
-        progress: Math.min(100, Math.round((n.quantity_received / n.quantity_required) * 100)),
+        progress: Math.min(
+          100,
+          Math.round((n.quantity_received / n.quantity_required) * 100),
+        ),
       }))
       .sort((a, b) => b.progress - a.progress)
       .slice(0, 3);
@@ -189,8 +222,14 @@ export default function ImpactPage() {
       totalRequired,
       fulfilledNeedsCount,
       totalNeedsCount: needs.length,
-      fulfillmentRate: needs.length > 0 ? Math.round((fulfilledNeedsCount / needs.length) * 100) : 0,
-      coverageRate: totalRequired > 0 ? Math.round((totalReceived / totalRequired) * 100) : 0,
+      fulfillmentRate:
+        needs.length > 0
+          ? Math.round((fulfilledNeedsCount / needs.length) * 100)
+          : 0,
+      coverageRate:
+        totalRequired > 0
+          ? Math.round((totalReceived / totalRequired) * 100)
+          : 0,
       monthlyImpact,
       districtImpact,
       stories,
@@ -220,7 +259,9 @@ export default function ImpactPage() {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-12">
         <div className="mx-auto max-w-3xl rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
-          <h1 className="mb-2 text-2xl font-bold text-red-800">Unable to Load Impact Page</h1>
+          <h1 className="mb-2 text-2xl font-bold text-red-800">
+            Unable to Load Impact Page
+          </h1>
           <p className="text-red-700">{error}</p>
           <button
             onClick={() => window.location.reload()}
@@ -233,8 +274,14 @@ export default function ImpactPage() {
     );
   }
 
-  const maxMonthlyValue = Math.max(...metrics.monthlyImpact.map((m) => m.value), 1);
-  const maxDistrictValue = Math.max(...metrics.districtImpact.map((d) => d.value), 1);
+  const maxMonthlyValue = Math.max(
+    ...metrics.monthlyImpact.map((m) => m.value),
+    1,
+  );
+  const maxDistrictValue = Math.max(
+    ...metrics.districtImpact.map((d) => d.value),
+    1,
+  );
 
   return (
     <div className="min-h-screen bg-linear-to-br from-cyan-50 via-white to-emerald-50">
@@ -250,7 +297,8 @@ export default function ImpactPage() {
             How This Platform Transforms Donations Into Real Outcomes
           </h1>
           <p className="mt-4 max-w-2xl text-base text-cyan-50 sm:text-lg">
-            Track contribution momentum, district-level support, and delivery progress from donors to organizations.
+            Track contribution momentum, district-level support, and delivery
+            progress from donors to organizations.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
@@ -279,48 +327,80 @@ export default function ImpactPage() {
         <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-2xl border border-cyan-100 bg-white/90 p-6 shadow-sm">
             <p className="text-sm font-medium text-gray-500">Total Donations</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{metrics.totalDonations.toLocaleString()}</p>
-            <p className="mt-2 text-sm text-emerald-700">{metrics.totalSuccessfulDonations.toLocaleString()} confirmed or fulfilled</p>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {metrics.totalDonations.toLocaleString()}
+            </p>
+            <p className="mt-2 text-sm text-emerald-700">
+              {metrics.totalSuccessfulDonations.toLocaleString()} confirmed or
+              fulfilled
+            </p>
           </article>
 
           <article className="rounded-2xl border border-emerald-100 bg-white/90 p-6 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Supplies Delivered</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{metrics.totalReceived.toLocaleString()}</p>
-            <p className="mt-2 text-sm text-gray-600">of {metrics.totalRequired.toLocaleString()} requested units</p>
+            <p className="text-sm font-medium text-gray-500">
+              Supplies Delivered
+            </p>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {metrics.totalReceived.toLocaleString()}
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              of {metrics.totalRequired.toLocaleString()} requested units
+            </p>
           </article>
 
           <article className="rounded-2xl border border-amber-100 bg-white/90 p-6 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Needs Fulfillment Rate</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{metrics.fulfillmentRate}%</p>
-            <p className="mt-2 text-sm text-gray-600">{metrics.fulfilledNeedsCount} of {metrics.totalNeedsCount} needs fully covered</p>
+            <p className="text-sm font-medium text-gray-500">
+              Needs Fulfillment Rate
+            </p>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {metrics.fulfillmentRate}%
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              {metrics.fulfilledNeedsCount} of {metrics.totalNeedsCount} needs
+              fully covered
+            </p>
           </article>
 
           <article className="rounded-2xl border border-sky-100 bg-white/90 p-6 shadow-sm">
             <p className="text-sm font-medium text-gray-500">Active Donors</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{metrics.uniqueDonors.toLocaleString()}</p>
-            <p className="mt-2 text-sm text-gray-600">supporting {metrics.totalOrganizations.toLocaleString()} organizations</p>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+              {metrics.uniqueDonors.toLocaleString()}
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              supporting {metrics.totalOrganizations.toLocaleString()}{" "}
+              organizations
+            </p>
           </article>
         </section>
 
         <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <article className="rounded-2xl border border-blue-100 bg-white/90 p-6 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Donation Trend (Last 6 Months)</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                Donation Trend (Last 6 Months)
+              </h2>
               <span className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
                 Units
               </span>
             </div>
             <div className="grid grid-cols-6 items-end gap-3">
               {metrics.monthlyImpact.map((month) => {
-                const height = Math.max(10, Math.round((month.value / maxMonthlyValue) * 160));
+                const height = Math.max(
+                  10,
+                  Math.round((month.value / maxMonthlyValue) * 160),
+                );
                 return (
                   <div key={month.label} className="flex flex-col items-center">
-                    <div className="mb-2 text-xs font-semibold text-gray-500">{month.value}</div>
+                    <div className="mb-2 text-xs font-semibold text-gray-500">
+                      {month.value}
+                    </div>
                     <div
                       className="w-full rounded-t-md bg-linear-to-t from-blue-500 to-cyan-400"
                       style={{ height: `${height}px` }}
                     />
-                    <div className="mt-2 text-xs font-medium text-gray-600">{month.label}</div>
+                    <div className="mt-2 text-xs font-medium text-gray-600">
+                      {month.label}
+                    </div>
                   </div>
                 );
               })}
@@ -329,7 +409,9 @@ export default function ImpactPage() {
 
           <article className="rounded-2xl border border-emerald-100 bg-white/90 p-6 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Regional Distribution</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                Regional Distribution
+              </h2>
               <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                 Top Districts
               </span>
@@ -337,17 +419,25 @@ export default function ImpactPage() {
 
             {metrics.districtImpact.length === 0 ? (
               <p className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
-                District-level impact will appear as confirmed donations increase.
+                District-level impact will appear as confirmed donations
+                increase.
               </p>
             ) : (
               <div className="space-y-4">
                 {metrics.districtImpact.map((item) => {
-                  const width = Math.max(5, Math.round((item.value / maxDistrictValue) * 100));
+                  const width = Math.max(
+                    5,
+                    Math.round((item.value / maxDistrictValue) * 100),
+                  );
                   return (
                     <div key={item.district}>
                       <div className="mb-1 flex items-center justify-between text-sm">
-                        <span className="font-semibold text-gray-700">{item.district}</span>
-                        <span className="text-gray-500">{item.value.toLocaleString()} units</span>
+                        <span className="font-semibold text-gray-700">
+                          {item.district}
+                        </span>
+                        <span className="text-gray-500">
+                          {item.value.toLocaleString()} units
+                        </span>
                       </div>
                       <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
                         <div
@@ -366,39 +456,58 @@ export default function ImpactPage() {
         <section className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-5">
           <article className="rounded-2xl border border-amber-100 bg-white/90 p-6 shadow-sm xl:col-span-3">
             <h2 className="text-xl font-bold text-gray-900">Impact Stories</h2>
-            <p className="mt-1 text-sm text-gray-500">A snapshot of needs that received strong donor support.</p>
+            <p className="mt-1 text-sm text-gray-500">
+              A snapshot of needs that received strong donor support.
+            </p>
             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
               {metrics.stories.map((story) => (
-                <div key={story.title} className="rounded-xl border border-amber-100 bg-linear-to-b from-amber-50/70 to-white p-4">
+                <div
+                  key={story.title}
+                  className="rounded-xl border border-amber-100 bg-linear-to-b from-amber-50/70 to-white p-4"
+                >
                   <h3 className="font-semibold text-gray-900">{story.title}</h3>
-                  <p className="mt-2 min-h-16 text-sm leading-relaxed text-gray-600">{story.body}</p>
+                  <p className="mt-2 min-h-16 text-sm leading-relaxed text-gray-600">
+                    {story.body}
+                  </p>
                   <div className="mt-3 h-2 overflow-hidden rounded-full bg-amber-100">
                     <div
                       className="h-full rounded-full bg-linear-to-r from-amber-500 to-orange-500"
                       style={{ width: `${story.progress}%` }}
                     />
                   </div>
-                  <p className="mt-2 text-xs font-semibold text-amber-700">{story.progress}% coverage</p>
+                  <p className="mt-2 text-xs font-semibold text-amber-700">
+                    {story.progress}% coverage
+                  </p>
                 </div>
               ))}
             </div>
           </article>
 
           <article className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm xl:col-span-2">
-            <h2 className="text-xl font-bold text-gray-900">Recent Successful Donations</h2>
-            <p className="mt-1 text-sm text-gray-500">Latest confirmed and fulfilled contributions.</p>
+            <h2 className="text-xl font-bold text-gray-900">
+              Recent Successful Donations
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Latest confirmed and fulfilled contributions.
+            </p>
 
             <div className="mt-5 space-y-3">
               {metrics.latestSuccessfulDonations.length === 0 && (
                 <p className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-5 text-sm text-gray-500">
-                  No successful donations yet. Check back once organizations confirm deliveries.
+                  No successful donations yet. Check back once organizations
+                  confirm deliveries.
                 </p>
               )}
 
               {metrics.latestSuccessfulDonations.map((entry) => (
-                <div key={entry.id} className="rounded-lg border border-gray-100 p-3">
+                <div
+                  key={entry.id}
+                  className="rounded-lg border border-gray-100 p-3"
+                >
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-gray-900">{entry.donor}</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {entry.donor}
+                    </p>
                     <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                       {entry.quantity} units
                     </span>
@@ -414,16 +523,26 @@ export default function ImpactPage() {
         <section className="mt-8 rounded-2xl border border-cyan-100 bg-linear-to-r from-cyan-600 to-emerald-600 p-7 text-white shadow-lg">
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
             <div>
-              <h2 className="text-2xl font-bold">Grow Platform Impact Even Faster</h2>
+              <h2 className="text-2xl font-bold">
+                Grow Platform Impact Even Faster
+              </h2>
               <p className="mt-2 max-w-2xl text-cyan-50">
-                Current needs coverage is at {metrics.coverageRate}%. More donors and faster confirmations will help close the remaining gap.
+                Current needs coverage is at {metrics.coverageRate}%. More
+                donors and faster confirmations will help close the remaining
+                gap.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/needs" className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-50">
+              <Link
+                href="/needs"
+                className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-50"
+              >
                 Support a Need
               </Link>
-              <Link href="/login?tab=register" className="rounded-lg border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/20">
+              <Link
+                href="/login?tab=register"
+                className="rounded-lg border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/20"
+              >
                 Join as Donor
               </Link>
             </div>

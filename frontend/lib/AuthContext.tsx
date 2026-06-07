@@ -16,6 +16,8 @@ interface AuthContextType {
     password: string;
     password2: string;
     phone_number: string;
+    first_name: string;
+    last_name: string;
   }) => Promise<void>;
   registerOrgAdmin: (data: {
     username: string;
@@ -111,6 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string;
     password2: string;
     phone_number: string;
+    first_name: string;
+    last_name: string;
   }) => {
     setError(null);
     setLoading(true);

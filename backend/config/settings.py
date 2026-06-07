@@ -26,9 +26,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-3z55ai11+0pf5gb5_fb8g9^69zpj6e*3fvttevtwt9-6+j_k^e')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)  # False by default - prevents sensitive info leaks
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+ALLOWED_HOSTS = config(
+    'ALLOWED_HOSTS',
+    default='localhost,127.0.0.1,62.171.171.71,62.171.171.71.nip.io',
+    cast=Csv()
+)
 
 # Trust Traefik's forwarded headers (prevents HTTP→HTTPS redirect loop)
 # Traefik terminates SSL and forwards requests as HTTP internally,
@@ -41,7 +45,7 @@ SECURE_SSL_REDIRECT = False  # Traefik handles SSL, not Django
 GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
 # Frontend Configuration
-FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+FRONTEND_URL = config('FRONTEND_URL', default='http://62.171.171.71.nip.io')
 
 
 # Application definition
@@ -76,15 +80,20 @@ MIDDLEWARE = [
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000',
+    default='http://localhost:3000,http://127.0.0.1:3000,http://62.171.171.71.nip.io',
     cast=Csv()
 )
 
 CORS_ALLOW_CREDENTIALS = True
 
-# Allow all origins in dev (Traefik.me domain changes per deployment)
-# For production, set CORS_ALLOWED_ORIGINS explicitly instead
-CORS_ALLOW_ALL_ORIGINS = True
+# Keep CORS explicit so browser-authenticated requests work cleanly in production.
+CORS_ALLOW_ALL_ORIGINS = False
+
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://localhost:3000,http://127.0.0.1:3000,http://62.171.171.71.nip.io',
+    cast=Csv()
+)
 
 ROOT_URLCONF = 'config.urls'  # Main URL configuration
 

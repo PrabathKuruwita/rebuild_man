@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { search, SearchResult } from "@/lib/api";
 import NeedCard from "@/components/NeedCard";
@@ -11,16 +11,19 @@ import { Search } from "lucide-react";
 export default function SearchContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
-  const initialType = (searchParams.get("type") as "organization" | "need" | "all") || "all";
+  const initialType =
+    (searchParams.get("type") as "all" | "organization" | "need") || "all";
 
   const [query, setQuery] = useState(initialQuery);
-  const [searchType, setSearchType] = useState<"organization" | "need" | "all">(initialType);
+  const [searchType, setSearchType] = useState<"organization" | "need" | "all">(
+    initialType,
+  );
   const [priority, setPriority] = useState("");
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const performSearch = async () => {
+  const performSearch = useCallback(async () => {
     if (!query.trim() || query.length < 2) {
       setError("Search query must be at least 2 characters");
       return;
@@ -41,29 +44,16 @@ export default function SearchContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [query, searchType, priority]);
 
   // Auto-search when query changes from URL params
   useEffect(() => {
     if (initialQuery) {
-      const searchData = async () => {
-        setLoading(true);
-        setError("");
-        try {
-          const data = await search(initialQuery, initialType as "all" | "organization" | "need", {
-            limit: 50,
-            excludeFulfilled: true,
-          });
-          setResults(data);
-        } catch (err: unknown) {
-          setError(err instanceof Error ? err.message : "Search failed");
-        } finally {
-          setLoading(false);
-        }
-      };
-      searchData();
+      queueMicrotask(() => {
+        void performSearch();
+      });
     }
-  }, [initialQuery, initialType]);
+  }, [initialQuery, performSearch]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,7 +104,11 @@ export default function SearchContent() {
                 <select
                   id="search-type"
                   value={searchType}
-                  onChange={(e) => setSearchType(e.target.value as "organization" | "need" | "all")}
+                  onChange={(e) =>
+                    setSearchType(
+                      e.target.value as "all" | "organization" | "need",
+                    )
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">All</option>

@@ -12,6 +12,7 @@ from .views import (
     DocumentUploadViewSet,
     DonationViewSet,
     AdminApprovalViewSet,
+    DonorUserViewSet,
     RegisterView,
     OrgAdminRegisterView,
     MeView,
@@ -29,6 +30,7 @@ router.register(r'sections', SectionViewSet)
 router.register(r'needs', NeedItemViewSet)
 router.register(r'documents', DocumentUploadViewSet)
 router.register(r'donations', DonationViewSet)
+router.register(r'donors', DonorUserViewSet, basename='donors')
 router.register(r'admin/approvals', AdminApprovalViewSet, basename='admin_approval')
 
 # The API URLs are now determined automatically by the router.
@@ -43,4 +45,4 @@ urlpatterns = [
     re_path(r'^auth/forgot-password/?$', forgot_password, name='auth_forgot_password'),
     re_path(r'^auth/reset-password/?$', reset_password, name='auth_reset_password'),
     path('', include(router.urls)),
-]
+]

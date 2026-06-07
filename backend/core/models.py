@@ -2,57 +2,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-# 6. DONATIONS (Donors pledging or fulfilling needs)
-class Donation(models.Model):
-    STATUS_CHOICES = (
-        ('PENDING', 'Pending'),
-        ('CONFIRMED', 'Confirmed'),
-        ('FULFILLED', 'Fulfilled'),
-        ('CANCELLED', 'Cancelled'),
-    )
-    
-    DONOR_TYPE_CHOICES = (
-        ('private', 'Private Citizen / NGO / Corporate'),
-        ('government', 'Government Sponsor'),
-    )
 
-    # Core donation info
-    donor = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name="donations")
-    need_item = models.ForeignKey('NeedItem', on_delete=models.CASCADE, related_name="donations")
-    quantity = models.PositiveIntegerField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
-    message = models.TextField(blank=True)
-    estimated_delivery_date = models.DateField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    # Donor type
-    donor_type = models.CharField(max_length=20, choices=DONOR_TYPE_CHOICES, default='private', null=True, blank=True)
-    
-    # Private Citizen / NGO / Corporate fields
-    donor_name = models.CharField(max_length=200, blank=True)
-    donor_contact = models.CharField(max_length=200, blank=True)
-    donor_organization = models.CharField(max_length=200, blank=True)
-    donor_address = models.TextField(blank=True)
-    donor_email = models.EmailField(blank=True)
-    donor_phone = models.CharField(max_length=30, blank=True)
-    
-    # Government Sponsor fields
-    government_department = models.CharField(max_length=200, blank=True)
-    government_program = models.CharField(max_length=200, blank=True)
-    government_officer_name = models.CharField(max_length=200, blank=True)
-    government_officer_designation = models.CharField(max_length=200, blank=True)
-    government_officer_contact = models.CharField(max_length=200, blank=True)
-
-    # Donation confirmation letter
-    donation_letter_file = models.FileField(
-        upload_to='donation_letters/',
-        null=True,
-        blank=True,
-        help_text="Uploaded signed donation confirmation letter (PDF)"
-    )
-
-    def __str__(self):
-        return f"Donation by {self.donor_name or self.donor or 'Guest'} for {self.need_item.name} ({self.quantity})"
 
 # 1. USERS
 # Extending the default user to distinguish between Admin, Donors, and Gov Officials
@@ -117,6 +67,14 @@ class User(AbstractUser):
         related_name='admin_decisions',
         help_text="The admin who approved/rejected this request"
     )
+    organization = models.ForeignKey(
+        'Organization',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='admins',
+        help_text="The organization this user is an admin for"
+    )
 
     def save(self, *args, **kwargs):
         """
@@ -154,9 +112,6 @@ class Organization(models.Model):
     email_contact = models.EmailField(blank=True)
     website = models.URLField(blank=True)
     established_year = models.IntegerField(null=True, blank=True)
-
-    # One-to-One relationship: One admin manages exactly ONE organization
-    admin_user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, related_name="managed_org")
 
     class Meta:
         constraints = [
@@ -272,9 +227,14 @@ class Donation(models.Model):
     government_officer_name = models.CharField(max_length=200, blank=True)
     government_officer_designation = models.CharField(max_length=100, blank=True)
     government_officer_contact = models.CharField(max_length=20, blank=True)
+    government_email = models.EmailField(blank=True)
     
     # Donation letter (PDF)
     donation_letter_file = models.FileField(upload_to='donation_letters/', null=True, blank=True)
+
+    # Admins who took actions
+    confirmed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="confirmed_donations")
+    cancelled_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="cancelled_donations")
 
     def __str__(self):
         return f"Donation {self.id} - {self.quantity} units of {self.need_item.name}"

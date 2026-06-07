@@ -31,10 +31,9 @@ export function useAdminGuard() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const authorized = !isLoading && (
-    (user && user.role !== "DONOR") || 
-    (!user && pathname === "/login")
-  );
+  const authorized =
+    !isLoading &&
+    ((user && user.role !== "DONOR") || (!user && pathname === "/login"));
 
   useEffect(() => {
     if (!isLoading) {

@@ -3,29 +3,15 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import {
+  AdminApprovalRequest as ApprovalRequest,
   getAdminApprovals,
   approveOrgAdmin,
   rejectOrgAdmin,
   getApprovedOrgAdmins,
+  getRejectedOrgAdmins,
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Check, X, ChevronDown, ChevronUp } from "lucide-react";
-
-interface ApprovalRequest {
-  id: number;
-  username: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  phone_number: string;
-  approval_status: "PENDING" | "APPROVED" | "REJECTED";
-  organization_name: string;
-  organization_type: string;
-  rejection_reason?: string;
-  approval_requested_at?: string;
-  approval_decided_at?: string;
-  approval_decided_by_username?: string;
-}
 
 interface ConfirmationDialog {
   isOpen: boolean;
@@ -34,11 +20,24 @@ interface ConfirmationDialog {
   userName: string;
 }
 
+function sortByNewest(requests: ApprovalRequest[]): ApprovalRequest[] {
+  return [...requests].sort((a, b) => {
+    const dateA = a.approval_decided_at || a.approval_requested_at || "";
+    const dateB = b.approval_decided_at || b.approval_requested_at || "";
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
+}
+
 export default function ApprovalsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending");
+  const [activeTab, setActiveTab] = useState<
+    "pending" | "approved" | "rejected"
+  >("pending");
   const [pendingRequests, setPendingRequests] = useState<ApprovalRequest[]>([]);
   const [approvedRequests, setApprovedRequests] = useState<ApprovalRequest[]>(
+    [],
+  );
+  const [rejectedRequests, setRejectedRequests] = useState<ApprovalRequest[]>(
     [],
   );
   const [loading, setLoading] = useState(true);
@@ -53,47 +52,40 @@ export default function ApprovalsPage() {
     userName: "",
   });
 
-  const sortByNewest = (requests: ApprovalRequest[]): ApprovalRequest[] => {
-    return [...requests].sort((a, b) => {
-      const dateA = a.approval_decided_at || a.approval_requested_at || "";
-      const dateB = b.approval_decided_at || b.approval_requested_at || "";
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    });
-  };
-
   useEffect(() => {
-    let isMounted = true;
+    let cancelled = false;
+
     const loadAllApprovals = async () => {
       try {
-        if (isMounted) {
-          setLoading(true);
-          setError("");
-        }
-        const [pending, approved] = await Promise.all([
+        setLoading(true);
+        setError("");
+        const [pending, approved, rejected] = await Promise.all([
           getAdminApprovals(),
           getApprovedOrgAdmins(),
+          getRejectedOrgAdmins(),
         ]);
-        if (isMounted) {
-          setPendingRequests(sortByNewest(pending as ApprovalRequest[]));
-          setApprovedRequests(sortByNewest(approved as ApprovalRequest[]));
-        }
+
+        if (cancelled) return;
+
+        setPendingRequests(sortByNewest(pending));
+        setApprovedRequests(sortByNewest(approved));
+        setRejectedRequests(sortByNewest(rejected));
       } catch (err: unknown) {
-        if (isMounted) {
-          const error = err as Error;
+        if (!cancelled) {
           setError("Failed to load approval requests");
-          console.error(error);
+          console.error(err);
         }
       } finally {
-        if (isMounted) {
+        if (!cancelled) {
           setLoading(false);
         }
       }
     };
 
-    loadAllApprovals();
+    void loadAllApprovals();
 
     return () => {
-      isMounted = false;
+      cancelled = true;
     };
   }, []);
 
@@ -113,11 +105,14 @@ export default function ApprovalsPage() {
     if (!confirmDialog.userId) return;
 
     try {
-      const result = await approveOrgAdmin(confirmDialog.userId) as { user: ApprovalRequest };
-      setPendingRequests(
-        pendingRequests.filter((r) => r.id !== confirmDialog.userId),
+      const result = await approveOrgAdmin(confirmDialog.userId);
+      setPendingRequests((current) =>
+        current.filter((r) => r.id !== confirmDialog.userId),
       );
-      setApprovedRequests([...approvedRequests, result.user]);
+      const approvedUser = result.user;
+      if (approvedUser) {
+        setApprovedRequests((current) => [...current, approvedUser]);
+      }
       setConfirmDialog({
         isOpen: false,
         type: null,
@@ -136,7 +131,12 @@ export default function ApprovalsPage() {
     }
   };
 
+  const handleReject = async (id: number) => {
+    const request = pendingRequests.find((r) => r.id === id);
+    if (!request) return;
 
+    setRejectingId(id);
+  };
 
   const handleRejectConfirm = async () => {
     if (!rejectionReason.trim()) {
@@ -159,13 +159,17 @@ export default function ApprovalsPage() {
     if (!confirmDialog.userId) return;
 
     try {
-      await rejectOrgAdmin(
+      const result = await rejectOrgAdmin(
         confirmDialog.userId,
         rejectionReason,
       );
-      setPendingRequests(
-        pendingRequests.filter((r) => r.id !== confirmDialog.userId),
+      setPendingRequests((current) =>
+        current.filter((r) => r.id !== confirmDialog.userId),
       );
+      const rejectedUser = result.user;
+      if (rejectedUser) {
+        setRejectedRequests((current) => [...current, rejectedUser]);
+      }
       setRejectingId(null);
       setRejectionReason("");
       setConfirmDialog({
@@ -241,6 +245,16 @@ export default function ApprovalsPage() {
             >
               Approved ({approvedRequests.length})
             </button>
+            <button
+              onClick={() => setActiveTab("rejected")}
+              className={`px-1 py-4 font-medium text-sm border-b-2 transition ${
+                activeTab === "rejected"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Rejected ({rejectedRequests.length})
+            </button>
           </div>
         </div>
 
@@ -275,7 +289,7 @@ export default function ApprovalsPage() {
                         rejectingId={rejectingId}
                         rejectionReason={rejectionReason}
                         onApprove={handleApprove}
-                        onRejectStart={() => setRejectingId(req.id)}
+                        onRejectStart={() => handleReject(req.id)}
                         onRejectCancel={() => {
                           setRejectingId(null);
                           setRejectionReason("");
@@ -309,6 +323,34 @@ export default function ApprovalsPage() {
                             expandedCardId === req.id ? null : req.id,
                           )
                         }
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Rejected Requests Tab */}
+            {activeTab === "rejected" && (
+              <div>
+                {rejectedRequests.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-lg">
+                    <p className="text-gray-600">No rejected admin requests</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {rejectedRequests.map((req) => (
+                      <RequestCard
+                        key={req.id}
+                        req={req}
+                        isPending={false}
+                        isExpanded={expandedCardId === req.id}
+                        onToggleExpand={() =>
+                          setExpandedCardId(
+                            expandedCardId === req.id ? null : req.id,
+                          )
+                        }
+                        showReason={true}
                       />
                     ))}
                   </div>

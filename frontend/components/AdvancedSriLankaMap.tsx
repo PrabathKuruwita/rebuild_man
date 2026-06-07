@@ -4,8 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { Organization } from "@/lib/api";
 import "leaflet/dist/leaflet.css";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let L: any = null;
+type LeafletMap = {
+  fitBounds: (
+    bounds: unknown,
+    options?: { padding?: [number, number]; maxZoom?: number },
+  ) => void;
+  off: () => void;
+  remove: () => void;
+};
+
+let L: typeof import("leaflet") | null = null;
 
 const initLeaflet = async () => {
   if (!L) {
@@ -50,10 +58,11 @@ const districtCoordinates: Record<string, [number, number]> = {
 const normalizeDistrictKey = (district: string): string =>
   district.toLowerCase().replace(/[^a-z]/g, "");
 
-export default function AdvancedSriLankaMap({ organizations = [] }: AdvancedSriLankaMapProps) {
+export default function AdvancedSriLankaMap({
+  organizations = [],
+}: AdvancedSriLankaMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const map = useRef<any>(null);
+  const map = useRef<LeafletMap | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
   const [mappedOrganizations, setMappedOrganizations] = useState(0);
@@ -77,8 +86,11 @@ export default function AdvancedSriLankaMap({ organizations = [] }: AdvancedSriL
 
         // In React Strict Mode, effects can run twice in development.
         // Reset previous Leaflet binding on the same DOM node before creating a new map.
-        if ((container as unknown as { _leaflet_id?: boolean })._leaflet_id) {
-          (container as unknown as { _leaflet_id?: boolean })._leaflet_id = undefined;
+        const leafletContainer = container as HTMLElement & {
+          _leaflet_id?: number;
+        };
+        if (leafletContainer._leaflet_id) {
+          leafletContainer._leaflet_id = undefined;
           container.innerHTML = "";
         }
 
@@ -96,19 +108,24 @@ export default function AdvancedSriLankaMap({ organizations = [] }: AdvancedSriL
             attribution: "&copy; OpenStreetMap contributors",
             maxZoom: 19,
             minZoom: 6,
-          }
+          },
         ).addTo(map.current);
 
         // Fix Leaflet marker icons
         LeafletLib.Icon.Default.mergeOptions({
-          iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-          iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+          iconRetinaUrl:
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+          iconUrl:
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+          shadowUrl:
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
         });
 
         const organizationsWithCoordinates = organizations
           .map((organization) => {
-            const districtKey = normalizeDistrictKey(organization.district || "");
+            const districtKey = normalizeDistrictKey(
+              organization.district || "",
+            );
             const location = districtCoordinates[districtKey];
             if (!location) {
               return null;
@@ -120,7 +137,15 @@ export default function AdvancedSriLankaMap({ organizations = [] }: AdvancedSriL
               lng: location[1],
             };
           })
-          .filter((entry): entry is { organization: Organization; lat: number; lng: number } => entry !== null);
+          .filter(
+            (
+              entry,
+            ): entry is {
+              organization: Organization;
+              lat: number;
+              lng: number;
+            } => entry !== null,
+          );
 
         // Add markers only for registered organizations
         organizationsWithCoordinates.forEach((entry) => {
@@ -141,14 +166,17 @@ export default function AdvancedSriLankaMap({ organizations = [] }: AdvancedSriL
           `;
 
           marker.bindPopup(popupContent, { maxWidth: 250, maxHeight: 200 });
-          marker.on('click', () => marker.openPopup());
+          marker.on("click", () => marker.openPopup());
         });
 
         if (organizationsWithCoordinates.length > 0) {
           const bounds = LeafletLib.latLngBounds(
             organizationsWithCoordinates.map((entry) => [entry.lat, entry.lng]),
           );
-          map.current.fitBounds(bounds, { padding: [30, 30], maxZoom: 9 });
+          const leafletMap = map.current;
+          if (leafletMap) {
+            leafletMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 9 });
+          }
         }
 
         setMappedOrganizations(organizationsWithCoordinates.length);
@@ -185,7 +213,9 @@ export default function AdvancedSriLankaMap({ organizations = [] }: AdvancedSriL
           <div className="text-white text-center">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-200 border-t-white mx-auto mb-3"></div>
             <p className="text-sm font-medium">Loading Sri Lanka Map...</p>
-            <p className="text-xs text-blue-100 mt-1">Initializing 9 hospital locations</p>
+            <p className="text-xs text-blue-100 mt-1">
+              Initializing 9 hospital locations
+            </p>
           </div>
         </div>
       )}
@@ -194,7 +224,9 @@ export default function AdvancedSriLankaMap({ organizations = [] }: AdvancedSriL
         <div className="absolute inset-0 bg-red-50/95 flex items-center justify-center z-50">
           <div className="text-center px-4">
             <p className="text-sm font-semibold text-red-700">{mapError}</p>
-            <p className="text-xs text-red-600 mt-1">Check network access to OpenStreetMap tiles.</p>
+            <p className="text-xs text-red-600 mt-1">
+              Check network access to OpenStreetMap tiles.
+            </p>
           </div>
         </div>
       )}
@@ -203,7 +235,9 @@ export default function AdvancedSriLankaMap({ organizations = [] }: AdvancedSriL
       <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 z-40 max-w-xs pointer-events-auto hover:shadow-xl transition-shadow cursor-default">
         <div className="flex items-center gap-2 mb-3">
           <span className="w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse"></span>
-          <span className="text-sm font-bold text-gray-900">ORGANIZATION MAP</span>
+          <span className="text-sm font-bold text-gray-900">
+            ORGANIZATION MAP
+          </span>
         </div>
         <div className="space-y-2 text-xs text-gray-700 font-medium">
           <p>{mappedOrganizations} registered organizations</p>
@@ -215,7 +249,8 @@ export default function AdvancedSriLankaMap({ organizations = [] }: AdvancedSriL
       {mappedOrganizations === 0 && !isLoading && !mapError && (
         <div className="absolute bottom-4 left-4 bg-white/95 rounded-lg shadow-lg px-4 py-2 z-40 backdrop-blur-sm">
           <span className="text-xs font-semibold text-gray-900">
-            No registered organizations yet. Markers will appear after registration.
+            No registered organizations yet. Markers will appear after
+            registration.
           </span>
         </div>
       )}

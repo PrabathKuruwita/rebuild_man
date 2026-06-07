@@ -155,7 +155,11 @@ export default function OrganizationDetailPage() {
           {/* Top row: back + edit */}
           <div className="flex items-center justify-between mb-5">
             <Link
-              href="/"
+              href={
+                user?.role === "ADMIN" || user?.role === "ORG_ADMIN"
+                  ? "/organizations"
+                  : "/"
+              }
               className="text-white/60 hover:text-white text-sm flex items-center gap-1 transition-colors"
             >
               <svg
@@ -171,7 +175,9 @@ export default function OrganizationDetailPage() {
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Back to Home
+              {user?.role === "ADMIN" || user?.role === "ORG_ADMIN"
+                ? "Back to Organizations"
+                : "Back to Home"}
             </Link>
             {isOrgAdmin && (
               <Link

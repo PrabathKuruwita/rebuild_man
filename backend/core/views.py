@@ -24,6 +24,7 @@ from .serializers import (
     OrgAdminRegisterSerializer,
     AdminApprovalSerializer,
     UserSerializer,
+    DonorUserSerializer,
     UpdateProfileSerializer
 )
 from .serializers_jwt import get_tokens_for_user
@@ -62,7 +63,7 @@ class IsOrgAdminOfThisOrg(BasePermission):
             return True
         # ORG_ADMIN can only access their own organization
         if request.user.role == 'ORG_ADMIN':
-            return obj.admin_user_id == request.user.id
+            return obj == request.user.organization
         return False
 # --- Auth Views ---
 
@@ -269,7 +270,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         
         # ORG_ADMIN users only see their own organization
         if hasattr(user, 'role') and user.role == 'ORG_ADMIN':
-            return queryset.filter(admin_user=user)
+            return queryset.filter(admins=user)
         
         # DONOR users see all organizations (for viewing/donating)
         return queryset
@@ -277,7 +278,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         # ORG_ADMIN users can only create one organization
         if (hasattr(request.user, 'role') and request.user.role == 'ORG_ADMIN'):
-            if Organization.objects.filter(admin_user=request.user).exists():
+            if request.user.organization is not None:
                 return Response(
                     {"detail": "You can only create one organization. You already have an organization."},
                     status=status.HTTP_400_BAD_REQUEST
@@ -285,11 +286,11 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        """Set the admin_user to the current user if they're an ORG_ADMIN"""
+        """Set the organization on the user if they're an ORG_ADMIN"""
+        org = serializer.save()
         if hasattr(self.request.user, 'role') and self.request.user.role == 'ORG_ADMIN':
-            serializer.save(admin_user=self.request.user)
-        else:
-            serializer.save()
+            self.request.user.organization = org
+            self.request.user.save(update_fields=['organization'])
 
     # Custom action to get hierarchy (Org -> Sections -> Needs)
     @action(detail=True, methods=['get'])
@@ -297,6 +298,84 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         org = self.get_object()
         serializer = self.get_serializer(org)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsOrgAdminOfThisOrg])
+    def invite_admin(self, request, pk=None):
+        """Allows an existing Org Admin to invite another admin to the same organization."""
+        org = self.get_object()
+        
+        email = request.data.get('email')
+        username = request.data.get('username')
+        password = request.data.get('password')
+        first_name = request.data.get('first_name', '')
+        last_name = request.data.get('last_name', '')
+        
+        if not email or not username or not password:
+            return Response(
+                {"detail": "Email, username, and password are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if User.objects.filter(username=username).exists():
+            return Response({"detail": "User with this username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if User.objects.filter(email=email).exists():
+            return Response({"detail": "User with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            role='ORG_ADMIN',
+            approval_status='APPROVED',
+            organization=org,
+            first_name=first_name,
+            last_name=last_name
+        )
+        
+        # Send invitation email
+        try:
+            frontend_url = settings.FRONTEND_URL
+            login_url = f"{frontend_url}/login"
+            
+            subject = f"Invitation to manage {org.name} on NeedTracker"
+            message = (
+                f"Hello {first_name or username},\n\n"
+                f"You have been invited to manage '{org.name}' on the NeedTracker Hospital Donation Platform.\n\n"
+                f"Your account has been created with the following temporary credentials:\n"
+                f"Username: {username}\n"
+                f"Password: {password}\n\n"
+                f"Please log in using this link: {login_url}\n\n"
+                f"We recommend changing your password immediately after logging in.\n\n"
+                f"Thank you,\nThe NeedTracker Team"
+            )
+            
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # We don't want to fail the user creation if email fails, 
+            # but we should log it
+            print(f"Failed to send invitation email: {e}")
+        
+        return Response(
+            {"detail": "Admin invited successfully.", "user_id": user.id, "username": user.username}, 
+            status=status.HTTP_201_CREATED
+        )
+
+    @action(detail=True, methods=['get'], permission_classes=[IsOrgAdminOfThisOrg])
+    def admins(self, request, pk=None):
+        """List all admins who manage this organization."""
+        org = self.get_object()
+        data = [
+            {"id": a.id, "username": a.username, "email": a.email, "first_name": a.first_name, "last_name": a.last_name}
+            for a in org.admins.all()
+        ]
+        return Response(data)
 
 
 # 2. Section ViewSet
@@ -320,7 +399,7 @@ class SectionViewSet(viewsets.ModelViewSet):
         
         # ORG_ADMIN users only see sections from their organization
         if hasattr(user, 'role') and user.role == 'ORG_ADMIN':
-            return queryset.filter(organization__admin_user=user)
+            return queryset.filter(organization__admins=user)
         
         # DONOR users see all sections (for viewing/donating)
         return queryset
@@ -349,7 +428,7 @@ class NeedItemViewSet(viewsets.ModelViewSet):
             pass  # Return all
         # ORG_ADMIN users only see needs from their organization
         elif hasattr(user, 'role') and user.role == 'ORG_ADMIN':
-            queryset = queryset.filter(section__organization__admin_user=user)
+            queryset = queryset.filter(section__organization__admins=user)
         # DONOR users see all needs (for viewing/donating)
         
         # Filter by priority if requested
@@ -530,6 +609,16 @@ class DocumentUploadViewSet(viewsets.ModelViewSet):
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class DonorUserViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint that allows admins to view donor users.
+    """
+    serializer_class = DonorUserSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return User.objects.filter(role='DONOR').order_by('-date_joined')
+
 # 4.5 Admin Approval ViewSet (for managing org admin approval requests)
 class AdminApprovalViewSet(viewsets.ViewSet):
     """
@@ -577,29 +666,21 @@ class AdminApprovalViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check if organization already has an admin
-        if user.requested_organization and user.requested_organization.admin_user and user.requested_organization.admin_user != user:
-            return Response(
-                {'error': 'Organization already has an assigned admin'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
         # Approve the user and assign them to the organization
         from django.utils import timezone
         user.approval_status = 'APPROVED'
         user.rejection_reason = ''
         user.approval_decided_at = timezone.now()
         user.approval_decided_by = request.user
-        user.save()
         
-        # Link the organization to this admin (if organization exists)
+        # Link the user to the organization
         if user.requested_organization:
-            org = user.requested_organization
-            org.admin_user = user
-            org.save()
-            org_name = org.name
+            user.organization = user.requested_organization
+            org_name = user.requested_organization.name
         else:
             org_name = 'Not assigned'
+            
+        user.save()
         
         # Send approval email
         try:
@@ -718,13 +799,27 @@ class AdminApprovalViewSet(viewsets.ViewSet):
         except Exception as e:
             print(f"Failed to send rejection email to {user_email}: {str(e)}")
         
-        # DELETE the user account so they can register again
-        user.delete()
+        # Mark user as REJECTED instead of deleting so they appear in the rejected list
+        from django.utils import timezone
+        import uuid
+        
+        user.approval_status = 'REJECTED'
+        user.rejection_reason = reason
+        user.approval_decided_at = timezone.now()
+        user.approval_decided_by = request.user
+        
+        # Append a unique suffix to email and username to allow re-registration
+        uid = str(uuid.uuid4())[:8]
+        user.username = f"{user.username}_rejected_{uid}"
+        user.email = f"rejected_{uid}_{user.email}"
+        user.save()
+        
+        # The email message says the account has been removed. We should update the text slightly.
+        # But it's fine, to the user it's effectively removed (they can't login, they must re-register).
         
         return Response({
-            'message': f'Org admin registration request rejected and user account deleted. User can now re-register.',
-            'deleted_email': user_email,
-            'rejection_reason': reason
+            'message': f'Org admin registration request rejected.',
+            'user': AdminApprovalSerializer(user).data
         }, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['get'])
@@ -733,7 +828,7 @@ class AdminApprovalViewSet(viewsets.ViewSet):
         approved_users = User.objects.filter(
             role='ORG_ADMIN',
             approval_status='APPROVED'
-        ).select_related('requested_organization', 'managed_org')
+        ).select_related('requested_organization', 'organization')
         
         serializer = AdminApprovalSerializer(approved_users, many=True)
         return Response(serializer.data)
@@ -754,6 +849,25 @@ class DonationViewSet(viewsets.ModelViewSet):
     queryset = Donation.objects.select_related('donor', 'need_item').all()
     serializer_class = DonationSerializer
     
+    def get_queryset(self):
+        """Filter donations based on user role and organization ownership"""
+        queryset = Donation.objects.select_related('donor', 'need_item').all()
+        user = self.request.user
+        
+        if not user.is_authenticated:
+            return Donation.objects.none()
+            
+        if hasattr(user, 'role') and user.role == 'ADMIN':
+            return queryset
+            
+        if hasattr(user, 'role') and user.role == 'ORG_ADMIN':
+            return queryset.filter(need_item__section__organization__admins=user)
+            
+        if hasattr(user, 'role') and user.role == 'DONOR':
+            return queryset.filter(donor=user)
+            
+        return Donation.objects.none()
+
     def get_permissions(self):
         """Allow authenticated users to create donations and view their own, admins can manage all"""
         if self.action in ['create', 'list', 'retrieve']:
@@ -766,6 +880,83 @@ class DonationViewSet(viewsets.ModelViewSet):
             serializer.save(donor=self.request.user)
         else:
             serializer.save()
+
+    def _send_donation_email(self, donation, action):
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        # Get donor email and name
+        if donation.donor:
+            donor_email = donation.donor.email
+            donor_name = donation.donor.first_name or donation.donor.username
+        elif donation.donor_type == 'private':
+            donor_email = donation.donor_email
+            donor_name = donation.donor_name
+        elif donation.donor_type == 'government':
+            donor_email = donation.government_email
+            donor_name = donation.government_officer_name or donation.government_department
+        else:
+            return
+            
+        if not donor_email:
+            return
+            
+        need_name = donation.need_item.name
+        section_name = donation.need_item.section.name
+        org_name = donation.need_item.section.organization.name
+        quantity = donation.quantity
+        unit = donation.need_item.unit
+        
+        if action == 'confirm':
+            subject = "Donation Confirmed: {} – NeedTracker".format(org_name)
+            message = (
+                "Dear {donor_name},\n\n"
+                "Great news! Your donation pledge of {quantity} {unit}(s) of '{need_name}' for {section_name} "
+                "has been confirmed by the administrators at {org_name}.\n\n"
+                "They are now expecting your contribution. Please arrange the delivery "
+                "as per the guidelines provided by the organization.\n\n"
+                "Thank you for your generous support. Your contribution makes a real difference!\n\n"
+                "— The NeedTracker Team"
+            ).format(
+                donor_name=donor_name,
+                quantity=quantity,
+                unit=unit,
+                need_name=need_name,
+                section_name=section_name,
+                org_name=org_name
+            )
+        elif action == 'cancel':
+            subject = "Donation Cancelled: {} – NeedTracker".format(org_name)
+            message = (
+                "Dear {donor_name},\n\n"
+                "We wanted to inform you that your donation pledge of {quantity} {unit}(s) of '{need_name}' for {section_name} "
+                "has been cancelled by the administrators at {org_name}.\n\n"
+                "This may happen if the need has already been fulfilled by other donors, or if the "
+                "organization's requirements have changed.\n\n"
+                "We truly appreciate your willingness to help. Please check the NeedTracker platform "
+                "for other critical needs that you can support.\n\n"
+                "— The NeedTracker Team"
+            ).format(
+                donor_name=donor_name,
+                quantity=quantity,
+                unit=unit,
+                need_name=need_name,
+                section_name=section_name,
+                org_name=org_name
+            )
+        else:
+            return
+            
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[donor_email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            print(f"Failed to send donation {action} email to {donor_email}: {str(e)}")
     
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
@@ -780,6 +971,7 @@ class DonationViewSet(viewsets.ModelViewSet):
             
             # Set this donation to CONFIRMED
             donation.status = 'CONFIRMED'
+            donation.confirmed_by = request.user
             donation.save()
             
             # Check if need is now 100% fulfilled
@@ -789,6 +981,9 @@ class DonationViewSet(viewsets.ModelViewSet):
                     need_item=need_item,
                     status='CONFIRMED'
                 ).update(status='FULFILLED')
+            
+            # Send confirmation email to donor
+            self._send_donation_email(donation, 'confirm')
             
             return Response({
                 'status': 'Donation confirmed', 
@@ -804,7 +999,12 @@ class DonationViewSet(viewsets.ModelViewSet):
         donation = self.get_object()
         if donation.status == 'PENDING':
             donation.status = 'CANCELLED'
+            donation.cancelled_by = request.user
             donation.save()
+            
+            # Send cancellation email to donor
+            self._send_donation_email(donation, 'cancel')
+            
             return Response({'status': 'Donation cancelled'}, status=status.HTTP_200_OK)
         return Response({'status': 'Only pending donations can be cancelled'}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -33,13 +33,13 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         if request.user.role == 'ORG_ADMIN':
             # For Organization objects
             if obj.__class__.__name__ == 'Organization':
-                return obj.admin_user == request.user
+                return obj == request.user.organization
             # For Section, NeedItem, and other objects with organization reference
             elif hasattr(obj, 'organization'):
-                return obj.organization.admin_user == request.user
+                return obj.organization == request.user.organization
             # For Section checking
             elif hasattr(obj, 'section') and hasattr(obj.section, 'organization'):
-                return obj.section.organization.admin_user == request.user
+                return obj.section.organization == request.user.organization
         
         return False
 
@@ -70,9 +70,9 @@ class IsOrgAdminOrReadOnly(permissions.BasePermission):
         if request.user.role == 'ORG_ADMIN':
             # Check if the object belongs to the admin's organization
             if hasattr(obj, 'organization'):
-                return obj.organization.admin_user == request.user
+                return obj.organization == request.user.organization
             elif obj.__class__.__name__ == 'Organization':
-                return obj.admin_user == request.user
+                return obj == request.user.organization
         
         return False
 

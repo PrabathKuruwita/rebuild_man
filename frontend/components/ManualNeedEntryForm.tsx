@@ -97,8 +97,9 @@ export default function ManualNeedEntryForm({
     } catch (err: unknown) {
       console.error("Error saving need:", err);
       const errorMessage =
-        (err instanceof Error ? err.message : null) ||
-        "Failed to save the need. Please check your inputs and try again.";
+        err instanceof Error
+          ? err.message
+          : "Failed to save the need. Please check your inputs and try again.";
       setError(errorMessage);
     } finally {
       setSubmitting(false);

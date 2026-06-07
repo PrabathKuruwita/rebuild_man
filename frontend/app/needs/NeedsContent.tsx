@@ -20,23 +20,33 @@ export default function NeedsContent() {
     "priority",
   );
 
-  useEffect(() => {
-    async function loadNeeds() {
-      setLoading(true);
-      try {
-        const data = await getNeeds(priorityFilter || undefined, true);
-        setNeeds(data);
-      } catch (error) {
-        console.error("Failed to fetch needs:", error);
-      } finally {
-        setLoading(false);
-      }
+  const fetchNeeds = async () => {
+    try {
+      // Fetch all needs to ensure stats correlate to total unfulfilled needs
+      const data = await getNeeds(undefined, true);
+      setNeeds(data);
+    } catch (error) {
+      console.error("Failed to fetch needs:", error);
     }
-    loadNeeds();
-  }, [priorityFilter]);
+  };
+
+  useEffect(() => {
+    async function fetchNeedsWithLoader() {
+      setLoading(true);
+      await fetchNeeds();
+      setLoading(false);
+    }
+    // Fetch only once so tab switches are fast and stats don't change
+    fetchNeedsWithLoader();
+  }, []);
+
+  // Filter locally
+  const filteredNeeds = priorityFilter
+    ? needs.filter((n) => n.priority === priorityFilter)
+    : needs;
 
   // Sort needs
-  const sortedNeeds = [...needs].sort((a, b) => {
+  const sortedNeeds = [...filteredNeeds].sort((a, b) => {
     if (sortBy === "priority") {
       const priorityOrder = { CRITICAL: 0, ESSENTIAL: 1, NICE: 2 };
       return priorityOrder[a.priority] - priorityOrder[b.priority];
@@ -107,12 +117,7 @@ export default function NeedsContent() {
               Nice to Have: <strong>{stats.nice}</strong>
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">
-              Fulfilled: <strong>{stats.fulfilled}</strong>
-            </span>
-          </div>
+
         </div>
       </div>
 

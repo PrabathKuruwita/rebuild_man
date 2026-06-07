@@ -47,6 +47,7 @@ export default function OrganizationsPage() {
   const [editSectionConfirm, setEditSectionConfirm] = useState<Section | null>(
     null,
   );
+  const [orgToDelete, setOrgToDelete] = useState<Organization | null>(null);
 
   const fetchOrganizations = async () => {
     try {
@@ -55,12 +56,7 @@ export default function OrganizationsPage() {
 
       // If ADMIN, show all organizations; if ORG_ADMIN, show only their organization
       if (user?.role === "ADMIN") {
-        // ADMIN sees all organizations
-        if (orgs.length > 0) {
-          const firstOrgId = orgs[0].id;
-          setSelectedOrgId(firstOrgId);
-          setOrganization(orgs[0]);
-        }
+        // ADMIN sees all organizations - stay in list view by default
       } else if (user?.role === "ORG_ADMIN") {
         // ORG_ADMIN sees only their organization
         if (orgs.length > 0) {
@@ -137,12 +133,18 @@ export default function OrganizationsPage() {
   };
 
   const handleDelete = async () => {
-    if (!organization) return;
+    const targetOrg = user?.role === "ADMIN" ? orgToDelete : organization;
+    if (!targetOrg) return;
     setDeleting(true);
     try {
-      await deleteOrganization(organization.id);
-      setOrganization(null);
+      await deleteOrganization(targetOrg.id);
+      if (user?.role === "ADMIN") {
+        setOrgToDelete(null);
+      } else {
+        setOrganization(null);
+      }
       setShowDeleteConfirm(false);
+      await fetchOrganizations();
     } catch (err) {
       console.error("Failed to delete organization:", err);
     } finally {
@@ -176,8 +178,8 @@ export default function OrganizationsPage() {
               : "View and manage the organization"}
           </p>
 
-          {/* Organization Selector for ADMIN */}
-          {user?.role === "ADMIN" && organizations.length > 1 && (
+          {/* Organization Selector for ADMIN - Hidden as we show list cards */}
+          {user?.role === "ADMIN" && organizations.length > 1 && false && (
             <div className="mt-4 max-w-xs">
               <label
                 htmlFor="org-selector"
@@ -203,7 +205,7 @@ export default function OrganizationsPage() {
           )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons - Only for ORG_ADMIN now, ADMIN has buttons on cards */}
         {organization && user?.role === "ORG_ADMIN" && (
           <div className="flex items-center gap-3">
             <Link
@@ -249,8 +251,126 @@ export default function OrganizationsPage() {
       </div>
 
       {/* Content */}
-      {organization ? (
+      {user?.role === "ADMIN" && !organization ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {organizations.map((org) => (
+            <div
+              key={org.id}
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between hover:shadow-md transition-shadow"
+            >
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg
+                      className="w-6 h-6 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-gray-900 line-clamp-1">
+                      {org.name}
+                    </h2>
+                    <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full font-medium">
+                      {org.org_type}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-6">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Reg:</span>
+                    <span className="text-gray-900 font-medium">
+                      {org.registration_number}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">District:</span>
+                    <span className="text-gray-900 font-medium">
+                      {org.district}
+                    </span>
+                  </div>
+                  {org.phone && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Phone:</span>
+                      <span className="text-gray-900">{org.phone}</span>
+                    </div>
+                  )}
+                  {org.email_contact && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Email:</span>
+                      <span className="text-gray-900 truncate ml-2">
+                        {org.email_contact}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setOrganization(org)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  View Details
+                </button>
+                <button
+                  onClick={() => {
+                    setOrgToDelete(org);
+                    setShowDeleteConfirm(true);
+                  }}
+                  className="inline-flex items-center justify-center p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                  title="Delete Organization"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : organization ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 transition-all">
+          {user?.role === "ADMIN" && (
+            <button
+              onClick={() => setOrganization(null)}
+              className="mb-6 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+              Back to Organizations List
+            </button>
+          )}
           {/* Header with Icon and Basic Info */}
           <div className="flex items-start gap-4 mb-6 justify-between">
             <div className="flex items-start gap-4 flex-1">
@@ -733,8 +853,10 @@ export default function OrganizationsPage() {
               </div>
               <p className="text-gray-700 mb-6">
                 Are you sure you want to delete{" "}
-                <strong>{organization?.name}</strong>? All sections and needs
-                will be permanently removed.
+                <strong>
+                  {(user?.role === "ADMIN" ? orgToDelete : organization)?.name}
+                </strong>
+                ? All sections and needs will be permanently removed.
               </p>
               <div className="flex justify-end gap-3">
                 <button

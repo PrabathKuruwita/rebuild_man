@@ -94,7 +94,7 @@ def main():
         else:
             print("\nAvailable organizations:")
             for i, org in enumerate(orgs, 1):
-                linked = " (currently linked)" if org.admin_user == user else ""
+                linked = " (currently linked)" if user.organization == org else ""
                 print(f"  [{i}] {org.name} - {org.district}{linked}")
             
             print("  [0] Skip linking")
@@ -106,8 +106,8 @@ def main():
                         break
                     elif 1 <= org_choice <= len(orgs):
                         org = list(orgs)[org_choice - 1]
-                        org.admin_user = user
-                        org.save()
+                        user.organization = org
+                        user.save()
                         print(f"\n✅ User {user.username} linked to: {org.name}")
                         break
                     else:
@@ -127,13 +127,9 @@ def main():
     print(f"Staff: {user.is_staff}")
     
     if user.role == 'ORG_ADMIN':
-        managed_orgs = Organization.objects.filter(admin_user=user)
-        if managed_orgs.exists():
-            first_org = managed_orgs.first()
-            if first_org:
-                print(f"Manages: {first_org.name}")
-            else:
-                print("⚠️  Not linked to any organization yet")
+        first_org = user.organization
+        if first_org:
+            print(f"Manages: {first_org.name}")
         else:
             print("⚠️  Not linked to any organization yet")
     

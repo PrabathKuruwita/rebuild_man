@@ -14,10 +14,73 @@ export interface User {
   last_name?: string;
 }
 
+export interface DonorUser {
+  id: number;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number: string;
+  date_joined: string;
+  donations_count: number;
+}
+
 export interface AuthResponse {
   access: string;
   refresh: string;
   user?: User; // Optional because standard JWT response might only have tokens, but we'll try to include user or fetch it separately
+}
+
+export interface RegisterUserData {
+  username: string;
+  email: string;
+  password: string;
+  password2: string;
+  phone_number: string;
+  first_name: string;
+  last_name: string;
+}
+
+export interface RegisterOrgAdminData extends RegisterUserData {
+  organization_name: string;
+  organization_type?: string;
+}
+
+export interface OrgAdminInviteData {
+  username: string;
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+}
+
+export interface AdminApprovalRequest {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  approval_status: "PENDING" | "APPROVED" | "REJECTED";
+  organization_name: string;
+  organization_type: string;
+  rejection_reason?: string;
+  approval_requested_at?: string;
+  approval_decided_at?: string;
+  approval_decided_by_username?: string;
+}
+
+export interface ApprovalActionResponse {
+  message?: string;
+  user?: AdminApprovalRequest;
+}
+
+interface ApiListResponse<T> {
+  results?: T[];
+}
+
+function unwrapListResponse<T>(response: ApiListResponse<T> | T[]): T[] {
+  return Array.isArray(response) ? response : response.results || [];
 }
 
 export interface NeedItem {
@@ -105,7 +168,10 @@ export interface Donation {
   government_officer_name: string;
   government_officer_designation: string;
   government_officer_contact: string;
+  government_email: string;
   donation_letter_file: string | null;
+  confirmed_by_name?: string;
+  cancelled_by_name?: string;
   need_item_detail?: {
     id: number;
     name: string;
@@ -260,62 +326,73 @@ export async function loginUser(
   });
 }
 
-export async function registerUser(data: unknown): Promise<AuthResponse> {
+export async function registerUser(
+  data: RegisterUserData,
+): Promise<AuthResponse> {
   return fetchAPI<AuthResponse>("/auth/register/", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function registerOrgAdmin(data: {
-  username: string;
-  password: string;
-  password2: string;
-  email: string;
-  phone_number: string;
-  first_name: string;
-  last_name: string;
-  organization_name: string;
-  organization_type?: string;
-}): Promise<unknown> {
-  return fetchAPI<unknown>("/auth/register-org-admin/", {
+export async function registerOrgAdmin(
+  data: RegisterOrgAdminData,
+): Promise<AuthResponse> {
+  return fetchAPI<AuthResponse>("/auth/register-org-admin/", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function getAdminApprovals(): Promise<unknown> {
-  return fetchAPI<unknown>("/admin/approvals/", {
+export async function getAdminApprovals(): Promise<AdminApprovalRequest[]> {
+  const response = await fetchAPI<
+    ApiListResponse<AdminApprovalRequest> | AdminApprovalRequest[]
+  >("/admin/approvals/", {
     method: "GET",
   });
+  return unwrapListResponse(response);
 }
 
-export async function approveOrgAdmin(userId: number): Promise<unknown> {
-  return fetchAPI<unknown>(`/admin/approvals/${userId}/approve/`, {
-    method: "POST",
-  });
+export async function approveOrgAdmin(
+  userId: number,
+): Promise<ApprovalActionResponse> {
+  return fetchAPI<ApprovalActionResponse>(
+    `/admin/approvals/${userId}/approve/`,
+    {
+      method: "POST",
+    },
+  );
 }
 
 export async function rejectOrgAdmin(
   userId: number,
   reason: string,
-): Promise<unknown> {
-  return fetchAPI<unknown>(`/admin/approvals/${userId}/reject/`, {
-    method: "POST",
-    body: JSON.stringify({ reason }),
-  });
+): Promise<ApprovalActionResponse> {
+  return fetchAPI<ApprovalActionResponse>(
+    `/admin/approvals/${userId}/reject/`,
+    {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    },
+  );
 }
 
-export async function getApprovedOrgAdmins(): Promise<unknown> {
-  return fetchAPI<unknown>("/admin/approvals/approved_list/", {
+export async function getApprovedOrgAdmins(): Promise<AdminApprovalRequest[]> {
+  const response = await fetchAPI<
+    ApiListResponse<AdminApprovalRequest> | AdminApprovalRequest[]
+  >("/admin/approvals/approved_list/", {
     method: "GET",
   });
+  return unwrapListResponse(response);
 }
 
-export async function getRejectedOrgAdmins(): Promise<unknown> {
-  return fetchAPI<unknown>("/admin/approvals/rejected_list/", {
+export async function getRejectedOrgAdmins(): Promise<AdminApprovalRequest[]> {
+  const response = await fetchAPI<
+    ApiListResponse<AdminApprovalRequest> | AdminApprovalRequest[]
+  >("/admin/approvals/rejected_list/", {
     method: "GET",
   });
+  return unwrapListResponse(response);
 }
 
 export async function getCurrentUser(): Promise<User> {
@@ -343,8 +420,10 @@ export async function updateCurrentUser(data: {
 
 // Organizations
 export const getOrganizations = async () => {
-  const response = await fetchAPI<unknown>("/organizations/");
-  return ((response as { results?: Organization[] }).results || response) as Organization[];
+  const response = await fetchAPI<
+    ApiListResponse<Organization> | Organization[]
+  >("/organizations/");
+  return unwrapListResponse(response);
 };
 export const getOrganization = (id: number) =>
   fetchAPI<Organization>(`/organizations/${id}/`);
@@ -361,12 +440,27 @@ export const updateOrganization = (id: number, data: Partial<Organization>) =>
     body: JSON.stringify(data),
   });
 export const deleteOrganization = (id: number) =>
-  fetchAPI<void>(`/organizations/${id}/`, { method: "DELETE" });
+  fetchAPI(`/organizations/${id}/`, { method: "DELETE" });
+
+export const getOrgAdmins = async (orgId: number) => {
+  const response = await fetchAPI<ApiListResponse<User> | User[]>(
+    `/organizations/${orgId}/admins/`,
+  );
+  return unwrapListResponse(response);
+};
+
+export const inviteOrgAdmin = (orgId: number, data: OrgAdminInviteData) =>
+  fetchAPI<{ message?: string }>(`/organizations/${orgId}/invite_admin/`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 
 // Sections
 export const getSections = async () => {
-  const response = await fetchAPI<unknown>("/sections/");
-  return ((response as { results?: Section[] }).results || response) as Section[];
+  const response = await fetchAPI<ApiListResponse<Section> | Section[]>(
+    "/sections/",
+  );
+  return unwrapListResponse(response);
 };
 export const getSection = (id: number) => fetchAPI<Section>(`/sections/${id}/`);
 export const createSection = (data: Partial<Section>) =>
@@ -391,8 +485,10 @@ export const getNeeds = async (
   if (priority) params.append("priority", priority);
   if (excludeFulfilled) params.append("exclude_fulfilled", "true");
   const query = params.toString() ? `?${params.toString()}` : "";
-  const response = await fetchAPI<unknown>(query ? `/needs/${query}` : "/needs/");
-  return ((response as { results?: NeedItem[] }).results || response) as NeedItem[];
+  const response = await fetchAPI<ApiListResponse<NeedItem> | NeedItem[]>(
+    query ? `/needs/${query}` : "/needs/",
+  );
+  return unwrapListResponse(response);
 };
 export const getNeed = (id: number) => fetchAPI<NeedItem>(`/needs/${id}/`);
 export const createNeed = (data: Partial<NeedItem>) =>
@@ -407,8 +503,10 @@ export const deleteNeed = (id: number) =>
 
 // Documents
 export const getDocuments = async () => {
-  const response = await fetchAPI<unknown>("/documents/");
-  return ((response as { results?: DocumentUpload[] }).results || response) as DocumentUpload[];
+  const response = await fetchAPI<
+    ApiListResponse<DocumentUpload> | DocumentUpload[]
+  >("/documents/");
+  return unwrapListResponse(response);
 };
 export const uploadDocument = async (
   file: File,
@@ -449,8 +547,10 @@ export const createDonation = (data: Partial<Donation>) =>
   });
 
 export const getDonations = async () => {
-  const response = await fetchAPI<unknown>("/donations/");
-  return ((response as { results?: Donation[] }).results || response) as Donation[];
+  const response = await fetchAPI<ApiListResponse<Donation> | Donation[]>(
+    "/donations/",
+  );
+  return unwrapListResponse(response);
 };
 
 export const getDonation = (id: number) =>
@@ -463,10 +563,10 @@ export const updateDonation = (id: number, data: Partial<Donation>) =>
   });
 
 export const confirmDonation = (id: number) =>
-  fetchAPI<unknown>(`/donations/${id}/confirm/`, { method: "POST" });
+  fetchAPI<void>(`/donations/${id}/confirm/`, { method: "POST" });
 
 export const cancelDonation = (id: number) =>
-  fetchAPI<unknown>(`/donations/${id}/cancel/`, { method: "POST" });
+  fetchAPI<void>(`/donations/${id}/cancel/`, { method: "POST" });
 
 export const deleteDonation = (id: number) =>
   fetchAPI<void>(`/donations/${id}/`, { method: "DELETE" });
@@ -539,3 +639,11 @@ export async function search(
 
   return response.json();
 }
+
+// Donors
+export const getDonors = async () => {
+  const response = await fetchAPI<ApiListResponse<DonorUser> | DonorUser[]>(
+    "/donors/",
+  );
+  return unwrapListResponse(response);
+};

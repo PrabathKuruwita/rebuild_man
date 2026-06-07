@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rebuild-ingress
+  namespace: rikili001
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+  - host: 62.171.171.71.nip.io
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend
+            port: {number: 8000}
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port: {number: 3000}
