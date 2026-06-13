@@ -123,6 +123,19 @@ export default function AdvancedSriLankaMap({
 
         const organizationsWithCoordinates = organizations
           .map((organization) => {
+            if (
+              organization.latitude !== undefined &&
+              organization.latitude !== null &&
+              organization.longitude !== undefined &&
+              organization.longitude !== null
+            ) {
+              return {
+                organization,
+                lat: Number(organization.latitude),
+                lng: Number(organization.longitude),
+              };
+            }
+
             const districtKey = normalizeDistrictKey(
               organization.district || "",
             );

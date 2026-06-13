@@ -846,8 +846,9 @@ class AdminApprovalViewSet(viewsets.ViewSet):
 
 # 5. Donation ViewSet
 class DonationViewSet(viewsets.ModelViewSet):
-    queryset = Donation.objects.select_related('donor', 'need_item').all()
+    queryset = Donation.objects.select_related('donor', 'need_item').all().order_by('-created_at')
     serializer_class = DonationSerializer
+    pagination_class = None
     
     def get_queryset(self):
         """Filter donations based on user role and organization ownership"""
@@ -944,6 +945,24 @@ class DonationViewSet(viewsets.ModelViewSet):
                 section_name=section_name,
                 org_name=org_name
             )
+        elif action == 'receive':
+            subject = "Donation Received: Thank You! – NeedTracker"
+            message = (
+                "Dear {donor_name},\n\n"
+                "We are pleased to inform you that your donation of {quantity} {unit}(s) of '{need_name}' "
+                "has been safely received by the team at {org_name}.\n\n"
+                "Your generous support helps us continue our services and fulfill critical needs. We truly "
+                "appreciate your contribution!\n\n"
+                "A receipt and confirmation of delivery has been logged in the NeedTracker platform.\n\n"
+                "— The NeedTracker Team"
+            ).format(
+                donor_name=donor_name,
+                quantity=quantity,
+                unit=unit,
+                need_name=need_name,
+                section_name=section_name,
+                org_name=org_name
+            )
         else:
             return
             
@@ -964,8 +983,46 @@ class DonationViewSet(viewsets.ModelViewSet):
         When need reaches 100% fulfillment, automatically mark all confirmed donations as FULFILLED"""
         donation = self.get_object()
         if donation.status == 'PENDING':
-            # Update the need item's quantity_received
             need_item = donation.need_item
+            
+            # Read confirmed quantity (defaults to full amount)
+            confirmed_quantity = int(request.data.get('confirmed_quantity', donation.quantity))
+            
+            # Ensure we don't confirm more than the requested amount or less than 1
+            confirmed_quantity = max(1, min(confirmed_quantity, donation.quantity))
+            
+            if confirmed_quantity < donation.quantity:
+                # Create surplus record
+                surplus = donation.quantity - confirmed_quantity
+                Donation.objects.create(
+                    donor=donation.donor,
+                    need_item=donation.need_item,
+                    quantity=surplus,
+                    status='CANCELLED',
+                    message=donation.message,
+                    estimated_delivery_date=donation.estimated_delivery_date,
+                    donor_type=donation.donor_type,
+                    donor_name=donation.donor_name,
+                    donor_contact=donation.donor_contact,
+                    donor_organization=donation.donor_organization,
+                    donor_address=donation.donor_address,
+                    donor_email=donation.donor_email,
+                    donor_phone=donation.donor_phone,
+                    government_department=donation.government_department,
+                    government_program=donation.government_program,
+                    government_officer_name=donation.government_officer_name,
+                    government_officer_designation=donation.government_officer_designation,
+                    government_officer_contact=donation.government_officer_contact,
+                    government_email=donation.government_email,
+                    cancelled_by=request.user,
+                    cancellation_reason='Surplus quantity exceeding the required need.',
+                    cancelled_at=timezone.now()
+                )
+                
+                # Adjust original donation
+                donation.quantity = confirmed_quantity
+
+            # Update the need item's quantity_received
             need_item.quantity_received += donation.quantity
             need_item.save()
             
@@ -974,14 +1031,7 @@ class DonationViewSet(viewsets.ModelViewSet):
             donation.confirmed_by = request.user
             donation.save()
             
-            # Check if need is now 100% fulfilled
-            if need_item.quantity_received >= need_item.quantity_required:
-                # Mark all CONFIRMED donations for this need as FULFILLED
-                Donation.objects.filter(
-                    need_item=need_item,
-                    status='CONFIRMED'
-                ).update(status='FULFILLED')
-            
+
             # Send confirmation email to donor
             self._send_donation_email(donation, 'confirm')
             
@@ -998,8 +1048,11 @@ class DonationViewSet(viewsets.ModelViewSet):
         """Cancel a pending donation"""
         donation = self.get_object()
         if donation.status == 'PENDING':
+            reason = request.data.get('reason', '')
             donation.status = 'CANCELLED'
             donation.cancelled_by = request.user
+            donation.cancellation_reason = reason
+            donation.cancelled_at = timezone.now()
             donation.save()
             
             # Send cancellation email to donor
@@ -1007,4 +1060,91 @@ class DonationViewSet(viewsets.ModelViewSet):
             
             return Response({'status': 'Donation cancelled'}, status=status.HTTP_200_OK)
         return Response({'status': 'Only pending donations can be cancelled'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def receive(self, request, pk=None):
+        """Mark a confirmed donation as physically received (status FULFILLED)"""
+        donation = self.get_object()
+        if donation.status == 'CONFIRMED':
+            donation.status = 'FULFILLED'
+            donation.received_by = request.user
+            donation.save()
+            
+            # Send physical receipt email to donor
+            self._send_donation_email(donation, 'receive')
+            
+            return Response({'status': 'Donation marked as received'}, status=status.HTTP_200_OK)
+        return Response({'status': 'Only confirmed donations can be marked as received'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def system_stats(request):
+    """
+    Get system-wide statistics for the landing page.
+    """
+    # 1. Count unique provinces covered
+    district_to_province = {
+        # Western
+        'colombo': 'Western', 'gampaha': 'Western', 'kalutara': 'Western',
+        # Central
+        'kandy': 'Central', 'matale': 'Central', 'nuwara eliya': 'Central',
+        # Southern
+        'galle': 'Southern', 'matara': 'Southern', 'hambantota': 'Southern',
+        # Northern
+        'jaffna': 'Northern', 'kilinochchi': 'Northern', 'mannar': 'Northern',
+        'mullaitivu': 'Northern', 'vavuniya': 'Northern',
+        # Eastern
+        'trincomalee': 'Eastern', 'batticaloa': 'Eastern', 'ampara': 'Eastern',
+        # North Western
+        'kurunegala': 'North Western', 'puttalam': 'North Western',
+        # North Central
+        'anuradhapura': 'North Central', 'polonnaruwa': 'North Central',
+        # Uva
+        'badulla': 'Uva', 'moneragala': 'Uva',
+        # Sabaragamuwa
+        'ratnapura': 'Sabaragamuwa', 'kegalle': 'Sabaragamuwa'
+    }
+    
+    provinces = {
+        'western', 'central', 'southern', 'northern', 'eastern', 
+        'north western', 'north central', 'uva', 'sabaragamuwa'
+    }
+
+    districts = Organization.objects.values_list('district', flat=True).distinct()
+    unique_provinces = set()
+    for d in districts:
+        if d:
+            d_norm = d.strip().lower()
+            if d_norm in district_to_province:
+                unique_provinces.add(district_to_province[d_norm])
+            elif d_norm in provinces:
+                unique_provinces.add(d.strip().title())
+            else:
+                unique_provinces.add(d.strip().title())
+                
+    provinces_count = len(unique_provinces)
+    
+    # 2. Count verified hospitals (organizations)
+    verified_hospitals = Organization.objects.count()
+    
+    # 3. Count donors onboarded
+    donors_count = User.objects.filter(role='DONOR').count()
+    
+    # 4. Calculate delivery success rate
+    fulfilled = Donation.objects.filter(status='FULFILLED').count()
+    cancelled = Donation.objects.filter(status='CANCELLED').count()
+    
+    total_completed = fulfilled + cancelled
+    if total_completed > 0:
+        delivery_success_rate = round((fulfilled / total_completed) * 100)
+    else:
+        delivery_success_rate = 98  # Default/fallback from design
+        
+    return Response({
+        'provinces_covered': provinces_count,
+        'verified_hospitals': verified_hospitals,
+        'donors_onboarded': donors_count,
+        'delivery_success_rate': delivery_success_rate
+    })
 

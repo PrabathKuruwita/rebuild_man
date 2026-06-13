@@ -30,7 +30,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)  # False by default - prevents
 
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,62.171.171.71,62.171.171.71.nip.io',
+    default='localhost,127.0.0.1,62.171.171.71,rebuild-app.duckdns.org',
     cast=Csv()
 )
 
@@ -45,7 +45,7 @@ SECURE_SSL_REDIRECT = False  # Traefik handles SSL, not Django
 GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
 # Frontend Configuration
-FRONTEND_URL = config('FRONTEND_URL', default='http://62.171.171.71.nip.io')
+FRONTEND_URL = config('FRONTEND_URL', default='https://rebuild-app.duckdns.org')
 
 
 # Application definition
@@ -80,7 +80,7 @@ MIDDLEWARE = [
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000,http://62.171.171.71.nip.io',
+    default='http://localhost:3000,http://127.0.0.1:3000,https://rebuild-app.duckdns.org',
     cast=Csv()
 )
 
@@ -91,7 +91,7 @@ CORS_ALLOW_ALL_ORIGINS = False
 
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000,http://62.171.171.71.nip.io',
+    default='http://localhost:3000,http://127.0.0.1:3000,https://rebuild-app.duckdns.org',
     cast=Csv()
 )
 

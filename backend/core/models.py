@@ -112,6 +112,9 @@ class Organization(models.Model):
     email_contact = models.EmailField(blank=True)
     website = models.URLField(blank=True)
     established_year = models.IntegerField(null=True, blank=True)
+    
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -120,6 +123,44 @@ class Organization(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        # Automatically geocode if coordinates are not provided
+        if self.latitude is None or self.longitude is None:
+            try:
+                import urllib.request
+                import urllib.parse
+                import json
+                import time
+                
+                # Build search queries from most specific to least specific
+                queries = [
+                    f"{self.name}, {self.address}, {self.district}, Sri Lanka",
+                    f"{self.name}, {self.district}, Sri Lanka",
+                    f"{self.address}, {self.district}, Sri Lanka",
+                    f"{self.district}, Sri Lanka"
+                ]
+                
+                for q in queries:
+                    try:
+                        q_clean = " ".join(q.split())
+                        url = 'https://nominatim.openstreetmap.org/search?q=' + urllib.parse.quote(q_clean) + '&format=json&limit=1'
+                        req = urllib.request.Request(url, headers={'User-Agent': 'NeedTracker/1.0'})
+                        res = urllib.request.urlopen(req, timeout=5)
+                        data = json.loads(res.read().decode('utf-8'))
+                        if data:
+                            self.latitude = float(data[0]['lat'])
+                            self.longitude = float(data[0]['lon'])
+                            break
+                    except Exception as e:
+                        print(f"[Geocoding] Error with query '{q}': {e}")
+                    # Brief pause to avoid aggressive requests
+                    time.sleep(0.5)
+            except Exception as e:
+                print(f"[Geocoding] General error geocoding organization {self.name}: {e}")
+                
+        super().save(*args, **kwargs)
+
 
 
 # 3. SECTIONS (Departments inside the Org)
@@ -235,6 +276,9 @@ class Donation(models.Model):
     # Admins who took actions
     confirmed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="confirmed_donations")
     cancelled_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="cancelled_donations")
+    received_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="received_donations")
+    cancellation_reason = models.TextField(blank=True, default='')
+    cancelled_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"Donation {self.id} - {self.quantity} units of {self.need_item.name}"

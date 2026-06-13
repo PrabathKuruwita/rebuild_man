@@ -391,12 +391,12 @@ export default function ImpactPage() {
                 );
                 return (
                   <div key={month.label} className="flex flex-col items-center">
+                    <style>{`.bar-month-${month.label} { height: ${height}px; }`}</style>
                     <div className="mb-2 text-xs font-semibold text-gray-500">
                       {month.value}
                     </div>
                     <div
-                      className="w-full rounded-t-md bg-linear-to-t from-blue-500 to-cyan-400"
-                      style={{ height: `${height}px` }}
+                      className={`w-full rounded-t-md bg-linear-to-t from-blue-500 to-cyan-400 bar-month-${month.label}`}
                     />
                     <div className="mt-2 text-xs font-medium text-gray-600">
                       {month.label}
@@ -424,13 +424,14 @@ export default function ImpactPage() {
               </p>
             ) : (
               <div className="space-y-4">
-                {metrics.districtImpact.map((item) => {
+                {metrics.districtImpact.map((item, index) => {
                   const width = Math.max(
                     5,
                     Math.round((item.value / maxDistrictValue) * 100),
                   );
                   return (
                     <div key={item.district}>
+                      <style>{`.bar-district-${index} { width: ${width}%; }`}</style>
                       <div className="mb-1 flex items-center justify-between text-sm">
                         <span className="font-semibold text-gray-700">
                           {item.district}
@@ -441,8 +442,7 @@ export default function ImpactPage() {
                       </div>
                       <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
                         <div
-                          className="h-full rounded-full bg-linear-to-r from-emerald-500 to-cyan-500"
-                          style={{ width: `${width}%` }}
+                          className={`h-full rounded-full bg-linear-to-r from-emerald-500 to-cyan-500 bar-district-${index}`}
                         />
                       </div>
                     </div>
@@ -460,19 +460,19 @@ export default function ImpactPage() {
               A snapshot of needs that received strong donor support.
             </p>
             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
-              {metrics.stories.map((story) => (
+              {metrics.stories.map((story, index) => (
                 <div
                   key={story.title}
                   className="rounded-xl border border-amber-100 bg-linear-to-b from-amber-50/70 to-white p-4"
                 >
+                  <style>{`.bar-story-${index} { width: ${story.progress}%; }`}</style>
                   <h3 className="font-semibold text-gray-900">{story.title}</h3>
                   <p className="mt-2 min-h-16 text-sm leading-relaxed text-gray-600">
                     {story.body}
                   </p>
                   <div className="mt-3 h-2 overflow-hidden rounded-full bg-amber-100">
                     <div
-                      className="h-full rounded-full bg-linear-to-r from-amber-500 to-orange-500"
-                      style={{ width: `${story.progress}%` }}
+                      className={`h-full rounded-full bg-linear-to-r from-amber-500 to-orange-500 bar-story-${index}`}
                     />
                   </div>
                   <p className="mt-2 text-xs font-semibold text-amber-700">

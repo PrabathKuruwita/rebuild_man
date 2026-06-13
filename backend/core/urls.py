@@ -19,6 +19,7 @@ from .views import (
     custom_login,
     forgot_password,
     reset_password,
+    system_stats,
 )
 from .search_views import search
 
@@ -35,6 +36,7 @@ router.register(r'admin/approvals', AdminApprovalViewSet, basename='admin_approv
 
 # The API URLs are now determined automatically by the router.
 urlpatterns = [
+    re_path(r'^stats/?$', system_stats, name='system_stats'),
     re_path(r'^search/?$', search, name='search'),
     re_path(r'^auth/register/?$', RegisterView.as_view(), name='auth_register'),
     re_path(r'^auth/register-org-admin/?$', OrgAdminRegisterView.as_view(), name='auth_register_org_admin'),

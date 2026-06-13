@@ -55,6 +55,14 @@ spec:
                 secretKeyRef:
                   name: backend-secrets
                   key: DEFAULT_FROM_EMAIL
+            - name: EMAIL_BACKEND
+              value: "django.core.mail.backends.smtp.EmailBackend"
+            - name: EMAIL_HOST
+              value: "smtp.gmail.com"
+            - name: EMAIL_PORT
+              value: "587"
+            - name: EMAIL_USE_TLS
+              value: "True"
 ---
 apiVersion: v1
 kind: Service

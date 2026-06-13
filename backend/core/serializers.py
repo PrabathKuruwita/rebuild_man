@@ -273,7 +273,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'registration_number', 'address', 'district', 
             'org_type', 'description', 'phone', 'email_contact', 'website', 
-            'established_year', 'admins', 'sections',
+            'established_year', 'admins', 'sections', 'latitude', 'longitude',
         ]
         
     def get_admins(self, obj):
@@ -352,6 +352,7 @@ class DonationSerializer(serializers.ModelSerializer):
     need_item_detail = NeedItemDetailSerializer(source='need_item', read_only=True)
     confirmed_by_name = serializers.SerializerMethodField()
     cancelled_by_name = serializers.SerializerMethodField()
+    received_by_name = serializers.SerializerMethodField()
     
     class Meta:
         model = Donation
@@ -362,7 +363,8 @@ class DonationSerializer(serializers.ModelSerializer):
             'donor_email', 'donor_phone', 'government_department', 'government_program',
             'government_officer_name', 'government_officer_designation',
             'government_officer_contact', 'government_email', 'donation_letter_file',
-            'confirmed_by_name', 'cancelled_by_name'
+            'confirmed_by_name', 'cancelled_by_name', 'cancellation_reason', 'cancelled_at',
+            'received_by_name'
         ]
 
     def get_confirmed_by_name(self, obj):
@@ -377,5 +379,12 @@ class DonationSerializer(serializers.ModelSerializer):
             if obj.cancelled_by.first_name or obj.cancelled_by.last_name:
                 return f"{obj.cancelled_by.first_name} {obj.cancelled_by.last_name}".strip()
             return obj.cancelled_by.username
+        return None
+
+    def get_received_by_name(self, obj):
+        if obj.received_by:
+            if obj.received_by.first_name or obj.received_by.last_name:
+                return f"{obj.received_by.first_name} {obj.received_by.last_name}".strip()
+            return obj.received_by.username
         return None
 

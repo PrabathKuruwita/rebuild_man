@@ -4,10 +4,10 @@ metadata:
   name: rebuild-ingress
   namespace: rikili001
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
 spec:
   rules:
-  - host: 62.171.171.71.nip.io
+  - host: rebuild-app.duckdns.org
     http:
       paths:
       - path: /api

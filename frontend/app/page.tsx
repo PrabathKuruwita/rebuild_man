@@ -2,27 +2,44 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Organization, getOrganizations } from "@/lib/api";
+import { Organization, getOrganizations, NeedItem, getNeeds, SystemStats, getSystemStats } from "@/lib/api";
 import { PageLoading } from "@/components/LoadingSpinner";
 import Image from "next/image";
 import AdvancedSriLankaMap from "@/components/AdvancedSriLankaMap";
 
 export default function Home() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [urgentNeed, setUrgentNeed] = useState<NeedItem | null>(null);
+  const [stats, setStats] = useState<SystemStats | null>(null);
   const [loading, setLoading] = useState(true);
-
 
   const fetchData = async () => {
     try {
-      const orgs = await getOrganizations();
+      const [orgs, needs, systemStats] = await Promise.all([
+        getOrganizations(),
+        getNeeds("CRITICAL", true),
+        getSystemStats(),
+      ]);
       setOrganizations(orgs);
+      setStats(systemStats);
+
+      if (needs && needs.length > 0) {
+        const sortedNeeds = needs.sort(
+          (a, b) =>
+            b.quantity_required -
+            b.quantity_received -
+            (a.quantity_required - a.quantity_received),
+        );
+        setUrgentNeed(sortedNeeds[0]);
+      }
     } catch (err) {
       console.warn(
         "Backend API not available. Start with: python manage.py runserver",
-        err instanceof Error ? err.message : "Failed to load data"
+        err instanceof Error ? err.message : "Failed to load data",
       );
       // Continue without backend data - allow UI testing
       setOrganizations([]);
+      setStats(null);
     } finally {
       setLoading(false);
     }
@@ -39,10 +56,11 @@ export default function Home() {
   if (loading) return <PageLoading />;
 
   // Calculate real stats or use fallbacks from screenshot
-  const totalOrgs = organizations.length || 120;
-  const provinces = 9;
-  const donorsOnboarded = "4,500+";
-  const deliverySuccess = "98%";
+  const provinces = stats ? stats.provinces_covered : 9;
+  const totalOrgs = stats ? stats.verified_hospitals : (organizations.length || 120);
+  const donorsOnboarded = stats ? stats.donors_onboarded.toLocaleString() : "4,500+";
+  const deliverySuccess = stats ? `${stats.delivery_success_rate}%` : "98%";
+
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -65,15 +83,14 @@ export default function Home() {
 
               <h1 className="text-4xl lg:text-6xl font-black text-white leading-tight">
                 Donate directly to <br />
-                <span className="text-green-400">hospitals</span> that need it
-                most.
+                <span className="text-green-400">organizations</span> that need
+                it most.
               </h1>
 
               <p className="text-sm lg:text-base text-blue-100/80 leading-relaxed max-w-lg">
-                NeedTracker connects generous donors with verified hospitals and
-                healthcare organizations across Sri Lanka. Browse real, urgent
-                needs from saline bottles to medical equipment — and contribute
-                in minutes.
+                NeedTracker connects generous donors with verified organizations
+                across Sri Lanka. Browse real, urgent needs, and contribute in
+                minutes.
               </p>
 
               <div className="flex flex-wrap items-center gap-4">
@@ -113,7 +130,7 @@ export default function Home() {
                       d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                     />
                   </svg>
-                  Register Your Hospital
+                  Register Your Organization
                   <svg
                     className="w-4 h-4"
                     fill="none"
@@ -162,17 +179,23 @@ export default function Home() {
                       Most urgent right now
                     </div>
                     <h3 className="text-xl font-bold text-white">
-                      Saline Bottles - Homagama Hospital
+                      {urgentNeed
+                        ? `${urgentNeed.name} - ${urgentNeed.section_detail?.organization_name || "Hospital"}`
+                        : "Loading priority need..."}
                     </h3>
                     <div className="space-y-3">
                       <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden border border-white/5">
                         <div
-                          className="h-full bg-green-400 rounded-full"
-                          style={{ width: "11%" }}
+                          className="h-full bg-green-400 rounded-full transition-all duration-1000"
+                          style={{
+                            width: `${urgentNeed ? Math.min(100, Math.round((urgentNeed.quantity_received / urgentNeed.quantity_required) * 100)) : 0}%`,
+                          }}
                         ></div>
                       </div>
                       <div className="text-xs font-medium text-slate-300">
-                        11 of 100 units delivered
+                        {urgentNeed
+                          ? `${urgentNeed.quantity_received} of ${urgentNeed.quantity_required} units delivered`
+                          : "Fetching data..."}
                       </div>
                     </div>
                   </div>
@@ -231,11 +254,10 @@ export default function Home() {
               How it works
             </div>
             <h2 className="text-3xl font-black text-slate-900">
-              Helping hospitals in three simple steps
+              Helping organizations in three simple steps
             </h2>
             <p className="text-sm text-slate-500 max-w-xl mx-auto leading-relaxed">
-              A transparent platform built for donors, hospitals and the
-              patients they serve.
+              A transparent platform built for donors, and organizations.
             </p>
           </div>
 
@@ -243,7 +265,7 @@ export default function Home() {
             {[
               {
                 title: "1. Browse Verified Needs",
-                desc: "Hospitals post real-time requests for medicines, equipment and supplies.",
+                desc: "Organizations post real-time requests for needs.",
                 icon: (
                   <svg
                     className="w-6 h-6"
@@ -281,7 +303,7 @@ export default function Home() {
               },
               {
                 title: "3. Track Your Impact",
-                desc: "Follow your donation from confirmation to delivery at the hospital.",
+                desc: "Follow your donation from confirmation to delivery at the organization.",
                 icon: (
                   <svg
                     className="w-6 h-6"
@@ -346,7 +368,7 @@ export default function Home() {
                 </h2>
                 <p className="text-blue-100/70 text-base leading-relaxed">
                   Create a free donor account and start contributing to verified
-                  hospital needs today.
+                  organization needs today.
                 </p>
                 <Link
                   href="/login?tab=register"
@@ -390,7 +412,7 @@ export default function Home() {
                   </svg>
                 </div>
                 <h2 className="text-3xl font-bold text-slate-900">
-                  We&apos;re a hospital
+                  We&apos;re an organization
                 </h2>
                 <p className="text-sm text-slate-500 leading-relaxed">
                   Join NeedTracker to publish your needs, manage donations and
@@ -434,13 +456,13 @@ export default function Home() {
               </h2>
               <p className="text-sm text-slate-500 leading-relaxed">
                 Our interactive network shows real-time organizational activity.
-                Click on any location to view specific hospital requirements and
-                local impact.
+                Click on any location to view specific organization requirements
+                and local impact.
               </p>
             </div>
             <div className="flex gap-4">
               <div className="bg-slate-50 border border-slate-100 px-5 py-3 rounded-xl">
-                <div className="text-xl font-bold text-blue-600">9</div>
+                <div className="text-xl font-bold text-blue-600">{provinces}</div>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                   Provinces
                 </div>
@@ -450,7 +472,7 @@ export default function Home() {
                   {totalOrgs}
                 </div>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  Hospitals
+                  Organizations
                 </div>
               </div>
             </div>
@@ -476,7 +498,7 @@ export default function Home() {
             </div>
 
             <p className="text-slate-500 text-sm order-3 md:order-2">
-              © 2025 NeedTracker. Connecting hospitals with donors.
+              © 2026 NeedTracker. Connecting organizations with donors.
             </p>
 
             <nav className="flex items-center gap-6 order-5 md:order-3">

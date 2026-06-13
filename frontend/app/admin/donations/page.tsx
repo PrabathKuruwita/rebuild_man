@@ -9,6 +9,7 @@ import {
   getOrganizations,
   confirmDonation,
   cancelDonation,
+  receiveDonation,
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { CheckCircle2, XCircle, Clock, Gift } from "lucide-react";
@@ -16,7 +17,7 @@ import { useRouter } from "next/navigation";
 
 interface DonationDialogState {
   isOpen: boolean;
-  type: "confirm" | "cancel" | null;
+  type: "confirm" | "cancel" | "receive" | null;
   donationId: number | null;
   donationDetails: Donation | null;
 }
@@ -30,6 +31,7 @@ export default function DonationsPage() {
   const [filter, setFilter] = useState<string>("PENDING");
   const [confirming, setConfirming] = useState<number | null>(null);
   const [cancelling, setCancelling] = useState<number | null>(null);
+  const [receiving, setReceiving] = useState<number | null>(null);
   const [needsMap, setNeedsMap] = useState<Map<number, NeedItem>>(new Map());
   const [confirmDialog, setConfirmDialog] = useState<DonationDialogState>({
     isOpen: false,
@@ -38,6 +40,9 @@ export default function DonationsPage() {
     donationDetails: null,
   });
   const [viewDialog, setViewDialog] = useState<Donation | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isReasonStep, setIsReasonStep] = useState(false);
+  const [confirmOption, setConfirmOption] = useState<"remaining" | "full">("remaining");
 
   useEffect(() => {
     if (!authLoading) {
@@ -107,6 +112,8 @@ export default function DonationsPage() {
 
   const handleConfirm = async (donationId: number) => {
     const donation = donations.find((d) => d.id === donationId);
+    setIsReasonStep(false);
+    setConfirmOption("remaining");
     setConfirmDialog({
       isOpen: true,
       type: "confirm",
@@ -116,11 +123,20 @@ export default function DonationsPage() {
   };
 
   const handleConfirmApprove = async () => {
-    if (!confirmDialog.donationId) return;
+    if (!confirmDialog.donationId || !confirmDialog.donationDetails) return;
+
+    const donation = confirmDialog.donationDetails;
+    const need = needsMap.get(donation.need_item);
+    const remainingNeeded = need ? Math.max(0, need.quantity_required - need.quantity_received) : 0;
+
+    let confirmedQty = donation.quantity;
+    if (donation.quantity > remainingNeeded && confirmOption === "remaining") {
+      confirmedQty = remainingNeeded > 0 ? remainingNeeded : donation.quantity;
+    }
 
     setConfirming(confirmDialog.donationId);
     try {
-      await confirmDonation(confirmDialog.donationId);
+      await confirmDonation(confirmDialog.donationId, confirmedQty);
       setConfirmDialog({
         isOpen: false,
         type: null,
@@ -139,6 +155,8 @@ export default function DonationsPage() {
 
   const handleCancel = async (donationId: number) => {
     const donation = donations.find((d) => d.id === donationId);
+    setCancelReason("");
+    setIsReasonStep(false);
     setConfirmDialog({
       isOpen: true,
       type: "cancel",
@@ -152,7 +170,41 @@ export default function DonationsPage() {
 
     setCancelling(confirmDialog.donationId);
     try {
-      await cancelDonation(confirmDialog.donationId);
+      await cancelDonation(confirmDialog.donationId, cancelReason);
+      setConfirmDialog({
+        isOpen: false,
+        type: null,
+        donationId: null,
+        donationDetails: null,
+      });
+      setCancelReason("");
+      setIsReasonStep(false);
+      await fetchDonations();
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Failed to cancel donation",
+      );
+    } finally {
+      setCancelling(null);
+    }
+  };
+
+  const handleReceive = async (donationId: number) => {
+    const donation = donations.find((d) => d.id === donationId);
+    setConfirmDialog({
+      isOpen: true,
+      type: "receive",
+      donationId,
+      donationDetails: donation ?? null,
+    });
+  };
+
+  const handleReceiveApprove = async () => {
+    if (!confirmDialog.donationId) return;
+
+    setReceiving(confirmDialog.donationId);
+    try {
+      await receiveDonation(confirmDialog.donationId);
       setConfirmDialog({
         isOpen: false,
         type: null,
@@ -162,10 +214,10 @@ export default function DonationsPage() {
       await fetchDonations();
     } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message : "Failed to cancel donation",
+        err instanceof Error ? err.message : "Failed to mark donation as received",
       );
     } finally {
-      setCancelling(null);
+      setReceiving(null);
     }
   };
 
@@ -216,10 +268,16 @@ export default function DonationsPage() {
     let result: Donation[] = [];
     if (filter === "ALL") result = donations;
     else if (filter === "CONFIRMED")
-      result = donations.filter(
-        (d) => d.status === "CONFIRMED" || d.status === "FULFILLED",
-      );
+      result = donations.filter((d) => d.status === "CONFIRMED");
     else result = donations.filter((d) => d.status === filter);
+
+    if (filter === "CANCELLED") {
+      return result.sort((a, b) => {
+        const timeA = new Date(a.cancelled_at || a.created_at).getTime();
+        const timeB = new Date(b.cancelled_at || b.created_at).getTime();
+        return timeB - timeA;
+      });
+    }
 
     // Ensure the array is always sorted newest-first
     return result.sort(
@@ -445,11 +503,31 @@ export default function DonationsPage() {
                 </div>
               )}
 
+            {donation.status === "FULFILLED" && (
+              <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
+                <span className="text-gray-500 font-medium">
+                  Received By
+                </span>
+                <span className="col-span-2 text-gray-900 font-semibold text-purple-700">
+                  {donation.received_by_name || "N/A"}
+                </span>
+              </div>
+            )}
+
             {donation.status === "CANCELLED" && donation.cancelled_by_name && (
               <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
                 <span className="text-gray-500 font-medium">Cancelled By</span>
                 <span className="col-span-2 text-gray-900 font-semibold text-red-700">
                   {donation.cancelled_by_name}
+                </span>
+              </div>
+            )}
+
+            {donation.status === "CANCELLED" && (
+              <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
+                <span className="text-gray-500 font-medium">Reason</span>
+                <span className="col-span-2 text-gray-900">
+                  {donation.cancellation_reason || "No reason provided"}
                 </span>
               </div>
             )}
@@ -474,6 +552,60 @@ export default function DonationsPage() {
 
     const donation = confirmDialog.donationDetails;
     const isConfirm = confirmDialog.type === "confirm";
+    const need = needsMap.get(donation.need_item);
+    const remainingNeeded = need ? Math.max(0, need.quantity_required - need.quantity_received) : 0;
+    const hasOverAllocation = isConfirm && donation.quantity > remainingNeeded;
+
+    if (isReasonStep && !isConfirm) {
+      return (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-in">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <XCircle className="text-red-600" size={24} />
+              </div>
+            </div>
+
+            <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
+              Reason for Cancellation
+            </h3>
+
+            <p className="text-gray-600 text-center mb-4 text-sm">
+              Please specify the reason for cancelling this donation.
+            </p>
+
+            <div className="mb-6">
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="e.g., The hospital has already received enough supply of this item."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm min-h-[100px] text-gray-900"
+                required
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsReasonStep(false)}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition"
+                disabled={cancelling !== null}
+              >
+                Back
+              </button>
+              <button
+                onClick={handleCancelApprove}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg font-medium transition"
+                disabled={cancelling !== null || !cancelReason.trim()}
+              >
+                {cancelling !== null ? "Cancelling..." : "Submit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const isReceive = confirmDialog.type === "receive";
 
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
@@ -481,11 +613,13 @@ export default function DonationsPage() {
           <div className="flex items-center justify-center mb-4">
             <div
               className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                isConfirm ? "bg-green-100" : "bg-red-100"
+                isConfirm ? "bg-green-100" : isReceive ? "bg-purple-100" : "bg-red-100"
               }`}
             >
               {isConfirm ? (
                 <CheckCircle2 className="text-green-600" size={24} />
+              ) : isReceive ? (
+                <Gift className="text-purple-600" size={24} />
               ) : (
                 <XCircle className="text-red-600" size={24} />
               )}
@@ -493,13 +627,15 @@ export default function DonationsPage() {
           </div>
 
           <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
-            {isConfirm ? "Confirm Donation?" : "Cancel Donation?"}
+            {isConfirm ? "Confirm Donation?" : isReceive ? "Mark Donation Received?" : "Cancel Donation?"}
           </h3>
 
-          <p className="text-gray-600 text-center mb-4 text-sm">
+          <p className="text-gray-600 text-center mb-4 text-sm leading-relaxed">
             {isConfirm
               ? "Are you sure you want to confirm this donation?"
-              : "Are you sure you want to cancel this donation?"}
+              : isReceive
+                ? "Are you sure you want to mark this donation as physically received? This will send a thank-you acknowledgment email to the donor."
+                : "Are you sure you want to cancel this donation?"}
           </p>
 
           <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
@@ -526,6 +662,60 @@ export default function DonationsPage() {
             </div>
           </div>
 
+          {hasOverAllocation && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 text-sm animate-in fade-in duration-200">
+              <div className="font-semibold mb-2 text-amber-800 flex items-center gap-1.5">
+                <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                Over-allocation Notice
+              </div>
+              {remainingNeeded > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-amber-700 leading-relaxed">
+                    This request (<strong>{donation.quantity} {donation.need_item_detail?.unit || "units"}</strong>) exceeds the remaining needed quantity of <strong>{remainingNeeded} {donation.need_item_detail?.unit || "units"}</strong>. How would you like to handle this?
+                  </p>
+                  <div className="space-y-2.5 pt-1">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="radio"
+                        name="confirmOption"
+                        value="remaining"
+                        checked={confirmOption === "remaining"}
+                        onChange={() => setConfirmOption("remaining")}
+                        className="mt-1 accent-amber-600 cursor-pointer"
+                      />
+                      <span className="text-gray-700 group-hover:text-gray-900 transition text-[13px]">
+                        Confirm remaining needed only (<strong>{remainingNeeded} {donation.need_item_detail?.unit || "units"}</strong>)
+                        <span className="block text-xs text-gray-500 mt-0.5">
+                          Split and auto-cancel the surplus of <strong>{donation.quantity - remainingNeeded} {donation.need_item_detail?.unit || "units"}</strong>.
+                        </span>
+                      </span>
+                    </label>
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="radio"
+                        name="confirmOption"
+                        value="full"
+                        checked={confirmOption === "full"}
+                        onChange={() => setConfirmOption("full")}
+                        className="mt-1 accent-amber-600 cursor-pointer"
+                      />
+                      <span className="text-gray-700 group-hover:text-gray-900 transition text-[13px]">
+                        Confirm full amount (<strong>{donation.quantity} {donation.need_item_detail?.unit || "units"}</strong>)
+                        <span className="block text-xs text-gray-500 mt-0.5">
+                          Accept full pledge and allow over-allocation.
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-amber-700 leading-relaxed">
+                  The required need for this item has already been fully met. Confirming this request will accept the full pledge of <strong>{donation.quantity} {donation.need_item_detail?.unit || "units"}</strong> and result in over-allocation.
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-3">
             <button
               onClick={() =>
@@ -537,26 +727,32 @@ export default function DonationsPage() {
                 })
               }
               className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition"
-              disabled={confirming !== null || cancelling !== null}
+              disabled={confirming !== null || cancelling !== null || receiving !== null}
             >
               Back
             </button>
             <button
-              onClick={isConfirm ? handleConfirmApprove : handleCancelApprove}
+              onClick={isConfirm ? handleConfirmApprove : isReceive ? handleReceiveApprove : () => setIsReasonStep(true)}
               className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition ${
                 isConfirm
                   ? "bg-green-600 hover:bg-green-700 disabled:bg-green-400"
-                  : "bg-red-600 hover:bg-red-700 disabled:bg-red-400"
+                  : isReceive
+                    ? "bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400"
+                    : "bg-red-600 hover:bg-red-700 disabled:bg-red-400"
               }`}
-              disabled={confirming !== null || cancelling !== null}
+              disabled={confirming !== null || cancelling !== null || receiving !== null}
             >
-              {confirming !== null || cancelling !== null
-                ? isConfirm
+              {confirming !== null || cancelling !== null || receiving !== null
+                ? confirming !== null
                   ? "Confirming..."
-                  : "Cancelling..."
+                  : cancelling !== null
+                    ? "Cancelling..."
+                    : "Processing..."
                 : isConfirm
                   ? "Confirm"
-                  : "Cancel"}
+                  : isReceive
+                    ? "Received"
+                    : "Cancel"}
             </button>
           </div>
         </div>
@@ -596,7 +792,7 @@ export default function DonationsPage() {
                 count = donations.length;
               } else if (status === "CONFIRMED") {
                 count = donations.filter(
-                  (d) => d.status === "CONFIRMED" || d.status === "FULFILLED",
+                  (d) => d.status === "CONFIRMED",
                 ).length;
               } else if (status === "FULFILLED") {
                 // Count unique need items for FULFILLED tab
@@ -637,38 +833,38 @@ export default function DonationsPage() {
               No donations found for this filter
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+            <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
+              <table className="w-full min-w-[1300px] border-separate border-spacing-0">
+                <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
                   <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Need Item
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Section
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Required Quantity
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Received Quantity
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Requested Quantity
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Donor Type
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Donor Info
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Requested Date
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Actions
                     </th>
                   </tr>
@@ -794,9 +990,21 @@ export default function DonationsPage() {
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-sm">
-                                <span className="text-gray-500 text-xs">
-                                  No actions
-                                </span>
+                                <div className="space-y-2">
+                                  {needDonations.map((donation, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-center py-1"
+                                    >
+                                      <button
+                                        onClick={() => setViewDialog(donation)}
+                                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-[10px] font-medium transition"
+                                      >
+                                        View
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
                               </td>
                             </tr>
                           );
@@ -907,6 +1115,17 @@ export default function DonationsPage() {
                                     </button>
                                   </>
                                 )}
+                                {donation.status === "CONFIRMED" && (
+                                  <button
+                                    onClick={() => handleReceive(donation.id)}
+                                    disabled={receiving === donation.id}
+                                    className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 text-xs font-medium transition"
+                                  >
+                                    {receiving === donation.id
+                                      ? "Processing..."
+                                      : "Mark Received"}
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -924,11 +1143,11 @@ export default function DonationsPage() {
             let totalQuantity = 0;
 
             if (status === "CONFIRMED") {
-              const confirmedAndFulfilled = donations.filter(
-                (d) => d.status === "CONFIRMED" || d.status === "FULFILLED",
+              const confirmedDonations = donations.filter(
+                (d) => d.status === "CONFIRMED",
               );
-              count = confirmedAndFulfilled.length;
-              totalQuantity = confirmedAndFulfilled.reduce(
+              count = confirmedDonations.length;
+              totalQuantity = confirmedDonations.reduce(
                 (sum, d) => sum + d.quantity,
                 0,
               );
@@ -981,9 +1200,13 @@ export default function DonationsPage() {
               >
                 <div className={`text-sm font-bold ${titleColors[status]}`}>
                   {status}
-                  {status === "FULFILLED" && (
+                  {status === "FULFILLED" ? (
                     <span className="block text-xs font-medium opacity-80 mt-0.5">
                       Needs
+                    </span>
+                  ) : (
+                    <span className="block text-xs font-medium opacity-80 mt-0.5">
+                      Requests
                     </span>
                   )}
                 </div>

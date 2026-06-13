@@ -166,10 +166,16 @@ export default function ProfilePage() {
             <form onSubmit={handleProfileSave} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                  <label
+                    htmlFor="first_name"
+                    className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2"
+                  >
                     First Name
                   </label>
                   <input
+                    id="first_name"
+                    title="First Name"
+                    placeholder="First Name"
                     value={profileForm.first_name}
                     onChange={(e) =>
                       setProfileForm((p) => ({
@@ -181,10 +187,16 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                  <label
+                    htmlFor="last_name"
+                    className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2"
+                  >
                     Last Name
                   </label>
                   <input
+                    id="last_name"
+                    title="Last Name"
+                    placeholder="Last Name"
                     value={profileForm.last_name}
                     onChange={(e) =>
                       setProfileForm((p) => ({
@@ -198,7 +210,10 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2"
+                >
                   Email
                 </label>
                 <div className="relative">
@@ -207,6 +222,9 @@ export default function ProfilePage() {
                     size={18}
                   />
                   <input
+                    id="email"
+                    title="Email"
+                    placeholder="Email Address"
                     type="email"
                     value={profileForm.email}
                     onChange={(e) =>
@@ -218,7 +236,10 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                <label
+                  htmlFor="phone_number"
+                  className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2"
+                >
                   Phone Number
                 </label>
                 <div className="relative">
@@ -227,6 +248,9 @@ export default function ProfilePage() {
                     size={18}
                   />
                   <input
+                    id="phone_number"
+                    title="Phone Number"
+                    placeholder="Phone Number"
                     value={profileForm.phone_number}
                     onChange={(e) =>
                       setProfileForm((p) => ({
@@ -268,10 +292,16 @@ export default function ProfilePage() {
 
             <form onSubmit={handlePasswordSave} className="space-y-6">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                <label
+                  htmlFor="current_password"
+                  className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2"
+                >
                   Current password
                 </label>
                 <input
+                  id="current_password"
+                  title="Current Password"
+                  placeholder="Current password"
                   type="password"
                   value={passwordForm.current_password}
                   onChange={(e) =>
@@ -285,10 +315,16 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                <label
+                  htmlFor="new_password"
+                  className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2"
+                >
                   New password
                 </label>
                 <input
+                  id="new_password"
+                  title="New Password"
+                  placeholder="New password"
                   type="password"
                   value={passwordForm.new_password}
                   onChange={(e) =>
@@ -302,10 +338,16 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                <label
+                  htmlFor="confirm_password"
+                  className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2"
+                >
                   Confirm new password
                 </label>
                 <input
+                  id="confirm_password"
+                  title="Confirm new password"
+                  placeholder="Confirm new password"
                   type="password"
                   value={passwordForm.new_password2}
                   onChange={(e) =>

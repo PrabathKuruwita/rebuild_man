@@ -21,7 +21,7 @@ spec:
         ports: [{containerPort: 3000}]
         env:
         - name: NEXT_PUBLIC_API_URL
-          value: http://62.171.171.71.nip.io/api
+          value: https://rebuild-app.duckdns.org/api
           #value: http://backend:8000
 ---
 apiVersion: v1

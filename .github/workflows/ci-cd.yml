@@ -215,14 +215,18 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ravindudilhan/rebuild-backend:latest
+          tags: |
+            ravindudilhan/rebuild-backend:latest
+            ravindudilhan/rebuild-backend:${{ github.sha }}
 
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          tags: ravindudilhan/rebuild-frontend:latest
+          tags: |
+            ravindudilhan/rebuild-frontend:latest
+            ravindudilhan/rebuild-frontend:${{ github.sha }}
 
   deploy-k3s:
     needs: [push-images]
@@ -268,6 +272,11 @@ jobs:
       - name: Apply PostgreSQL manifests
         run: kubectl apply -f k8s/postgres.yaml
 
+      - name: Update image tags in manifests
+        run: |
+          sed -i "s|ravindudilhan/rebuild-backend:latest|ravindudilhan/rebuild-backend:${{ github.sha }}|g" k8s/backend.yaml
+          sed -i "s|ravindudilhan/rebuild-frontend:latest|ravindudilhan/rebuild-frontend:${{ github.sha }}|g" k8s/frontend.yaml
+
       - name: Apply backend manifests
         run: kubectl apply -f k8s/backend.yaml
 
@@ -276,3 +285,6 @@ jobs:
 
       - name: Apply ingress manifest
         run: kubectl apply -f k8s/ingress.yaml
+
+      - name: Apply Grafana ingress manifest
+        run: kubectl apply -f k8s/grafana-ingress.yaml
