@@ -183,8 +183,8 @@ export default function MobileNav({
               ) : (
                 <>
                   <MobileNavLink
-                    href="/#how-it-works"
-                    label="How it works"
+                    href="/"
+                    label="Home"
                     onClick={() => setIsOpen(false)}
                   />
                   <MobileNavLink

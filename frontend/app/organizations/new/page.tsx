@@ -24,6 +24,8 @@ export default function NewOrganizationPage() {
     email_contact: '',
     website: '',
     established_year: '',
+    latitude: '',
+    longitude: '',
   });
 
   useEffect(() => {
@@ -59,6 +61,8 @@ export default function NewOrganizationPage() {
         ...formData,
         org_type: formData.org_type as Organization['org_type'],
         established_year: formData.established_year ? Number(formData.established_year) : undefined,
+        latitude: formData.latitude !== '' ? Number(formData.latitude) : null,
+        longitude: formData.longitude !== '' ? Number(formData.longitude) : null,
       });
       router.push('/organizations');
     } catch (err) {
@@ -266,6 +270,66 @@ export default function NewOrganizationPage() {
                 placeholder="e.g. https://hospital.lk"
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
               />
+            </div>
+          </div>
+
+          {/* Coordinates (Latitude & Longitude) */}
+          <div className="border-t border-gray-100 pt-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">Map Coordinates (Optional)</h3>
+            <p className="text-xs text-gray-500 mb-2">
+              Leave these fields blank to automatically generate coordinates from the address. To use a precise location, copy and paste coordinates from Google Maps (e.g. 6.9271, 79.8612).
+            </p>
+            <details className="mt-2 mb-4 text-xs text-gray-500 cursor-pointer">
+              <summary className="text-blue-600 hover:text-blue-700 font-medium focus:outline-none">
+                How do I find these coordinates?
+              </summary>
+              <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-100 space-y-2 cursor-default" onClick={(e) => e.stopPropagation()}>
+                <p>Coordinates represent the exact physical location of your organization on the map:</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li><strong>Latitude</strong> represents the north-south position (first number).</li>
+                  <li><strong>Longitude</strong> represents the east-west position (second number).</li>
+                </ul>
+                <p className="font-semibold mt-2">To find them using Google Maps:</p>
+                <ol className="list-decimal pl-4 space-y-1">
+                  <li>Go to <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Maps</a>.</li>
+                  <li>Find your organization&apos;s exact location on the map.</li>
+                  <li><strong>Right-click</strong> (on computer) or <strong>press and hold</strong> (on mobile) on the exact spot.</li>
+                  <li>A small pop-up menu will display decimal numbers at the top (e.g. <code>7.0919, 80.0064</code>).</li>
+                  <li>Click/tap on those numbers to copy them. Paste the first number into Latitude and the second into Longitude.</li>
+                </ol>
+              </div>
+            </details>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="latitude" className="block text-sm font-medium text-gray-700 mb-2">
+                  Latitude
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  id="latitude"
+                  name="latitude"
+                  value={formData.latitude}
+                  onChange={handleChange}
+                  placeholder="e.g. 6.9271"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+                />
+              </div>
+              <div>
+                <label htmlFor="longitude" className="block text-sm font-medium text-gray-700 mb-2">
+                  Longitude
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  id="longitude"
+                  name="longitude"
+                  value={formData.longitude}
+                  onChange={handleChange}
+                  placeholder="e.g. 79.8612"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+                />
+              </div>
             </div>
           </div>
 

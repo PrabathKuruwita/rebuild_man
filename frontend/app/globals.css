@@ -90,6 +90,18 @@ input[type="password"]::-ms-clear {
   --color-yellow-300: #fde047;
   --color-green-300: #86efac;
   --color-blue-300: #93c5fd;
+
+  /* Marquee custom animation */
+  --animate-marquee: marquee 35s linear infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0%);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
 }
 
 /* Force light mode for consistent appearance */
@@ -374,4 +386,14 @@ button:active {
 .interactive-surface > * {
   position: relative;
   z-index: 1;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Smooth transparency fade mask for marquee edges */
+.marquee-mask {
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
 }

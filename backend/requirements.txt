@@ -33,3 +33,7 @@ asgiref==3.11.1
 djangorestframework-simplejwt==5.5.1
 sqlparse==0.5.5
 tzdata==2025.3
+
+
+# Prometheus metrics for monitoring
+django-prometheus==2.3.1

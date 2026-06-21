@@ -125,7 +125,25 @@ class Organization(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        # Automatically geocode if coordinates are not provided
+        # Automatically geocode if coordinates are not provided, or if address/name/district changed
+        # and the user did not manually update the coordinates.
+        if self.pk:
+            try:
+                orig = Organization.objects.get(pk=self.pk)
+                info_changed = (self.name != orig.name or 
+                                self.address != orig.address or 
+                                self.district != orig.district)
+                coords_changed = (self.latitude != orig.latitude or 
+                                  self.longitude != orig.longitude)
+                
+                # If name/address/district changed, and user did NOT manually change coordinates,
+                # we clear coordinates to force a fresh geocode.
+                if info_changed and not coords_changed:
+                    self.latitude = None
+                    self.longitude = None
+            except Organization.DoesNotExist:
+                pass
+
         if self.latitude is None or self.longitude is None:
             try:
                 import urllib.request

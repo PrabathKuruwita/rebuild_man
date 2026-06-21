@@ -30,7 +30,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)  # False by default - prevents
 
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,62.171.171.71,rebuild-app.duckdns.org',
+    default='localhost,127.0.0.1,62.171.171.71,rebuild-app.duckdns.org,backend,backend.rikili001,backend.rikili001.svc.cluster.local',
     cast=Csv()
 )
 
@@ -51,6 +51,7 @@ FRONTEND_URL = config('FRONTEND_URL', default='https://rebuild-app.duckdns.org')
 # Application definition
 
 INSTALLED_APPS = [
+    'django_prometheus',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -67,6 +68,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 #Middleware stack
 MIDDLEWARE = [ 
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # Add CORS middleware (must be before CommonMiddleware)
@@ -75,6 +77,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 # CORS Configuration

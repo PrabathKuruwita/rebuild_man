@@ -1,0 +1,221 @@
+================================================================================
+REBUILD PROJECT - DEPLOYMENT CHANGES AND TROUBLESHOOTING LOG
+================================================================================
+
+This document logs all the fixes, configurations, and domain migration changes
+made to the deployment pipeline, Kubernetes manifests, and Django backend configurations.
+
+--------------------------------------------------------------------------------
+1. CI/CD PIPELINE: IMAGE PULL & ROLLING UPDATE FIX
+--------------------------------------------------------------------------------
+* Location: .github/workflows/ci-cd.yml
+
+* Issue:
+  The K3s cluster was not pulling the new images upon deployment. Because the 
+  image tag remained ":latest" in the manifests, 'kubectl apply' did not see a 
+  change in the Pod template specification. Therefore, Kubernetes treated the 
+  apply as a no-op and did not restart the pods to pull the new builds.
+
+* Fix:
+  1. Updated the 'push-images' job to tag both backend and frontend images 
+     with BOTH 'latest' and the unique Git Commit SHA ('${{ github.sha }}').
+  2. Updated the 'deploy-k3s' job to dynamically replace ':latest' with the 
+     Git Commit SHA in the manifests before running 'kubectl apply'.
+
+* Code Changes in .github/workflows/ci-cd.yml:
+  - Inside `Build and push backend` & `Build and push frontend` steps:
+    tags: |
+      ravindudilhan/rebuild-backend:latest
+      ravindudilhan/rebuild-backend:${{ github.sha }}
+
+  - Added dynamic tag replacement before applying manifests:
+    - name: Update image tags in manifests
+      run: |
+        sed -i "s|ravindudilhan/rebuild-backend:latest|ravindudilhan/rebuild-backend:${{ github.sha }}|g" k8s/backend.yaml
+        sed -i "s|ravindudilhan/rebuild-frontend:latest|ravindudilhan/rebuild-frontend:${{ github.sha }}|g" k8s/frontend.yaml
+
+  - Added Grafana ingress application:
+    - name: Apply Grafana ingress manifest
+      run: kubectl apply -f k8s/grafana-ingress.yaml
+
+--------------------------------------------------------------------------------
+2. EMAIL SERVICE SMTP PRODUCTION CONFIGURATION
+--------------------------------------------------------------------------------
+* Location: k8s/backend.yaml & backend/config/settings.py
+
+* Issue:
+  Email sending worked locally but failed entirely when deployed.
+
+* Root Cause:
+  Locally, 'EMAIL_BACKEND' was set to the Console Backend (which just outputs 
+  emails to the terminal console). In production, 'EMAIL_BACKEND' was not 
+  defined in the container environment variables. Thus, it defaulted back to the 
+  Console Backend and merely printed the emails to the container stdout logs 
+  instead of forwarding them to the SMTP server.
+
+* Fix:
+  Added SMTP environment variables to the backend container deployment definition.
+
+* Code Changes in k8s/backend.yaml:
+  Added under the backend container spec:
+  - name: EMAIL_BACKEND
+    value: "django.core.mail.backends.smtp.EmailBackend"
+  - name: EMAIL_HOST
+    value: "smtp.gmail.com"
+  - name: EMAIL_PORT
+    value: "587"
+  - name: EMAIL_USE_TLS
+    value: "True"
+
+--------------------------------------------------------------------------------
+3. EMAIL DIAGNOSTICS SCRIPT
+--------------------------------------------------------------------------------
+* Location: backend/test_email_config.py
+
+* Description:
+  Created a standalone diagnostic utility script to test email setups easily 
+  without relying on UI features. It verifies active settings and prompts for 
+  a recipient address to test SMTP messaging.
+
+* How to execute locally:
+  cd backend
+  .\venv\Scripts\python.exe test_email_config.py
+
+* How to execute inside K8s backend pod:
+  kubectl exec -it deployment/backend -n rikili001 -- python test_email_config.py
+
+--------------------------------------------------------------------------------
+4. GRAFANA INGRESS SETUP
+--------------------------------------------------------------------------------
+* Location: k8s/grafana-ingress.yaml
+
+* Description:
+  Exposed the internal Grafana service under the 'monitoring' namespace to the 
+  public internet via a subdomain.
+
+* Host configured:
+  grafana.rebuild-app.duckdns.org
+
+* DNS Wildcard Note:
+  Because DuckDNS supports wildcard subdomain routing, pointing your primary 
+  domain (rebuild-app.duckdns.org) to your IP (62.171.171.71) automatically 
+  resolves 'grafana.rebuild-app.duckdns.org' to the same IP. No extra record is 
+  needed.
+
+--------------------------------------------------------------------------------
+5. DJANGO PROMETHEUS INSTRUMENTATION (METRICS COLLECTION)
+--------------------------------------------------------------------------------
+* Location: backend/config/settings.py, backend/config/urls.py, requirements.txt
+
+* Description:
+  Configured Django to log real-time performance and query statistics for 
+  Prometheus monitoring.
+
+* Code Changes in backend/config/settings.py:
+  INSTALLED_APPS = [
+      'django_prometheus',   # Added at the top
+      'django.contrib.admin',
+      ...
+  ]
+
+  MIDDLEWARE = [
+      'django_prometheus.middleware.PrometheusBeforeMiddleware',  # Added at the top
+      'django.middleware.security.SecurityMiddleware',
+      ...
+      'django_prometheus.middleware.PrometheusAfterMiddleware',   # Added at the bottom
+  ]
+
+* Code Changes in backend/config/urls.py:
+  Exposed the metrics endpoint to make it queryable by the Prometheus scraper:
+  urlpatterns = [
+      path('admin/', admin.site.urls),
+      path('api/', include('core.urls')),
+      path('', include('django_prometheus.urls')),  # Added: exposes /metrics
+  ]
+
+* Dependencies Added (backend/requirements.txt):
+  django-prometheus==2.3.1
+
+--------------------------------------------------------------------------------
+6. DOMAIN MIGRATION TO DUCKDNS & HTTPS ENHANCEMENTS
+--------------------------------------------------------------------------------
+* Location: k8s/ingress.yaml, k8s/frontend.yaml, backend/config/settings.py
+
+* Description:
+  Migrated hostnames from old 'nip.io' / 'sslip.io' to 'rebuild-app.duckdns.org' 
+  and updated configurations to use HTTPS with Web/Websecure entrypoints.
+
+* Code Changes:
+  1. k8s/ingress.yaml:
+     - Configured entrypoints: `web,websecure`
+     - Updated host: `rebuild-app.duckdns.org`
+     - Added `/metrics` exact route pointing to backend port 8000 for monitoring:
+       - path: /metrics
+         pathType: Exact
+         backend:
+           service:
+             name: backend
+             port: {number: 8000}
+
+  2. k8s/frontend.yaml:
+     - Updated API URL env var:
+       - name: NEXT_PUBLIC_API_URL
+         value: https://rebuild-app.duckdns.org/api
+
+  3. backend/config/settings.py:
+     - Updated allowed hosts, frontend redirection target, CORS origins, and CSRF:
+       ALLOWED_HOSTS = ['localhost', '127.0.0.1', '62.171.171.71', 'rebuild-app.duckdns.org', 'backend', 'backend.rikili001', 'backend.rikili001.svc.cluster.local']
+       FRONTEND_URL = 'https://rebuild-app.duckdns.org'
+       CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://rebuild-app.duckdns.org']
+       CSRF_TRUSTED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://rebuild-app.duckdns.org']
+
+--------------------------------------------------------------------------------
+7. PROMETHEUS SCRAPE CONFIGURATION VIA CONFIGMAP
+--------------------------------------------------------------------------------
+* Location: k8s/prometheus-scrape-config.yaml & .github/workflows/ci-cd.yml
+
+* Issue:
+  The previous 'ServiceMonitor' setup failed to deploy with the error:
+  "no matches for kind 'ServiceMonitor' in version 'monitoring.coreos.com/v1'"
+  This occurred because the Prometheus Operator Custom Resource Definitions (CRDs)
+  were not installed on the K3s cluster.
+
+* Fix:
+  1. Removed the 'ServiceMonitor' resource to avoid CRD dependency.
+  2. Created a standard Kubernetes 'ConfigMap' named 'prometheus-scrape-config.yaml' 
+     declaring the Prometheus server configuration and scrape jobs.
+  3. Added the Django backend scrape target pointing to the cluster DNS of the 
+     backend service: 'backend.rikili001.svc.cluster.local:8000'.
+  4. Updated the pipeline to deploy the scrape config ConfigMap instead of the 
+     ServiceMonitor.
+
+* Code Changes in k8s/prometheus-scrape-config.yaml:
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: prometheus-server
+    namespace: monitoring
+    labels:
+      app: prometheus
+  data:
+    prometheus.yml: |
+      global:
+        scrape_interval: 15s
+        evaluation_interval: 15s
+      scrape_configs:
+        - job_name: prometheus
+          static_configs:
+            - targets: ['localhost:9090']
+        - job_name: node-exporter
+          static_configs:
+            - targets: ['prometheus-prometheus-node-exporter.monitoring.svc.cluster.local:9100']
+        - job_name: django-backend
+          static_configs:
+            - targets: ['backend.rikili001.svc.cluster.local:8000']
+          metrics_path: /metrics
+          scrape_interval: 30s
+
+* Pipeline Updates (.github/workflows/ci-cd.yml):
+  - name: Apply Prometheus scrape config manifest
+    run: kubectl apply -f k8s/prometheus-scrape-config.yaml
+================================================================================

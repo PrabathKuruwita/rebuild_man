@@ -53,10 +53,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - BACKEND_URL=http://backend:8000
     container_name: rebuild_frontend
     environment:
       # Relative URL: browser calls /api/* on same host → Next.js rewrites to backend internally
       NEXT_PUBLIC_API_URL: "/api"
+      BACKEND_URL: "http://backend:8000"
     ports:
       - "3000:3000"
     depends_on:

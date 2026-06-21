@@ -288,3 +288,6 @@ jobs:
 
       - name: Apply Grafana ingress manifest
         run: kubectl apply -f k8s/grafana-ingress.yaml
+        
+      - name: Apply Prometheus scrape config manifest
+        run: kubectl apply -f k8s/prometheus-scrape-config.yaml

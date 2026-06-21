@@ -2,26 +2,34 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Organization, getOrganizations, NeedItem, getNeeds, SystemStats, getSystemStats } from "@/lib/api";
+import { Organization, getOrganizations, NeedItem, getNeeds, SystemStats, getSystemStats, getPublicRecentDonations, PublicDonation } from "@/lib/api";
 import { PageLoading } from "@/components/LoadingSpinner";
 import Image from "next/image";
 import AdvancedSriLankaMap from "@/components/AdvancedSriLankaMap";
+
+
 
 export default function Home() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [urgentNeed, setUrgentNeed] = useState<NeedItem | null>(null);
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recentDonations, setRecentDonations] = useState<PublicDonation[]>([]);
 
   const fetchData = async () => {
     try {
-      const [orgs, needs, systemStats] = await Promise.all([
+      const [orgs, needs, systemStats, donations] = await Promise.all([
         getOrganizations(),
         getNeeds("CRITICAL", true),
         getSystemStats(),
+        getPublicRecentDonations().catch((err) => {
+          console.warn("Failed to fetch public donations", err);
+          return [] as PublicDonation[];
+        })
       ]);
       setOrganizations(orgs);
       setStats(systemStats);
+      setRecentDonations(donations || []);
 
       if (needs && needs.length > 0) {
         const sortedNeeds = needs.sort(
@@ -40,6 +48,7 @@ export default function Home() {
       // Continue without backend data - allow UI testing
       setOrganizations([]);
       setStats(null);
+      setRecentDonations([]);
     } finally {
       setLoading(false);
     }
@@ -65,15 +74,25 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white font-sans">
       {/* Hero Section */}
-      <section className="relative bg-blue-900 overflow-hidden pt-16 lg:pt-24 pb-0">
-        <div className="absolute inset-0 bg-linear-to-r from-blue-900 via-blue-800 to-blue-600"></div>
-        {/* Dot Pattern Overlay */}
-        <div className="absolute inset-0 bg-dots opacity-60 z-0"></div>
+      <section className="relative bg-blue-900 overflow-hidden pt-16 lg:pt-24 pb-0 flex flex-col justify-between min-h-[650px]">
+        {/* Full-bleed Background Image covering the entire blue section */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1920&q=80"
+            alt="Hospital Donation Background"
+            className="w-full h-full object-cover"
+          />
+          {/* Gradient Overlay for text readability and theme matching */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-950 via-blue-950/85 to-blue-900/40 mix-blend-multiply"></div>
+          <div className="absolute inset-0 bg-blue-950/45"></div>
+          {/* Dot Pattern Overlay */}
+          <div className="absolute inset-0 bg-dots opacity-40"></div>
+        </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex-grow flex flex-col justify-between">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center pt-4">
             {/* Left Column: Text Content */}
-            <div className="space-y-8 animate-fade-in-up">
+            <div className="space-y-8 animate-fade-in-up relative z-20">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                 <span className="text-xs font-bold text-white uppercase tracking-wider">
@@ -161,52 +180,123 @@ export default function Home() {
                 </svg>
                 100% transparent - Every donation tracked end-to-end
               </div>
-            </div>
 
-            {/* Right Column: Featured Image Card */}
-            <div className="relative animate-fade-in group lg:ml-auto">
-              <div className="absolute -inset-4 bg-white/10 rounded-4xl blur-2xl group-hover:bg-white/20 transition-all duration-500"></div>
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 aspect-video bg-slate-800 flex items-center justify-center">
-                <img
-                  src="https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=800&q=80"
-                  alt="Hospital Donation Need"
-                  className="w-full h-full object-cover"
-                />
-                {/* Urgent Need Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-8 bg-linear-to-t from-slate-900 via-slate-900/80 to-transparent">
-                  <div className="space-y-4">
-                    <div className="text-blue-100/60 text-[10px] font-bold uppercase tracking-widest">
-                      Most urgent right now
+            </div>
+            {/* Right Column: Live Activity Feed (stacked vertically, right-aligned, hover effects, web-suitable font sizes) */}
+            <div className="relative z-20 flex flex-col justify-center h-full lg:pl-24 space-y-10 w-full">
+              {/* Realtime Urgent Needs Section (Above Completed Donations) */}
+              {urgentNeed && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                    <span className="text-xs md:text-sm font-bold text-red-400 uppercase tracking-widest">
+                      Most Urgent Right Now
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-baseline gap-2">
+                    <h4 className="text-base md:text-lg font-bold text-white leading-snug">
+                      {urgentNeed.name}
+                    </h4>
+                    <span className="text-xs md:text-sm text-slate-300 font-medium">
+                      {urgentNeed.section_detail?.organization_name || "Colombo South Teaching Hospital"}
+                    </span>
+                  </div>
+
+                  <div className="mt-2 space-y-1">
+                    <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-green-500 rounded-full transition-all duration-1000"
+                        style={{
+                          width: `${Math.min(100, Math.round((urgentNeed.quantity_received / urgentNeed.quantity_required) * 100))}%`,
+                        }}
+                      ></div>
                     </div>
-                    <h3 className="text-xl font-bold text-white">
-                      {urgentNeed
-                        ? `${urgentNeed.name} - ${urgentNeed.section_detail?.organization_name || "Hospital"}`
-                        : "Loading priority need..."}
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden border border-white/5">
-                        <div
-                          className="h-full bg-green-400 rounded-full transition-all duration-1000"
-                          style={{
-                            width: `${urgentNeed ? Math.min(100, Math.round((urgentNeed.quantity_received / urgentNeed.quantity_required) * 100)) : 0}%`,
-                          }}
-                        ></div>
-                      </div>
-                      <div className="text-xs font-medium text-slate-300">
-                        {urgentNeed
-                          ? `${urgentNeed.quantity_received} of ${urgentNeed.quantity_required} units delivered`
-                          : "Fetching data..."}
-                      </div>
+                    <div className="flex justify-between text-xs text-slate-400 font-medium">
+                      <span>{urgentNeed.quantity_received} of {urgentNeed.quantity_required} units delivered</span>
+                      <span className="text-green-400 font-bold">
+                        {Math.min(100, Math.round((urgentNeed.quantity_received / urgentNeed.quantity_required) * 100))}%
+                      </span>
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* Completed Donations Section (Below Realtime Urgent Needs) */}
+              <div className="space-y-3 pt-6">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                  <span className="text-xs md:text-sm font-bold text-green-400 uppercase tracking-widest">
+                    Live Feed • Recent Contributions
+                  </span>
+                </div>
+
+                {recentDonations.length > 0 ? (
+                  <div className="w-full overflow-hidden py-1 relative marquee-mask">
+                    <div className="flex overflow-hidden">
+                      <div className="animate-marquee flex w-max items-center whitespace-nowrap gap-8">
+                        {/* Original Items */}
+                        {recentDonations.map((donation, idx) => (
+                          <div
+                            key={`orig-${donation.id}-${idx}`}
+                            className="flex items-center gap-1.5 text-base md:text-lg text-slate-200 cursor-pointer hover:text-green-400 hover:scale-105 transition-all duration-200 hover:bg-white/5 px-2 py-1 rounded-md"
+                          >
+                            <span className="font-bold text-white">{donation.donor_name}</span>
+                            <span className="text-slate-400">contributed</span>
+                            <span className="font-bold text-green-400">
+                              {donation.quantity} {donation.unit.toLowerCase()}s of {donation.need_item_name}
+                            </span>
+                            <span className="text-slate-400">to</span>
+                            <span className="font-bold text-white">{donation.organization_name}</span>
+                          </div>
+                        ))}
+                        
+                        {/* Duplicated Items */}
+                        {recentDonations.map((donation, idx) => (
+                          <div
+                            key={`dup-${donation.id}-${idx}`}
+                            className="flex items-center gap-1.5 text-base md:text-lg text-slate-200 cursor-pointer hover:text-green-400 hover:scale-105 transition-all duration-200 hover:bg-white/5 px-2 py-1 rounded-md"
+                          >
+                            <span className="font-bold text-white">{donation.donor_name}</span>
+                            <span className="text-slate-400">contributed</span>
+                            <span className="font-bold text-green-400">
+                              {donation.quantity} {donation.unit.toLowerCase()}s of {donation.need_item_name}
+                            </span>
+                            <span className="text-slate-400">to</span>
+                            <span className="font-bold text-white">{donation.organization_name}</span>
+                          </div>
+                        ))}
+
+                        {/* Triplicated Items */}
+                        {recentDonations.length < 5 && recentDonations.map((donation, idx) => (
+                          <div
+                            key={`trip-${donation.id}-${idx}`}
+                            className="flex items-center gap-1.5 text-base md:text-lg text-slate-200 cursor-pointer hover:text-green-400 hover:scale-105 transition-all duration-200 hover:bg-white/5 px-2 py-1 rounded-md"
+                          >
+                            <span className="font-bold text-white">{donation.donor_name}</span>
+                            <span className="text-slate-400">contributed</span>
+                            <span className="font-bold text-green-400">
+                              {donation.quantity} {donation.unit.toLowerCase()}s of {donation.need_item_name}
+                            </span>
+                            <span className="text-slate-400">to</span>
+                            <span className="font-bold text-white">{donation.organization_name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-slate-400 text-xs italic py-1">
+                    Waiting for contributions...
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Stats Row - Integrated into hero with subtle gap */}
-        <div className="w-full bg-white/10 backdrop-blur-sm border-t border-white/10 relative overflow-hidden mt-12">
+        {/* Stats Row - Integrated into hero with subtle z-index overlay */}
+        <div className="w-full bg-white/10 backdrop-blur-sm border-t border-white/10 relative z-20 overflow-hidden mt-12">
           <div className="absolute inset-0 bg-dots opacity-50 pointer-events-none"></div>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
             <div className="grid grid-cols-4 gap-8">

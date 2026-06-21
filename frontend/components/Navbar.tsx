@@ -103,7 +103,7 @@ export default function Navbar() {
   const navLinks = isAdmin
     ? [
       { href: "/", label: "Dashboard" },
-      { href: "/organizations", label: "Organizations" },
+      { href: "/organizations", label: user?.role === "ORG_ADMIN" ? "Organization" : "Organizations" },
       { href: "/needs", label: "All Needs" },
       ...(user?.role === "ADMIN"
         ? [
@@ -185,7 +185,7 @@ export default function Navbar() {
                   href="/organizations"
                   className={`text-sm font-semibold transition-colors ${pathname === "/organizations" ? "text-blue-600" : "text-slate-600 hover:text-blue-600"}`}
                 >
-                  Organizations
+                  {user?.role === "ORG_ADMIN" ? "Organization" : "Organizations"}
                 </Link>
                 <Link
                   href="/needs"
@@ -197,10 +197,10 @@ export default function Navbar() {
             ) : (
               <>
                 <Link
-                  href="/#how-it-works"
+                  href="/"
                   className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
                 >
-                  How it works
+                  Home
                 </Link>
                 <Link
                   href="/needs"

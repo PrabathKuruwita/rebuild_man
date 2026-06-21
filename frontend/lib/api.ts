@@ -134,8 +134,8 @@ export interface Organization {
   email_contact?: string;
   website?: string;
   established_year?: number;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
   sections: Section[];
 }
 
@@ -550,6 +550,21 @@ export const createDonation = (data: Partial<Donation>) =>
     method: "POST",
     body: JSON.stringify(data),
   });
+
+export interface PublicDonation {
+  id: number;
+  donor_name: string;
+  need_item_name: string;
+  quantity: number;
+  unit: string;
+  organization_name: string;
+  created_at: string;
+  status: string;
+}
+
+export const getPublicRecentDonations = async (): Promise<PublicDonation[]> => {
+  return fetchAPI<PublicDonation[]>("/donations/public_recent/");
+};
 
 export const getDonations = async () => {
   const response = await fetchAPI<ApiListResponse<Donation> | Donation[]>(

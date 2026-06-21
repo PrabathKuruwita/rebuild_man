@@ -850,6 +850,37 @@ class DonationViewSet(viewsets.ModelViewSet):
     serializer_class = DonationSerializer
     pagination_class = None
     
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def public_recent(self, request):
+        """Get the latest confirmed or fulfilled donations for the landing page"""
+        recent_donations = Donation.objects.filter(
+            status__in=['CONFIRMED', 'FULFILLED']
+        ).select_related('need_item', 'need_item__section__organization').order_by('-created_at')[:10]
+        
+        data = []
+        for donation in recent_donations:
+            donor_display = "Anonymous Donor"
+            if donation.donor_type == 'government' and donation.government_department:
+                donor_display = donation.government_department
+            elif donation.donor_organization:
+                donor_display = donation.donor_organization
+            elif donation.donor_name:
+                # Keep only first name or show general donor
+                parts = donation.donor_name.split()
+                donor_display = (parts[0] if parts else "Private") + " (Private)"
+                
+            data.append({
+                'id': donation.id,
+                'donor_name': donor_display,
+                'need_item_name': donation.need_item.name,
+                'quantity': donation.quantity,
+                'unit': donation.need_item.unit,
+                'organization_name': donation.need_item.section.organization.name,
+                'created_at': donation.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'status': donation.status
+            })
+        return Response(data)
+    
     def get_queryset(self):
         """Filter donations based on user role and organization ownership"""
         queryset = Donation.objects.select_related('donor', 'need_item').all()
@@ -871,6 +902,8 @@ class DonationViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Allow authenticated users to create donations and view their own, admins can manage all"""
+        if self.action == 'public_recent':
+            return [AllowAny()]
         if self.action in ['create', 'list', 'retrieve']:
             return [IsAuthenticated()]
         return [IsAdminUser()]

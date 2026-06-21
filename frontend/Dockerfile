@@ -18,6 +18,10 @@ COPY . .
 # Create .env.local
 RUN echo "NEXT_PUBLIC_API_URL=/api" > .env.local
 
+# Define build arguments for Next.js build
+ARG BACKEND_URL
+ENV BACKEND_URL=$BACKEND_URL
+
 # Build the Next.js app
 RUN npm run build
 

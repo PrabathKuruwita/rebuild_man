@@ -23,6 +23,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('core.urls')), # <-- This connects your API
+    path('', include('django_prometheus.urls')),
 ]
 
 # Serve media files in development

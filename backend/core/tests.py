@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from core.models import Organization, Section, NeedItem, Donation
+from unittest.mock import patch, MagicMock
 
 User = get_user_model()
 
@@ -165,3 +166,114 @@ class DonationSplitTests(APITestCase):
         donation.refresh_from_db()
         self.assertEqual(donation.status, 'FULFILLED')
         self.assertEqual(donation.received_by, self.org_admin)
+
+
+class OrganizationGeocodingTests(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="adminpassword"
+        )
+        self.client.force_authenticate(user=self.admin)
+
+    @patch('urllib.request.urlopen')
+    def test_organization_save_geocodes_automatically(self, mock_urlopen):
+        """
+        An organization created without coordinates should be geocoded.
+        """
+        mock_response = MagicMock()
+        mock_response.read.return_value = b'[{"lat": "6.9271", "lon": "79.8612"}]'
+        mock_urlopen.return_value = mock_response
+
+        org = Organization.objects.create(
+            name="Mocked Hospital Colombo",
+            registration_number="REG-MCK-01",
+            address="123 Hospital Road",
+            district="Colombo"
+        )
+
+        self.assertEqual(org.latitude, 6.9271)
+        self.assertEqual(org.longitude, 79.8612)
+
+    @patch('urllib.request.urlopen')
+    def test_organization_geocode_on_address_change(self, mock_urlopen):
+        """
+        An organization updated with a new address should have its coordinates re-geocoded.
+        """
+        mock_response = MagicMock()
+        mock_response.read.return_value = b'[{"lat": "6.9271", "lon": "79.8612"}]'
+        mock_urlopen.return_value = mock_response
+
+        org = Organization.objects.create(
+            name="Mocked Hospital Colombo",
+            registration_number="REG-MCK-02",
+            address="123 Hospital Road",
+            district="Colombo"
+        )
+        self.assertEqual(org.latitude, 6.9271)
+
+        # Update address
+        mock_response_new = MagicMock()
+        mock_response_new.read.return_value = b'[{"lat": "7.2906", "lon": "80.6337"}]'
+        mock_urlopen.return_value = mock_response_new
+
+        org.address = "456 Kandy Road"
+        org.save()
+
+        self.assertEqual(org.latitude, 7.2906)
+        self.assertEqual(org.longitude, 80.6337)
+
+    @patch('urllib.request.urlopen')
+    def test_organization_custom_coordinates_not_overwritten(self, mock_urlopen):
+        """
+        Custom coordinates should not be overridden by geocoder.
+        """
+        org = Organization.objects.create(
+            name="Mocked Hospital Colombo",
+            registration_number="REG-MCK-03",
+            address="123 Hospital Road",
+            district="Colombo",
+            latitude=6.1234,
+            longitude=79.5678
+        )
+        self.assertEqual(org.latitude, 6.1234)
+        self.assertEqual(org.longitude, 79.5678)
+        mock_urlopen.assert_not_called()
+
+        # Update address but provide explicit coordinates
+        org.address = "Changed Address"
+        org.latitude = 6.4321
+        org.longitude = 79.8765
+        org.save()
+
+        self.assertEqual(org.latitude, 6.4321)
+        self.assertEqual(org.longitude, 79.8765)
+        mock_urlopen.assert_not_called()
+
+    @patch('urllib.request.urlopen')
+    def test_organization_address_change_triggers_geocode(self, mock_urlopen):
+        """
+        If address changes and coordinates are NOT changed manually, geocoding runs.
+        """
+        org = Organization.objects.create(
+            name="Mocked Hospital Colombo",
+            registration_number="REG-MCK-04",
+            address="123 Hospital Road",
+            district="Colombo",
+            latitude=6.1234,
+            longitude=79.5678
+        )
+
+        mock_response = MagicMock()
+        mock_response.read.return_value = b'[{"lat": "7.2906", "lon": "80.6337"}]'
+        mock_urlopen.return_value = mock_response
+
+        # Change address only
+        org.address = "456 Kandy Road"
+        org.save()
+
+        self.assertEqual(org.latitude, 7.2906)
+        self.assertEqual(org.longitude, 80.6337)
+        self.assertTrue(mock_urlopen.called)
+

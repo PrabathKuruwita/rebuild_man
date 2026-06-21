@@ -71,4 +71,4 @@ metadata:
   namespace: rikili001
 spec:
   selector: { app: backend }
-  ports: [{ port: 8000 }]
+  ports: [{ name: http, port: 8000 }]
