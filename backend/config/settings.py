@@ -23,14 +23,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-3z55ai11+0pf5gb5_fb8g9^69zpj6e*3fvttevtwt9-6+j_k^e')
+# Must be set via environment variable. Generate a new key with: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+SECRET_KEY = config('SECRET_KEY', default=None)
+if not SECRET_KEY:
+    raise ValueError('SECRET_KEY environment variable is not set. Generate one with: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)  # False by default - prevents sensitive info leaks
 
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,62.171.171.71,rebuild-app.duckdns.org,backend,backend.rikili001,backend.rikili001.svc.cluster.local',
+    default='localhost,127.0.0.1,backend',
     cast=Csv()
 )
 

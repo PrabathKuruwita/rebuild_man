@@ -39,10 +39,6 @@ class IsAdminOrReadOnly(BasePermission):
     def has_permission(self, request, view):
         if request.method in ('GET', 'HEAD', 'OPTIONS'):
             return True
-        # Debug logging
-        if not request.user or not request.user.is_authenticated:
-            print(f"[DEBUG] Unauthenticated {request.method} request to {request.path}")
-            print(f"[DEBUG] User: {request.user}, Authenticated: {request.user.is_authenticated if request.user else 'No user'}")
         return request.user and request.user.is_authenticated and hasattr(request.user, 'role') and request.user.role in ('ADMIN', 'ORG_ADMIN')
 
 

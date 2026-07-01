@@ -6,9 +6,9 @@ services:
     image: postgres:15-alpine
     container_name: rebuild_db
     environment:
-      POSTGRES_DB: rebuild_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin1234
+      POSTGRES_DB: ${DB_NAME:-rebuild_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_password_change_me}
     ports:
       - "5433:5432"
     volumes:
