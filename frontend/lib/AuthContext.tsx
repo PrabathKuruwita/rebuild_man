@@ -95,6 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/admin');
       } else if (currentUser.role === 'ORG_ADMIN') {
         router.push('/org-admin');
+      } else if (currentUser.role === 'DONOR') {
+        router.push('/');
       } else {
         router.push('/needs');
       }
@@ -135,7 +137,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentUser);
 
       // Redirect
-      router.push('/needs');
+      if (currentUser.role === 'DONOR') {
+        router.push('/');
+      } else {
+        router.push('/needs');
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed';
       setError(message);

@@ -128,7 +128,7 @@ export default function OrgAdminDashboard() {
         const allDonations = await getDonations();
         const myDonations = allDonations.filter(
           (d) =>
-            (d.status === "CONFIRMED" || d.status === "FULFILLED") &&
+            d.status === "FULFILLED" &&
             d.need_item_detail?.id &&
             myNeeds.some((n) => n.id === d.need_item),
         );

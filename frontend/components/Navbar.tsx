@@ -42,7 +42,7 @@ export default function Navbar() {
     <nav
       ref={navRef}
       onMouseMove={handleNavMouseMove}
-      className="bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50"
+      className="bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-[1020]"
     >
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
@@ -103,13 +103,13 @@ export default function Navbar() {
               <>
                 <Link
                   href="/"
-                  className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
+                  className={`text-sm font-medium transition-colors ${pathname === "/" ? "text-blue-600 font-semibold" : "text-slate-600 hover:text-blue-600"}`}
                 >
-                  Home
+                  {user?.role === "DONOR" ? "Dashboard" : "Home"}
                 </Link>
                 <Link
                   href="/needs"
-                  className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
+                  className={`text-sm font-medium transition-colors ${pathname === "/needs" ? "text-blue-600 font-semibold" : "text-slate-600 hover:text-blue-600"}`}
                 >
                   Current Needs
                 </Link>
@@ -164,10 +164,10 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="hidden sm:flex items-center gap-2 relative" ref={panelRef}>
-                {(user.role === "ADMIN" || user.role === "ORG_ADMIN") && (
+                {user.role && (
                   <div className="hidden md:flex flex-col items-end mr-1">
                     <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                      {user.role === "ADMIN" ? "Admin" : "Org Admin"}
+                      {user.role === "ADMIN" ? "Admin" : user.role === "ORG_ADMIN" ? "Org Admin" : "Donor"}
                     </span>
                   </div>
                 )}

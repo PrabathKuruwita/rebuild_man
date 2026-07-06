@@ -895,6 +895,25 @@ class DonationViewSet(viewsets.ModelViewSet):
             })
         return Response(data)
     
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def public_impact(self, request):
+        """Get sanitized donation data for the public impact page"""
+        donations = Donation.objects.all().order_by('-created_at')
+        data = []
+        for donation in donations:
+            data.append({
+                'id': donation.id,
+                'status': donation.status,
+                'donor_type': donation.donor_type,
+                'donor_name': donation.donor_name,
+                'donor_organization': donation.donor_organization,
+                'government_department': donation.government_department,
+                'need_item': donation.need_item_id,
+                'quantity': donation.quantity,
+                'created_at': donation.created_at.isoformat()
+            })
+        return Response(data)
+    
     def get_queryset(self):
         """Filter donations based on user role and organization ownership"""
         queryset = Donation.objects.select_related('donor', 'need_item').all()
@@ -916,9 +935,9 @@ class DonationViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Allow authenticated users to create donations and view their own, admins can manage all"""
-        if self.action == 'public_recent':
+        if self.action in ['public_recent', 'public_impact']:
             return [AllowAny()]
-        if self.action in ['create', 'list', 'retrieve']:
+        if self.action in ['create', 'list', 'retrieve', 'cancel', 'update', 'partial_update']:
             return [IsAuthenticated()]
         return [IsAdminUser()]
     
@@ -928,6 +947,19 @@ class DonationViewSet(viewsets.ModelViewSet):
             serializer.save(donor=self.request.user)
         else:
             serializer.save()
+
+    def update(self, request, *args, **kwargs):
+        donation = self.get_object()
+        user = request.user
+        
+        # If user is a DONOR, enforce rules
+        if hasattr(user, 'role') and user.role == 'DONOR':
+            if donation.donor != user:
+                return Response({'status': 'You can only edit your own donations'}, status=status.HTTP_403_FORBIDDEN)
+            if donation.status != 'PENDING':
+                return Response({'status': 'You can only edit donations that are still pending verification'}, status=status.HTTP_400_BAD_REQUEST)
+                
+        return super().update(request, *args, **kwargs)
 
     def _send_donation_email(self, donation, action):
         from django.core.mail import send_mail
@@ -1131,9 +1163,14 @@ class DonationViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
-        """Cancel a pending donation"""
+        """Cancel a pending or confirmed donation"""
         donation = self.get_object()
-        if donation.status == 'PENDING':
+        
+        # Security check: If request user is a DONOR, they can only cancel their own donation
+        if hasattr(request.user, 'role') and request.user.role == 'DONOR' and donation.donor != request.user:
+            return Response({'status': 'You do not have permission to cancel this donation'}, status=status.HTTP_403_FORBIDDEN)
+            
+        if donation.status in ['PENDING', 'CONFIRMED']:
             reason = request.data.get('reason', '')
             donation.status = 'CANCELLED'
             donation.cancelled_by = request.user
@@ -1145,7 +1182,7 @@ class DonationViewSet(viewsets.ModelViewSet):
             self._send_donation_email(donation, 'cancel')
             
             return Response({'status': 'Donation cancelled'}, status=status.HTTP_200_OK)
-        return Response({'status': 'Only pending donations can be cancelled'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'status': 'Only pending or confirmed donations can be cancelled'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def receive(self, request, pk=None):
@@ -1223,11 +1260,22 @@ def system_stats(request):
     
     # 4. Calculate delivery success rate
     fulfilled = Donation.objects.filter(status='FULFILLED').count()
-    cancelled = Donation.objects.filter(status='CANCELLED').count()
     
-    total_completed = fulfilled + cancelled
-    if total_completed > 0:
-        delivery_success_rate = round((fulfilled / total_completed) * 100)
+    # Filter out cancellations that are NOT donor delivery failures (e.g. surplus, met by other means, duplicate)
+    from django.db.models import Q
+    cancelled_failures = Donation.objects.filter(status='CANCELLED').exclude(
+        Q(cancellation_reason__icontains='surplus') |
+        Q(cancellation_reason__icontains='exceeding') |
+        Q(cancellation_reason__icontains='already met') |
+        Q(cancellation_reason__icontains='already fulfilled') |
+        Q(cancellation_reason__icontains='no longer needed') |
+        Q(cancellation_reason__icontains='change in requirement') |
+        Q(cancellation_reason__icontains='duplicate')
+    ).count()
+    
+    total_relevant = fulfilled + cancelled_failures
+    if total_relevant > 0:
+        delivery_success_rate = round((fulfilled / total_relevant) * 100)
     else:
         delivery_success_rate = 98  # Default/fallback from design
         

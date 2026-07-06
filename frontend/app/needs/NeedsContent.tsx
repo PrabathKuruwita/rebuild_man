@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import NeedCard from "@/components/NeedCard";
 import PriorityFilter from "@/components/PriorityFilter";
 import { PageLoading } from "@/components/LoadingSpinner";
+import { Search } from "lucide-react";
 
 export default function NeedsContent() {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export default function NeedsContent() {
   const [sortBy, setSortBy] = useState<"priority" | "date" | "progress">(
     "priority",
   );
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchNeeds = async () => {
     try {
@@ -40,13 +42,30 @@ export default function NeedsContent() {
     fetchNeedsWithLoader();
   }, []);
 
-  // Filter locally
-  const filteredNeeds = priorityFilter
-    ? needs.filter((n) => n.priority === priorityFilter)
-    : needs;
+  // Filter locally by search query and priority filter
+  const searchedNeeds = (() => {
+    let result = needs;
+    if (priorityFilter) {
+      result = result.filter((n) => n.priority === priorityFilter);
+    }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((n) => {
+        const needName = (n.name || "").toLowerCase();
+        const orgName = (n.section_detail?.organization_name || "").toLowerCase();
+        const sectionName = (n.section_detail?.name || "").toLowerCase();
+        return (
+          needName.includes(query) ||
+          orgName.includes(query) ||
+          sectionName.includes(query)
+        );
+      });
+    }
+    return result;
+  })();
 
   // Sort needs
-  const sortedNeeds = [...filteredNeeds].sort((a, b) => {
+  const sortedNeeds = [...searchedNeeds].sort((a, b) => {
     if (sortBy === "priority") {
       const priorityOrder = { CRITICAL: 0, ESSENTIAL: 1, NICE: 2 };
       return priorityOrder[a.priority] - priorityOrder[b.priority];
@@ -118,6 +137,20 @@ export default function NeedsContent() {
             </span>
           </div>
 
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative max-w-md w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Search by need, organization, or section..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-sm transition"
+          />
         </div>
       </div>
 
