@@ -98,8 +98,8 @@ export default function AdminDashboard() {
         const deliveryRate =
           validDonations.length > 0
             ? Math.round(
-                (fulfilledDonations.length / validDonations.length) * 100,
-              )
+              (fulfilledDonations.length / validDonations.length) * 100,
+            )
             : 0;
 
         setStats({
@@ -275,7 +275,7 @@ export default function AdminDashboard() {
                 </h3>
                 <p className="text-slate-300 text-sm leading-relaxed mb-8">
                   Monitoring platform transactions, donor engagement, and
-                  hospital fulfillment rates across 9 provinces.
+                  organization fulfillment rates across 9 provinces.
                 </p>
 
                 <div className="space-y-6">

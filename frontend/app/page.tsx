@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Organization, getOrganizations, NeedItem, getNeeds, SystemStats, getSystemStats, getPublicRecentDonations, PublicDonation } from "@/lib/api";
 import { PageLoading } from "@/components/LoadingSpinner";
 import AdvancedSriLankaMap from "@/components/AdvancedSriLankaMap";
+import { useAuth } from "@/lib/AuthContext";
+import DonorDashboard from "@/components/DonorDashboard";
 
 
 
@@ -14,6 +16,7 @@ export default function Home() {
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentDonations, setRecentDonations] = useState<PublicDonation[]>([]);
+  const { user, loading: authLoading } = useAuth();
 
   const fetchData = async () => {
     try {
@@ -61,7 +64,11 @@ export default function Home() {
     loadData();
   }, []);
 
-  if (loading) return <PageLoading />;
+  if (loading || authLoading) return <PageLoading />;
+
+  if (user?.role === "DONOR") {
+    return <DonorDashboard />;
+  }
 
   // Calculate real stats or use fallbacks from screenshot
   const provinces = stats ? stats.provinces_covered : 9;
@@ -96,7 +103,7 @@ export default function Home() {
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                 <span className="text-xs font-bold text-white uppercase tracking-wider">
-                  Live across Sri Lanka • Verified hospitals
+                  Live across Sri Lanka • Verified organizations
                 </span>
               </div>
 
@@ -127,7 +134,7 @@ export default function Home() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      d="M19.414 14.414C21 12.828 22 11.5 22 9.5a5.5 5.5 0 0 0-9.591-3.676.6.6 0 0 1-.818.001A5.5 5.5 0 0 0 2 9.5c0 2.3 1.5 4 3 5.5l5.535 5.362a2 2 0 0 0 2.879.052 2.12 2.12 0 0 0-.004-3 2.124 2.124 0 1 0 3-3 2.124 2.124 0 0 0 3.004 0 2 2 0 0 0 0-2.828l-1.881-1.882a2.41 2.41 0 0 0-3.409 0l-1.71 1.71a2 2 0 0 1-2.828 0 2 2 0 0 1 0-2.828l2.823-2.762"
                     />
                   </svg>
                   Donate Now
@@ -193,7 +200,7 @@ export default function Home() {
                       Most Urgent Right Now
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-baseline gap-2">
                     <h4 className="text-base md:text-lg font-bold text-white leading-snug">
                       {urgentNeed.name}
@@ -250,7 +257,7 @@ export default function Home() {
                             <span className="font-bold text-white">{donation.organization_name}</span>
                           </div>
                         ))}
-                        
+
                         {/* Duplicated Items */}
                         {recentDonations.map((donation, idx) => (
                           <div
@@ -308,10 +315,10 @@ export default function Home() {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">
-                  {totalOrgs}+
+                  {totalOrgs}
                 </div>
                 <div className="text-[10px] font-bold text-blue-200/60 uppercase tracking-widest mt-1">
-                  Verified hospitals
+                  Verified organizations
                 </div>
               </div>
               <div className="text-center">
@@ -386,7 +393,7 @@ export default function Home() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      d="M19.414 14.414C21 12.828 22 11.5 22 9.5a5.5 5.5 0 0 0-9.591-3.676.6.6 0 0 1-.818.001A5.5 5.5 0 0 0 2 9.5c0 2.3 1.5 4 3 5.5l5.535 5.362a2 2 0 0 0 2.879.052 2.12 2.12 0 0 0-.004-3 2.124 2.124 0 1 0 3-3 2.124 2.124 0 0 0 3.004 0 2 2 0 0 0 0-2.828l-1.881-1.882a2.41 2.41 0 0 0-3.409 0l-1.71 1.71a2 2 0 0 1-2.828 0 2 2 0 0 1 0-2.828l2.823-2.762"
                     />
                   </svg>
                 ),
@@ -449,7 +456,7 @@ export default function Home() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      d="M19.414 14.414C21 12.828 22 11.5 22 9.5a5.5 5.5 0 0 0-9.591-3.676.6.6 0 0 1-.818.001A5.5 5.5 0 0 0 2 9.5c0 2.3 1.5 4 3 5.5l5.535 5.362a2 2 0 0 0 2.879.052 2.12 2.12 0 0 0-.004-3 2.124 2.124 0 1 0 3-3 2.124 2.124 0 0 0 3.004 0 2 2 0 0 0 0-2.828l-1.881-1.882a2.41 2.41 0 0 0-3.409 0l-1.71 1.71a2 2 0 0 1-2.828 0 2 2 0 0 1 0-2.828l2.823-2.762"
                     />
                   </svg>
                 </div>

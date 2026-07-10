@@ -82,13 +82,13 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
     };
 
     return (
-      <div 
-        key={sec.id} 
+      <div
+        key={sec.id}
         className="flex flex-col items-center lobby-animate-child w-full"
         style={{ animationDelay: `${idx * 0.08 + 0.3}s` }}
       >
         {/* Card container */}
-        <div 
+        <div
           onClick={handleCardClick}
           className="h-full w-full bg-slate-50 border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-blue-400 hover:shadow-md hover:shadow-blue-500/5 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer"
         >
@@ -110,7 +110,7 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
                   )}
                 </div>
               </div>
-              
+
               <div className="flex flex-col gap-1 items-end flex-shrink-0">
                 {hasCritical && (
                   <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md border border-rose-200/50 uppercase tracking-wider animate-pulse shadow-sm" title="Critical Needs Unfulfilled">
@@ -154,7 +154,7 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
             <div className="flex justify-between items-center text-xs">
               <span className="text-slate-500 font-medium flex items-center gap-1.5">
                 <Flame size={13} className="text-amber-500 animate-pulse" />
-                In Progress
+                In Progress Fulfilling
               </span>
               <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold rounded">
                 {fulfilling}
@@ -165,7 +165,7 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
             <div className="flex justify-between items-center text-xs">
               <span className="text-slate-500 font-medium flex items-center gap-1.5">
                 <PlayCircle size={13} className="text-slate-400" />
-                Not Started
+                Not Fulfilled Yet
               </span>
               <span className="px-2 py-0.5 bg-slate-100 text-slate-500 font-bold rounded">
                 {notStarted}
@@ -179,16 +179,15 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
                 <span>{sectionProgress}%</span>
               </div>
               <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden relative">
-                <div 
-                  className={`h-full rounded-full transition-all duration-500 lobby-animate-progress relative overflow-hidden ${
-                    sectionProgress >= 100 
-                      ? "bg-emerald-500" 
-                      : sectionProgress >= 50 
-                        ? "bg-blue-500" 
-                        : sectionProgress > 0 
-                          ? "bg-amber-500" 
-                          : "bg-slate-300"
-                  }`}
+                <div
+                  className={`h-full rounded-full transition-all duration-500 lobby-animate-progress relative overflow-hidden ${sectionProgress >= 100
+                    ? "bg-emerald-500"
+                    : sectionProgress >= 50
+                      ? "bg-blue-500"
+                      : sectionProgress > 0
+                        ? "bg-amber-500"
+                        : "bg-slate-300"
+                    }`}
                   style={{ width: `${sectionProgress}%` }}
                 >
                   {sectionProgress > 0 && sectionProgress < 100 && (
@@ -224,7 +223,8 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
   return (
     <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm overflow-hidden mb-12 animate-in fade-in duration-500">
       {/* Inline styles for lobby animations, scrollbars and progress fills */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes lobbyFadeInDown {
           from {
             opacity: 0;
@@ -371,7 +371,7 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
                 <span>{overallProgress}%</span>
               </div>
               <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden relative">
-                <div 
+                <div
                   className="h-full bg-white rounded-full transition-all duration-500 lobby-animate-progress relative overflow-hidden"
                   style={{ width: `${overallProgress}%` }}
                 >
@@ -390,6 +390,12 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
                 <span className="text-[10px] text-indigo-200/80">Sections</span>
               </div>
               <div className="w-px h-4 bg-white/10" />
+              <div className="flex items-center gap-1.5 text-indigo-100" title="Total Needs">
+                <ClipboardList size={13} className="text-indigo-200" />
+                <span className="font-bold text-white">{needs.length}</span>
+                <span className="text-[10px] text-indigo-200/80">Needs</span>
+              </div>
+              <div className="w-px h-4 bg-white/10" />
               <div className="flex items-center gap-1.5 text-indigo-100" title="Active Donors">
                 <Users size={13} className="text-indigo-200" />
                 <span className="font-bold text-white">{totalActiveDonors}</span>
@@ -400,8 +406,8 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
 
           {/* Vertical stem down from parent */}
           {filteredSections.length > 0 && (
-            <div 
-              className="w-px h-8 bg-slate-300 lobby-animate-line-y" 
+            <div
+              className="w-px h-8 bg-slate-300 lobby-animate-line-y"
               style={{ animationDelay: "0.3s" }}
             />
           )}

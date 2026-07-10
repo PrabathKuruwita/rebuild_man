@@ -6,7 +6,7 @@ import {
   Donation,
   NeedItem,
   Organization,
-  getDonations,
+  getPublicImpactDonations,
   getNeeds,
   getOrganizations,
 } from "@/lib/api";
@@ -42,24 +42,22 @@ export default function ImpactPage() {
       setError(null);
       setWarning(null);
 
-      // Check if user is authenticated for donation data
-      const isAuthenticated = !!localStorage.getItem("accessToken");
-
       const promises: [
         Promise<Organization[]>,
         Promise<NeedItem[]>,
-        Promise<Donation[]> | null,
+        Promise<Donation[]>,
       ] = [
-        getOrganizations(),
-        getNeeds(),
-        isAuthenticated ? getDonations() : null,
-      ];
+          getOrganizations(),
+          getNeeds(),
+          getPublicImpactDonations(),
+        ];
 
       const [orgResult, needsResult, donationResult] =
         await Promise.allSettled(promises);
 
       const organizationsLoaded = orgResult.status === "fulfilled";
       const needsLoaded = needsResult.status === "fulfilled";
+      const donationsLoaded = donationResult.status === "fulfilled";
 
       if (organizationsLoaded) {
         setOrganizations(orgResult.value as Organization[]);
@@ -73,19 +71,13 @@ export default function ImpactPage() {
         setNeeds([]);
       }
 
-      if (donationResult && donationResult.status === "fulfilled") {
+      if (donationsLoaded) {
         setDonations((donationResult.value as Donation[]) || []);
       } else {
         setDonations([]);
-        if (!isAuthenticated) {
-          setWarning(
-            "Sign in to see your personalized donation history. Showing global impact data.",
-          );
-        } else if (donationResult && donationResult.status === "rejected") {
-          setWarning(
-            "Donation history could not be loaded for this account. Showing impact based on available data.",
-          );
-        }
+        setWarning(
+          "Real-time donation analytics could not be fully loaded. Showing metrics based on available data.",
+        );
       }
 
       if (!organizationsLoaded && !needsLoaded) {
@@ -305,7 +297,7 @@ export default function ImpactPage() {
               href="/needs"
               className="rounded-lg bg-white px-5 py-3 text-sm font-semibold text-cyan-700 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"
             >
-              Donate to Active Needs
+              See Active Needs
             </Link>
             <Link
               href="/organizations"

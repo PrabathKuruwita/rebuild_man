@@ -13,8 +13,9 @@ import {
   receiveDonation,
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { CheckCircle2, XCircle, Clock, Gift } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Gift, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 interface DonationDialogState {
   isOpen: boolean;
@@ -22,6 +23,35 @@ interface DonationDialogState {
   donationId: number | null;
   donationDetails: Donation | null;
 }
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: {
+      name: string;
+      value: number;
+      percentage: string;
+    };
+  }>;
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-slate-950 text-white px-3 py-2 rounded-xl shadow-md border border-slate-800 text-xs">
+        <p className="font-semibold text-[11px]">{data.name}</p>
+        <p className="mt-1 text-[11px]">
+          Value: <span className="font-bold">{data.value.toLocaleString()}</span>
+        </p>
+        <p className="text-[11px]">
+          Share: <span className="font-bold">{data.percentage}%</span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 function DonationsContent() {
   const router = useRouter();
@@ -54,6 +84,9 @@ function DonationsContent() {
   const [cancelReason, setCancelReason] = useState("");
   const [isReasonStep, setIsReasonStep] = useState(false);
   const [confirmOption, setConfirmOption] = useState<"remaining" | "full">("remaining");
+  const [chartSectionFilter, setChartSectionFilter] = useState<string | number>("ALL");
+  const [donorTypeFilter, setDonorTypeFilter] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
     if (!authLoading) {
@@ -285,12 +318,58 @@ function DonationsContent() {
     });
   })();
 
+  const searchAndTypeFilteredDonations = (() => {
+    let result = sectionFilteredDonations;
+
+    // Apply Donor Type filter
+    if (donorTypeFilter !== "ALL") {
+      result = result.filter((d) => d.donor_type === donorTypeFilter);
+    }
+
+    // Apply Search Query filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((d) => {
+        // 1. Need Item
+        const needItemName = (d.need_item_detail?.name || `Need ${d.need_item}`).toLowerCase();
+
+        // 2. Created Date (need item's created_at)
+        const needObj = needsMap.get(d.need_item);
+        const createdDateStr = needObj?.created_at
+          ? new Date(needObj.created_at).toLocaleDateString().toLowerCase()
+          : "";
+
+        // 3. Donor Info (Name, Email)
+        const donorName = (d.donor_type === "private" ? d.donor_name : d.government_department || "").toLowerCase();
+        const donorEmail = (d.donor_type === "private" ? d.donor_email : d.government_email || "").toLowerCase();
+
+        // 4. Requested Date (donation created_at)
+        const requestedDateStr = d.created_at
+          ? new Date(d.created_at).toLocaleDateString().toLowerCase()
+          : "";
+
+        return (
+          needItemName.includes(query) ||
+          createdDateStr.includes(query) ||
+          donorName.includes(query) ||
+          donorEmail.includes(query) ||
+          requestedDateStr.includes(query)
+        );
+      });
+    }
+
+    return result;
+  })();
+
   const filteredDonations = (() => {
     let result: Donation[] = [];
-    if (filter === "ALL") result = sectionFilteredDonations;
-    else if (filter === "CONFIRMED")
-      result = sectionFilteredDonations.filter((d) => d.status === "CONFIRMED");
-    else result = sectionFilteredDonations.filter((d) => d.status === filter);
+    if (filter === "ALL") {
+      result = searchAndTypeFilteredDonations;
+    } else if (filter === "CONFIRMED") {
+      result = searchAndTypeFilteredDonations.filter((d) => d.status === "CONFIRMED");
+    } else {
+      result = searchAndTypeFilteredDonations.filter((d) => d.status === filter);
+    }
 
     if (filter === "CANCELLED") {
       return result.sort((a, b) => {
@@ -307,10 +386,12 @@ function DonationsContent() {
     );
   })();
 
+  const searchedDonations = filteredDonations;
+
   // For FULFILLED filter, group by need item
   const groupedFulfilledDonations: Record<number, Donation[]> =
     filter === "FULFILLED"
-      ? groupDonationsByNeedItem(filteredDonations)
+      ? groupDonationsByNeedItem(searchedDonations)
       : {};
 
   if (authLoading || isLoading) {
@@ -342,9 +423,9 @@ function DonationsContent() {
     const needName = needsMap.get(donation.need_item)?.name || "Unknown Need";
 
     return (
-      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 py-8">
-        <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-full flex flex-col animate-in">
-          <div className="flex justify-between items-center p-6 border-b shrink-0">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex flex-col items-center justify-start overflow-y-auto p-4 sm:p-10 z-50 w-screen h-screen">
+        <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full animate-in my-auto shrink-0">
+          <div className="flex justify-between items-center p-4 sm:p-6 border-b shrink-0">
             <h3 className="text-xl font-bold text-gray-900">
               Donation Details
             </h3>
@@ -358,31 +439,31 @@ function DonationsContent() {
             </button>
           </div>
 
-          <div className="p-6 overflow-y-auto flex-1 space-y-4 text-sm">
-            <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-medium">Need Item</span>
-              <span className="col-span-2 text-gray-900">{needName}</span>
+          <div className="p-4 sm:p-6 space-y-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+              <span className="text-gray-500 font-medium text-xs sm:text-sm">Need Item</span>
+              <span className="sm:col-span-2 text-gray-900 text-sm break-words">{needName}</span>
             </div>
 
             {needsMap.get(donation.need_item)?.section_detail?.name && (
-              <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                <span className="text-gray-500 font-medium">Section</span>
-                <span className="col-span-2 text-gray-900">
+              <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                <span className="text-gray-500 font-medium text-xs sm:text-sm">Section</span>
+                <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                   {needsMap.get(donation.need_item)?.section_detail?.name}
                 </span>
               </div>
             )}
 
-            <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-medium">Quantity</span>
-              <span className="col-span-2 text-gray-900">
+            <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+              <span className="text-gray-500 font-medium text-xs sm:text-sm">Quantity</span>
+              <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                 {donation.quantity} {donation.need_item_detail?.unit || "UNIT"}
               </span>
             </div>
 
-            <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-medium">Donor Type</span>
-              <span className="col-span-2 text-gray-900 capitalize">
+            <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+              <span className="text-gray-500 font-medium text-xs sm:text-sm">Donor Type</span>
+              <span className="sm:col-span-2 text-gray-900 text-sm break-words capitalize">
                 {donation.donor_type === "private"
                   ? "Private Donor"
                   : "Government"}
@@ -391,120 +472,120 @@ function DonationsContent() {
 
             {donation.donor_type === "private" ? (
               <>
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">Donor Name</span>
-                  <span className="col-span-2 text-gray-900">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Donor Name</span>
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.donor_name || "N/A"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
                     Contact Person
                   </span>
-                  <span className="col-span-2 text-gray-900">
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.donor_contact || "N/A"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
                     Contact Number
                   </span>
-                  <span className="col-span-2 text-gray-900">
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.donor_phone || "N/A"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">Email</span>
-                  <span className="col-span-2 text-gray-900">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Email</span>
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.donor_email || "N/A"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
                     Organization
                   </span>
-                  <span className="col-span-2 text-gray-900">
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.donor_organization || "N/A"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">Address</span>
-                  <span className="col-span-2 text-gray-900 truncate">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Address</span>
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.donor_address || "N/A"}
                   </span>
                 </div>
               </>
             ) : (
               <>
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">Department</span>
-                  <span className="col-span-2 text-gray-900">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Department</span>
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.government_department || "N/A"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">Program</span>
-                  <span className="col-span-2 text-gray-900">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Program</span>
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.government_program || "N/A"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
                     Officer Name
                   </span>
-                  <span className="col-span-2 text-gray-900">
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.government_officer_name || "N/A"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">Designation</span>
-                  <span className="col-span-2 text-gray-900">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Designation</span>
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.government_officer_designation || "N/A"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
                     Contact Number
                   </span>
-                  <span className="col-span-2 text-gray-900">
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.government_officer_contact || "N/A"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">Email</span>
-                  <span className="col-span-2 text-gray-900">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Email</span>
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.government_email || "N/A"}
                   </span>
                 </div>
               </>
             )}
 
-            <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-medium">Message</span>
-              <span className="col-span-2 text-gray-900">
+            <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+              <span className="text-gray-500 font-medium text-xs sm:text-sm">Message</span>
+              <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                 {donation.message || "N/A"}
               </span>
             </div>
 
-            <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-              <span className="text-gray-500 font-medium">
+            <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+              <span className="text-gray-500 font-medium text-xs sm:text-sm">
                 Estimated Delivery
               </span>
-              <span className="col-span-2 text-gray-900">
+              <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                 {donation.estimated_delivery_date
                   ? new Date(
-                      donation.estimated_delivery_date,
-                    ).toLocaleDateString()
+                    donation.estimated_delivery_date,
+                  ).toLocaleDateString()
                   : "N/A"}
               </span>
             </div>
@@ -512,47 +593,50 @@ function DonationsContent() {
             {(donation.status === "CONFIRMED" ||
               donation.status === "FULFILLED") &&
               donation.confirmed_by_name && (
-                <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                  <span className="text-gray-500 font-medium">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
                     Confirmed By
                   </span>
-                  <span className="col-span-2 text-gray-900 font-semibold text-green-700">
+                  <span className="sm:col-span-2 text-gray-900 font-semibold text-green-700 text-sm break-words">
                     {donation.confirmed_by_name}
+                    {donation.confirmed_by_role && ` (${donation.confirmed_by_role.replace("_", " ")})`}
                   </span>
                 </div>
               )}
 
             {donation.status === "FULFILLED" && (
-              <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                <span className="text-gray-500 font-medium">
+              <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                <span className="text-gray-500 font-medium text-xs sm:text-sm">
                   Received By
                 </span>
-                <span className="col-span-2 text-gray-900 font-semibold text-purple-700">
+                <span className="sm:col-span-2 text-gray-900 font-semibold text-purple-700 text-sm break-words">
                   {donation.received_by_name || "N/A"}
+                  {donation.received_by_role && ` (${donation.received_by_role.replace("_", " ")})`}
                 </span>
               </div>
             )}
 
             {donation.status === "CANCELLED" && donation.cancelled_by_name && (
-              <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                <span className="text-gray-500 font-medium">Cancelled By</span>
-                <span className="col-span-2 text-gray-900 font-semibold text-red-700">
+              <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                <span className="text-gray-500 font-medium text-xs sm:text-sm">Cancelled By</span>
+                <span className="sm:col-span-2 text-gray-900 font-semibold text-red-700 text-sm break-words">
                   {donation.cancelled_by_name}
+                  {donation.cancelled_by_role && ` (${donation.cancelled_by_role.replace("_", " ")})`}
                 </span>
               </div>
             )}
 
             {donation.status === "CANCELLED" && (
-              <div className="grid grid-cols-3 border-b border-gray-100 pb-2">
-                <span className="text-gray-500 font-medium">Reason</span>
-                <span className="col-span-2 text-gray-900">
+              <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                <span className="text-gray-500 font-medium text-xs sm:text-sm">Reason</span>
+                <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                   {donation.cancellation_reason || "No reason provided"}
                 </span>
               </div>
             )}
           </div>
 
-          <div className="p-6 border-t shrink-0 flex justify-end">
+          <div className="p-4 sm:p-6 border-t shrink-0 flex justify-end">
             <button
               onClick={() => setViewDialog(null)}
               className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition"
@@ -631,9 +715,8 @@ function DonationsContent() {
         <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-in">
           <div className="flex items-center justify-center mb-4">
             <div
-              className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                isConfirm ? "bg-green-100" : isReceive ? "bg-purple-100" : "bg-red-100"
-              }`}
+              className={`w-12 h-12 rounded-full flex items-center justify-center ${isConfirm ? "bg-green-100" : isReceive ? "bg-purple-100" : "bg-red-100"
+                }`}
             >
               {isConfirm ? (
                 <CheckCircle2 className="text-green-600" size={24} />
@@ -752,13 +835,12 @@ function DonationsContent() {
             </button>
             <button
               onClick={isConfirm ? handleConfirmApprove : isReceive ? handleReceiveApprove : () => setIsReasonStep(true)}
-              className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition ${
-                isConfirm
-                  ? "bg-green-600 hover:bg-green-700 disabled:bg-green-400"
-                  : isReceive
-                    ? "bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400"
-                    : "bg-red-600 hover:bg-red-700 disabled:bg-red-400"
-              }`}
+              className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition ${isConfirm
+                ? "bg-green-600 hover:bg-green-700 disabled:bg-green-400"
+                : isReceive
+                  ? "bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400"
+                  : "bg-red-600 hover:bg-red-700 disabled:bg-red-400"
+                }`}
               disabled={confirming !== null || cancelling !== null || receiving !== null}
             >
               {confirming !== null || cancelling !== null || receiving !== null
@@ -779,6 +861,59 @@ function DonationsContent() {
     );
   })();
 
+  const activeChartSectionName = chartSectionFilter === "ALL"
+    ? "All Sections"
+    : sections.find((s) => s.id === chartSectionFilter)?.name || "Unknown Section";
+
+  // Calculations for Pie Chart 1: Needs Fulfillment Status
+  const chartFilteredNeeds = Array.from(needsMap.values()).filter((need) => {
+    if (chartSectionFilter === "ALL") return true;
+    return need.section === chartSectionFilter;
+  });
+
+
+  const totalNeedsCount = chartFilteredNeeds.length;
+  const fullyReceivedNeedsCount = chartFilteredNeeds.filter(
+    (n) => n.quantity_received >= n.quantity_required && n.quantity_required > 0
+  ).length;
+  const pendingNeedsCount = totalNeedsCount - fullyReceivedNeedsCount;
+
+  const chart1Data = [
+    {
+      name: "100% Received Needs",
+      value: fullyReceivedNeedsCount,
+      percentage: totalNeedsCount > 0 ? ((fullyReceivedNeedsCount / totalNeedsCount) * 100).toFixed(1) : "0.0",
+    },
+    {
+      name: "Pending/Partial Needs",
+      value: pendingNeedsCount,
+      percentage: totalNeedsCount > 0 ? ((pendingNeedsCount / totalNeedsCount) * 100).toFixed(1) : "0.0",
+    },
+  ];
+
+  const CHART1_COLORS = ["#10B981", "#F59E0B"];
+
+  // Calculations for Pie Chart 2: Quantity Fulfillment Status
+  const totalRequiredQuantity = chartFilteredNeeds.reduce((sum, n) => sum + n.quantity_required, 0);
+  const totalReceivedQuantity = chartFilteredNeeds.reduce((sum, n) => sum + n.quantity_received, 0);
+  const remainingQuantityRequired = Math.max(0, totalRequiredQuantity - totalReceivedQuantity);
+
+  const chart2Data = [
+    {
+      name: "Physically Received Quantity",
+      value: totalReceivedQuantity,
+      percentage: totalRequiredQuantity > 0 ? ((totalReceivedQuantity / totalRequiredQuantity) * 100).toFixed(1) : "0.0",
+    },
+    {
+      name: "Remaining Quantity Required",
+      value: remainingQuantityRequired,
+      percentage: totalRequiredQuantity > 0 ? ((remainingQuantityRequired / totalRequiredQuantity) * 100).toFixed(1) : "0.0",
+    },
+  ];
+
+  const CHART2_COLORS = ["#6366F1", "#94A3B8"];
+
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
@@ -790,6 +925,8 @@ function DonationsContent() {
             Review and confirm donations from donors
           </p>
         </div>
+
+
 
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center justify-between">
@@ -803,35 +940,34 @@ function DonationsContent() {
           </div>
         )}
 
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-gray-200 gap-4">
-          <div className="flex gap-2">
+        <div className="mb-6 border-b border-gray-200">
+          <div className="flex gap-2 overflow-x-auto">
             {["PENDING", "CONFIRMED", "FULFILLED", "CANCELLED", "ALL"].map(
               (status) => {
                 let count = 0;
                 if (status === "ALL") {
-                  count = sectionFilteredDonations.length;
+                  count = searchAndTypeFilteredDonations.length;
                 } else if (status === "CONFIRMED") {
-                  count = sectionFilteredDonations.filter(
+                  count = searchAndTypeFilteredDonations.filter(
                     (d) => d.status === "CONFIRMED",
                   ).length;
                 } else if (status === "FULFILLED") {
                   // Count actual fulfilled requests (donations)
-                  count = sectionFilteredDonations.filter(
+                  count = searchAndTypeFilteredDonations.filter(
                     (d) => d.status === "FULFILLED",
                   ).length;
                 } else {
-                  count = sectionFilteredDonations.filter((d) => d.status === status).length;
+                  count = searchAndTypeFilteredDonations.filter((d) => d.status === status).length;
                 }
 
                 return (
                   <button
                     key={status}
                     onClick={() => setFilter(status)}
-                    className={`px-4 py-3 font-medium border-b-2 transition ${
-                      filter === status
-                        ? "text-blue-600 border-blue-600"
-                        : "text-gray-600 border-transparent hover:text-gray-900"
-                    }`}
+                    className={`px-4 py-3 font-medium border-b-2 transition whitespace-nowrap ${filter === status
+                      ? "text-blue-600 border-blue-600"
+                      : "text-gray-600 border-transparent hover:text-gray-900"
+                      }`}
                   >
                     {status}
                     <span className="ml-2 text-sm">({count})</span>
@@ -840,44 +976,79 @@ function DonationsContent() {
               },
             )}
           </div>
+        </div>
 
-          <div className="flex items-center gap-2 pb-2 sm:pb-0">
-            <label htmlFor="section-filter" className="text-sm text-gray-600 font-medium">
-              Filter by Section:
-            </label>
-            <select
-              id="section-filter"
-              value={sectionFilter}
-              onChange={(e) => {
-                const val = e.target.value;
-                const params = new URLSearchParams(searchParams.toString());
-                if (val === "ALL") {
-                  params.delete("section");
-                } else {
-                  params.set("section", val);
-                }
-                const newSearch = params.toString();
-                router.push(`/admin/donations${newSearch ? `?${newSearch}` : ""}`);
-              }}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium transition"
-            >
-              <option value="ALL">All Sections</option>
-              {sections.map((sec) => (
-                <option key={sec.id} value={sec.id}>
-                  {sec.name}
-                </option>
-              ))}
-            </select>
+        {/* Filter Controls Row: Search bar & dropdown filters */}
+        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Search bar */}
+          <div className="relative flex-1 max-w-md w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search by need, donor name/email, date..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 transition"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+            {/* Donor Type Filter */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="donor-type-filter" className="text-sm text-gray-600 font-medium whitespace-nowrap">
+                Filter Table by:
+              </label>
+              <select
+                id="donor-type-filter"
+                value={donorTypeFilter}
+                onChange={(e) => setDonorTypeFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium transition"
+              >
+                <option value="ALL">All Donor Types</option>
+                <option value="private">Private Donor</option>
+                <option value="government">Government</option>
+              </select>
+            </div>
+
+            {/* Section Filter */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="section-filter" className="text-sm text-gray-600 font-medium whitespace-nowrap">
+                Filter Table by:
+              </label>
+              <select
+                id="section-filter"
+                value={sectionFilter}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const params = new URLSearchParams(searchParams.toString());
+                  if (val === "ALL") {
+                    params.delete("section");
+                  } else {
+                    params.set("section", val);
+                  }
+                  const newSearch = params.toString();
+                  router.push(`/admin/donations${newSearch ? `?${newSearch}` : ""}`);
+                }}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium transition"
+              >
+                <option value="ALL">All Sections</option>
+                {sections.map((sec) => (
+                  <option key={sec.id} value={sec.id}>
+                    {sec.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow overflow-hidden w-full max-w-full">
           {filteredDonations.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               No donations found for this filter
             </div>
           ) : (
-            <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
+            <div className="overflow-x-auto overflow-y-auto max-h-[600px] w-full max-w-full">
               <table className="w-full min-w-[1300px] border-separate border-spacing-0">
                 <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
                   <tr>
@@ -886,6 +1057,9 @@ function DonationsContent() {
                     </th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Need Item
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                      Created Date
                     </th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       Section
@@ -922,277 +1096,286 @@ function DonationsContent() {
                 <tbody className="divide-y divide-gray-200">
                   {filter === "FULFILLED"
                     ? // For FULFILLED donations, group by need item and show all donors
-                      Object.entries(groupedFulfilledDonations)
-                        .sort(
-                          ([, a], [, b]) =>
-                            new Date(b[0].created_at).getTime() -
-                            new Date(a[0].created_at).getTime(),
-                        )
-                        .map(([needId, needDonations]) => {
-                          const firstDonation = needDonations[0];
-                          const totalQuantity = needDonations.reduce(
-                            (sum, d) => sum + d.quantity,
-                            0,
-                          );
-                          return (
-                            <tr
-                              key={needId}
-                              className="hover:bg-gray-50 transition"
-                            >
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                  {getStatusIcon("FULFILLED")}
-                                  <span
-                                    className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge("FULFILLED")}`}
-                                  >
-                                    FULFILLED
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm">
-                                <div className="font-medium text-gray-900">
-                                  {firstDonation.need_item_detail?.name ||
-                                    `Need ${firstDonation.need_item}`}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-600">
-                                {needsMap.get(firstDonation.need_item)
-                                  ?.section_detail?.name || "-"}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                                {needsMap.get(firstDonation.need_item)
-                                  ?.quantity_required
-                                  ? `${needsMap.get(firstDonation.need_item)?.quantity_required} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`
-                                  : "-"}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-purple-700 font-medium">
-                                {`${totalQuantity} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-green-700 font-medium">
-                                {needsMap.get(firstDonation.need_item)
-                                  ?.quantity_confirmed !== undefined
-                                  ? `${needsMap.get(firstDonation.need_item)?.quantity_confirmed} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`
-                                  : "-"}
-                              </td>
-                              <td className={`px-6 py-4 text-sm font-medium ${
-                                Math.max(0, (needsMap.get(firstDonation.need_item)?.quantity_required || 0) - (needsMap.get(firstDonation.need_item)?.quantity_confirmed || 0)) > 0
-                                  ? "text-red-600"
-                                  : "text-green-600"
+                    Object.entries(groupedFulfilledDonations)
+                      .sort(
+                        ([, a], [, b]) =>
+                          new Date(b[0].created_at).getTime() -
+                          new Date(a[0].created_at).getTime(),
+                      )
+                      .map(([needId, needDonations]) => {
+                        const firstDonation = needDonations[0];
+                        const totalQuantity = needDonations.reduce(
+                          (sum, d) => sum + d.quantity,
+                          0,
+                        );
+                        return (
+                          <tr
+                            key={needId}
+                            className="hover:bg-gray-50 transition"
+                          >
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                {getStatusIcon("FULFILLED")}
+                                <span
+                                  className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge("FULFILLED")}`}
+                                >
+                                  FULFILLED
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              <div className="font-medium text-gray-900">
+                                {firstDonation.need_item_detail?.name ||
+                                  `Need ${firstDonation.need_item}`}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {needsMap.get(firstDonation.need_item)?.created_at
+                                ? new Date(needsMap.get(firstDonation.need_item)!.created_at).toLocaleDateString()
+                                : "-"}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {needsMap.get(firstDonation.need_item)
+                                ?.section_detail?.name || "-"}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                              {needsMap.get(firstDonation.need_item)
+                                ?.quantity_required
+                                ? `${needsMap.get(firstDonation.need_item)?.quantity_required} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`
+                                : "-"}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-purple-700 font-medium">
+                              {`${totalQuantity} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-green-700 font-medium">
+                              {needsMap.get(firstDonation.need_item)
+                                ?.quantity_confirmed !== undefined
+                                ? `${needsMap.get(firstDonation.need_item)?.quantity_confirmed} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`
+                                : "-"}
+                            </td>
+                            <td className={`px-6 py-4 text-sm font-medium ${Math.max(0, (needsMap.get(firstDonation.need_item)?.quantity_required || 0) - (needsMap.get(firstDonation.need_item)?.quantity_confirmed || 0)) > 0
+                              ? "text-red-600"
+                              : "text-green-600"
                               }`}>
-                                {needsMap.get(firstDonation.need_item)
-                                  ? `${Math.max(0, (needsMap.get(firstDonation.need_item)?.quantity_required || 0) - (needsMap.get(firstDonation.need_item)?.quantity_confirmed || 0))} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`
-                                  : "-"}
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-600">
-                                <div className="space-y-2">
-                                  {needDonations.map((donation, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex items-center py-1"
+                              {needsMap.get(firstDonation.need_item)
+                                ? `${Math.max(0, (needsMap.get(firstDonation.need_item)?.quantity_required || 0) - (needsMap.get(firstDonation.need_item)?.quantity_confirmed || 0))} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`
+                                : "-"}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              <div className="space-y-2">
+                                {needDonations.map((donation, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center py-1"
+                                  >
+                                    {donation.quantity}{" "}
+                                    {donation.need_item_detail?.unit ||
+                                      "units"}
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              <div className="space-y-2">
+                                {needDonations.map((donation, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center py-1"
+                                  >
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${donation.donor_type === "private" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}
                                     >
-                                      {donation.quantity}{" "}
-                                      {donation.need_item_detail?.unit ||
-                                        "units"}
+                                      {donation.donor_type === "private"
+                                        ? "Private"
+                                        : "Government"}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              <div className="space-y-2">
+                                {needDonations.map((donation, idx) => (
+                                  <div key={idx} className="py-1">
+                                    <div className="text-gray-900 font-medium text-xs">
+                                      {donation.donor_type === "private"
+                                        ? donation.donor_name
+                                        : donation.government_department}
                                     </div>
-                                  ))}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm">
-                                <div className="space-y-2">
-                                  {needDonations.map((donation, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex items-center py-1"
-                                    >
-                                      <span
-                                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${donation.donor_type === "private" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}
-                                      >
-                                        {donation.donor_type === "private"
-                                          ? "Private"
-                                          : "Government"}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm">
-                                <div className="space-y-2">
-                                  {needDonations.map((donation, idx) => (
-                                    <div key={idx} className="py-1">
-                                      <div className="text-gray-900 font-medium text-xs">
-                                        {donation.donor_type === "private"
-                                          ? donation.donor_name
-                                          : donation.government_department}
-                                      </div>
-                                      {(donation.donor_type === "private"
-                                        ? donation.donor_email
-                                        : donation.government_email) && (
+                                    {(donation.donor_type === "private"
+                                      ? donation.donor_email
+                                      : donation.government_email) && (
                                         <div className="text-gray-500 text-[10px]">
                                           {donation.donor_type === "private"
                                             ? donation.donor_email
                                             : donation.government_email}
                                         </div>
                                       )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-600">
-                                <div className="space-y-2">
-                                  {needDonations.map((donation, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="py-1 flex items-center whitespace-nowrap text-xs"
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              <div className="space-y-2">
+                                {needDonations.map((donation, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="py-1 flex items-center whitespace-nowrap text-xs"
+                                  >
+                                    {new Date(
+                                      donation.created_at,
+                                    ).toLocaleDateString()}
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              <div className="space-y-2">
+                                {needDonations.map((donation, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center py-1"
+                                  >
+                                    <button
+                                      onClick={() => setViewDialog(donation)}
+                                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-[10px] font-medium transition"
                                     >
-                                      {new Date(
-                                        donation.created_at,
-                                      ).toLocaleDateString()}
-                                    </div>
-                                  ))}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm">
-                                <div className="space-y-2">
-                                  {needDonations.map((donation, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex items-center py-1"
-                                    >
-                                      <button
-                                        onClick={() => setViewDialog(donation)}
-                                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-[10px] font-medium transition"
-                                      >
-                                        View
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
+                                      View
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     : // For other statuses, show one row per donation
-                      filteredDonations.map((donation) => {
-                        const displayStatus =
-                          filter === "CONFIRMED"
-                            ? "CONFIRMED"
-                            : donation.status;
-                        return (
-                          <tr
-                            key={donation.id}
-                            className="hover:bg-gray-50 transition"
-                          >
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                {getStatusIcon(displayStatus)}
-                                <span
-                                  className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(displayStatus)}`}
-                                >
-                                  {displayStatus}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              <div className="font-medium text-gray-900">
-                                {donation.need_item_detail?.name ||
-                                  `Need ${donation.need_item}`}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {needsMap.get(donation.need_item)?.section_detail
-                                ?.name || "-"}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                              {needsMap.get(donation.need_item)
-                                ?.quantity_required
-                                ? `${needsMap.get(donation.need_item)?.quantity_required} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
-                                : "-"}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-purple-700 font-medium">
-                              {needsMap.get(donation.need_item)
-                                ?.quantity_received !== undefined
-                                ? `${needsMap.get(donation.need_item)?.quantity_received} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
-                                : "-"}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-green-700 font-medium">
-                              {needsMap.get(donation.need_item)
-                                ?.quantity_confirmed !== undefined
-                                ? `${needsMap.get(donation.need_item)?.quantity_confirmed} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
-                                : "-"}
-                            </td>
-                            <td className={`px-6 py-4 text-sm font-medium ${
-                              Math.max(0, (needsMap.get(donation.need_item)?.quantity_required || 0) - (needsMap.get(donation.need_item)?.quantity_confirmed || 0)) > 0
-                                ? "text-red-600"
-                                : "text-green-600"
-                            }`}>
-                              {needsMap.get(donation.need_item)
-                                ? `${Math.max(0, (needsMap.get(donation.need_item)?.quantity_required || 0) - (needsMap.get(donation.need_item)?.quantity_confirmed || 0))} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
-                                : "-"}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {donation.quantity}{" "}
-                              {donation.need_item_detail?.unit || "units"}
-                            </td>
-                            <td className="px-6 py-4 text-sm">
+                    searchedDonations.map((donation) => {
+                      const displayStatus =
+                        filter === "CONFIRMED"
+                          ? "CONFIRMED"
+                          : donation.status;
+                      return (
+                        <tr
+                          key={donation.id}
+                          className="hover:bg-gray-50 transition"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(displayStatus)}
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${donation.donor_type === "private" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}
+                                className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(displayStatus)}`}
                               >
-                                {donation.donor_type}
+                                {displayStatus}
                               </span>
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              <div className="text-gray-900 font-medium">
-                                {donation.donor_type === "private"
-                                  ? donation.donor_name
-                                  : donation.government_department}
-                              </div>
-                              {(donation.donor_type === "private"
-                                ? donation.donor_email
-                                : donation.government_email) && (
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <div className="font-medium text-gray-900">
+                              {donation.need_item_detail?.name ||
+                                `Need ${donation.need_item}`}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
+                            {needsMap.get(donation.need_item)?.created_at
+                              ? new Date(needsMap.get(donation.need_item)!.created_at).toLocaleDateString()
+                              : "-"}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
+                            {needsMap.get(donation.need_item)?.section_detail
+                              ?.name || "-"}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                            {needsMap.get(donation.need_item)
+                              ?.quantity_required
+                              ? `${needsMap.get(donation.need_item)?.quantity_required} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
+                              : "-"}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-purple-700 font-medium">
+                            {needsMap.get(donation.need_item)
+                              ?.quantity_received !== undefined
+                              ? `${needsMap.get(donation.need_item)?.quantity_received} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
+                              : "-"}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-green-700 font-medium">
+                            {needsMap.get(donation.need_item)
+                              ?.quantity_confirmed !== undefined
+                              ? `${needsMap.get(donation.need_item)?.quantity_confirmed} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
+                              : "-"}
+                          </td>
+                          <td className={`px-6 py-4 text-sm font-medium ${Math.max(0, (needsMap.get(donation.need_item)?.quantity_required || 0) - (needsMap.get(donation.need_item)?.quantity_confirmed || 0)) > 0
+                            ? "text-red-600"
+                            : "text-green-600"
+                            }`}>
+                            {needsMap.get(donation.need_item)
+                              ? `${Math.max(0, (needsMap.get(donation.need_item)?.quantity_required || 0) - (needsMap.get(donation.need_item)?.quantity_confirmed || 0))} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
+                              : "-"}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
+                            {donation.quantity}{" "}
+                            {donation.need_item_detail?.unit || "units"}
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${donation.donor_type === "private" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}
+                            >
+                              {donation.donor_type}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <div className="text-gray-900 font-medium">
+                              {donation.donor_type === "private"
+                                ? donation.donor_name
+                                : donation.government_department}
+                            </div>
+                            {(donation.donor_type === "private"
+                              ? donation.donor_email
+                              : donation.government_email) && (
                                 <div className="text-gray-600 text-xs">
                                   {donation.donor_type === "private"
                                     ? donation.donor_email
                                     : donation.government_email}
                                 </div>
                               )}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {new Date(
-                                donation.created_at,
-                              ).toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              <div className="flex gap-2">
-                                {" "}
-                                <button
-                                  onClick={() => setViewDialog(donation)}
-                                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-medium transition"
-                                >
-                                  View
-                                </button>{" "}
-                                {donation.status === "PENDING" && (
-                                  <>
-                                    <button
-                                      onClick={() => handleConfirm(donation.id)}
-                                      disabled={confirming === donation.id}
-                                      className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 text-xs font-medium transition"
-                                    >
-                                      {confirming === donation.id
-                                        ? "Confirming..."
-                                        : "Confirm"}
-                                    </button>
-                                    <button
-                                      onClick={() => handleCancel(donation.id)}
-                                      disabled={cancelling === donation.id}
-                                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 text-xs font-medium transition"
-                                    >
-                                      {cancelling === donation.id
-                                        ? "Cancelling..."
-                                        : "Cancel"}
-                                    </button>
-                                  </>
-                                )}
-                                {donation.status === "CONFIRMED" && (
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
+                            {new Date(
+                              donation.created_at,
+                            ).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <div className="flex gap-2">
+                              {" "}
+                              <button
+                                onClick={() => setViewDialog(donation)}
+                                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-medium transition"
+                              >
+                                View
+                              </button>{" "}
+                              {donation.status === "PENDING" && (
+                                <>
+                                  <button
+                                    onClick={() => handleConfirm(donation.id)}
+                                    disabled={confirming === donation.id}
+                                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 text-xs font-medium transition"
+                                  >
+                                    {confirming === donation.id
+                                      ? "Confirming..."
+                                      : "Confirm"}
+                                  </button>
+                                  <button
+                                    onClick={() => handleCancel(donation.id)}
+                                    disabled={cancelling === donation.id}
+                                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 text-xs font-medium transition"
+                                  >
+                                    {cancelling === donation.id
+                                      ? "Cancelling..."
+                                      : "Cancel"}
+                                  </button>
+                                </>
+                              )}
+                              {donation.status === "CONFIRMED" && (
+                                <>
                                   <button
                                     onClick={() => handleReceive(donation.id)}
                                     disabled={receiving === donation.id}
@@ -1202,12 +1385,22 @@ function DonationsContent() {
                                       ? "Processing..."
                                       : "Mark Received"}
                                   </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                                  <button
+                                    onClick={() => handleCancel(donation.id)}
+                                    disabled={cancelling === donation.id}
+                                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 text-xs font-medium transition"
+                                  >
+                                    {cancelling === donation.id
+                                      ? "Cancelling..."
+                                      : "Cancel"}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
@@ -1220,7 +1413,7 @@ function DonationsContent() {
             let totalQuantity = 0;
 
             if (status === "CONFIRMED") {
-              const confirmedDonations = sectionFilteredDonations.filter(
+              const confirmedDonations = searchAndTypeFilteredDonations.filter(
                 (d) => d.status === "CONFIRMED",
               );
               count = confirmedDonations.length;
@@ -1229,19 +1422,16 @@ function DonationsContent() {
                 0,
               );
             } else if (status === "FULFILLED") {
-              const fulfilledDonations = sectionFilteredDonations.filter(
+              const fulfilledDonations = searchAndTypeFilteredDonations.filter(
                 (d) => d.status === "FULFILLED",
               );
-              const uniqueNeeds = new Set(
-                fulfilledDonations.map((d) => d.need_item),
-              );
-              count = uniqueNeeds.size;
+              count = fulfilledDonations.length;
               totalQuantity = fulfilledDonations.reduce(
                 (sum, d) => sum + d.quantity,
                 0,
               );
             } else {
-              const standardDonations = sectionFilteredDonations.filter(
+              const standardDonations = searchAndTypeFilteredDonations.filter(
                 (d) => d.status === status,
               );
               count = standardDonations.length;
@@ -1277,15 +1467,9 @@ function DonationsContent() {
               >
                 <div className={`text-sm font-bold ${titleColors[status]}`}>
                   {status}
-                  {status === "FULFILLED" ? (
-                    <span className="block text-xs font-medium opacity-80 mt-0.5">
-                      Needs
-                    </span>
-                  ) : (
-                    <span className="block text-xs font-medium opacity-80 mt-0.5">
-                      Requests
-                    </span>
-                  )}
+                  <span className="block text-xs font-medium opacity-80 mt-0.5">
+                    Requests
+                  </span>
                 </div>
                 <div
                   className={`text-3xl font-black mt-2 ${numColors[status]}`}
@@ -1300,6 +1484,155 @@ function DonationsContent() {
               </div>
             );
           })}
+        </div>
+
+        {/* Visual Analytics Section */}
+        <div className="mt-12 bg-white rounded-3xl border border-slate-200 p-8 shadow-sm animate-in fade-in duration-500">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6 mb-8">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">
+                Visual Analytics Overview
+              </h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Visualizing needs and quantity fulfillment metrics
+              </p>
+            </div>
+
+            {/* Separate Dropdown Filter for both charts */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="chart-section-filter" className="text-sm text-gray-600 font-medium">
+                Filter Charts by:
+              </label>
+              <select
+                id="chart-section-filter"
+                value={chartSectionFilter}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setChartSectionFilter(val === "ALL" ? "ALL" : Number(val));
+                }}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium transition"
+              >
+                <option value="ALL">All Sections</option>
+                {sections.map((sec) => (
+                  <option key={sec.id} value={sec.id}>
+                    {sec.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Chart 1: Needs Fulfillment Status */}
+            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-6 flex flex-col justify-between h-[300px]">
+              <div>
+                <h3 className="text-base font-bold text-slate-800">Needs Fulfillment Overview ({activeChartSectionName})</h3>
+                <p className="text-xs text-slate-500 mt-1">Comparison of fully met needs vs. pending/partial needs</p>
+              </div>
+
+              {totalNeedsCount > 0 ? (
+                <div className="flex items-center justify-between flex-1 mt-4">
+                  <div className="w-[180px] h-[180px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={chart1Data}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {chart1Data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={CHART1_COLORS[index]} />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Custom Legend */}
+                  <div className="flex-1 flex flex-col justify-center pl-6 space-y-3">
+                    {chart1Data.map((entry, index) => (
+                      <div key={index} className="flex items-start gap-2.5">
+                        <span className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: CHART1_COLORS[index] }} />
+                        <div>
+                          <p className="text-xs font-semibold text-slate-700 leading-tight">{entry.name}</p>
+                          <p className="text-[11px] text-slate-500 font-bold mt-0.5">
+                            {entry.value} {entry.value === 1 ? 'need' : 'needs'} ({entry.percentage}%)
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="pt-2 border-t border-slate-100">
+                      <p className="text-[10px] text-slate-400 font-medium">Total Created Needs: <span className="font-bold text-slate-600">{totalNeedsCount}</span></p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-xs">
+                  No needs data available to display chart.
+                </div>
+              )}
+            </div>
+
+            {/* Chart 2: Quantity Fulfillment Status */}
+            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-6 flex flex-col justify-between h-[300px]">
+              <div>
+                <h3 className="text-base font-bold text-slate-800">Quantity Fulfillment Overview ({activeChartSectionName})</h3>
+                <p className="text-xs text-slate-500 mt-1">Comparison of physically received quantity vs. remaining required quantity</p>
+              </div>
+
+              {totalRequiredQuantity > 0 ? (
+                <div className="flex items-center justify-between flex-1 mt-4">
+                  <div className="w-[180px] h-[180px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={chart2Data}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {chart2Data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={CHART2_COLORS[index]} />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Custom Legend */}
+                  <div className="flex-1 flex flex-col justify-center pl-6 space-y-3">
+                    {chart2Data.map((entry, index) => (
+                      <div key={index} className="flex items-start gap-2.5">
+                        <span className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: CHART2_COLORS[index] }} />
+                        <div>
+                          <p className="text-xs font-semibold text-slate-700 leading-tight">{entry.name}</p>
+                          <p className="text-[11px] text-slate-500 font-bold mt-0.5">
+                            {entry.value.toLocaleString()} units ({entry.percentage}%)
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="pt-2 border-t border-slate-100">
+                      <p className="text-[10px] text-slate-400 font-medium">Total Required Qty: <span className="font-bold text-slate-600">{totalRequiredQuantity.toLocaleString()} units</span></p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-xs">
+                  No quantity data available to display chart.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
