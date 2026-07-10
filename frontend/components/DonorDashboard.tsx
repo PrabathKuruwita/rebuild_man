@@ -5,13 +5,10 @@ import { useAuth } from "@/lib/AuthContext";
 import {
   Donation,
   NeedItem,
-  Organization,
   getDonations,
   getOrganizations,
   cancelDonation,
   updateDonation,
-  statusColors,
-  unitLabels,
 } from "@/lib/api";
 import {
   HeartHandshake,
@@ -47,7 +44,6 @@ export default function DonorDashboard() {
   const { user } = useAuth();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [needsMap, setNeedsMap] = useState<Map<number, NeedItem>>(new Map());
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -96,7 +92,6 @@ export default function DonorDashboard() {
       ]);
 
       setDonations(donationsData);
-      setOrganizations(orgsData);
 
       // Build Needs Map
       const nMap = new Map<number, NeedItem>();
@@ -125,7 +120,15 @@ export default function DonorDashboard() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    let mounted = true;
+    Promise.resolve().then(() => {
+      if (mounted) {
+        fetchData();
+      }
+    });
+    return () => {
+      mounted = false;
+    };
   }, [fetchData]);
 
   const handleStartEdit = (donation: Donation) => {
@@ -325,7 +328,7 @@ export default function DonorDashboard() {
                 Welcome back, {user?.username}!
               </h1>
               <p className="text-blue-100 mt-2 text-sm max-w-xl leading-relaxed">
-                Thank you for your generosity. You have supported {totalOrgsSupported} organizations. Let's see your real-time impact metrics below.
+                Thank you for your generosity. You have supported {totalOrgsSupported} organizations. Let&apos;s see your real-time impact metrics below.
               </p>
             </div>
             <a
@@ -725,7 +728,7 @@ export default function DonorDashboard() {
                               </span>
                               {pledge.cancellation_reason && (
                                 <p className="text-[10px] text-red-600 mt-1 font-semibold leading-relaxed">
-                                  Reason: "{pledge.cancellation_reason}"
+                                  Reason: &quot;{pledge.cancellation_reason}&quot;
                                 </p>
                               )}
                             </div>
@@ -1156,7 +1159,7 @@ export default function DonorDashboard() {
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Your Message</p>
                     <p className="text-slate-600 italic bg-slate-50 p-3 rounded-xl mt-1 border border-slate-100 break-words">
-                      "{viewingDonation.message}"
+                      &quot;{viewingDonation.message}&quot;
                     </p>
                   </div>
                 )}
