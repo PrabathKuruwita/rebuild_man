@@ -25,7 +25,13 @@ export default function SectionAccordion({
   onEditSection,
   onDeleteSection,
 }: SectionAccordionProps) {
+  const [prevDefaultOpen, setPrevDefaultOpen] = useState(defaultOpen);
   const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  if (defaultOpen !== prevDefaultOpen) {
+    setPrevDefaultOpen(defaultOpen);
+    setIsOpen(defaultOpen);
+  }
 
   const criticalCount =
     section.needs?.filter((n) => n.priority === "CRITICAL").length || 0;

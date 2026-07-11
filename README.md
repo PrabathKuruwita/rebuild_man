@@ -1,37 +1,283 @@
 # NeedTracker — Rebuild Man Project
 
-A full-stack web application for tracking organisational needs, managing sections, and coordinating resource allocation across multiple organisations.
+> A full-stack web application for tracking organisational needs, managing sections, and coordinating resource and donation allocation across multiple organisations in Sri Lanka.
+
+[![CI/CD Pipeline](https://github.com/ravindudilhan/rebuild_man/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/ravindudilhan/rebuild_man/actions/workflows/ci-cd.yml)
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![Django](https://img.shields.io/badge/Django-5.1-green)
+![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-k3s-326CE5)
+
+---
+
+## Table of Contents
+
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Local Development (Manual)](#local-development-manual)
+  - [Docker (Recommended)](#docker-recommended)
+- [Environment Variables](#environment-variables)
+- [API Reference](#api-reference)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Kubernetes Deployment](#kubernetes-deployment)
+- [Monitoring & Observability](#monitoring--observability)
+- [Branch Strategy](#branch-strategy)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## ✨ Key Features at a Glance
+
+### 🔐 Authentication & Access Control
+- JWT-based login with **automatic token refresh** on expiry
+- Login via **username or email**
+- **3-tier role system** — `ADMIN`, `ORG_ADMIN`, `DONOR`
+- Org Admin **registration approval workflow** (Pending → Approved / Rejected)
+- Secure **email-based password reset** with 1-hour token expiry
+- Org Admins can **invite additional admins** to their organisation (sends email)
+- Route-level protection on both frontend and backend
+
+### 🏥 Organisation & Need Management
+- Full **CRUD for Organisations** with type, district, address, geo-coordinates, contact info
+- **Section management** within organisations (head of section, metadata)
+- **Need tracking** per section — priority levels (`CRITICAL`, `ESSENTIAL`, `NICE TO HAVE`), quantity required vs. received, units (`UNIT`, `BOX`, `KG`, `LITER`)
+- **Organisation hierarchy API** — retrieve a full org → sections → needs tree in one request
+- Role-scoped data visibility: Org Admins only see their own organisation's data
+
+### 💝 Donation Lifecycle
+- **Private and Government donor flows** with distinct form fields
+- Full donation status lifecycle: `PENDING` → `CONFIRMED` → `FULFILLED` / `CANCELLED`
+- Confirm, cancel (with reason), and receive/fulfil actions per donation
+- Optional **donation letter file upload**
+- **Public recent donations feed** — visible without authentication
+- Automatically tracks `quantity_received` against `quantity_required` per need item
+
+### 🤖 AI-Powered Document Processing
+- Upload PDF documents per organisation
+- Trigger **Google Gemini AI** + **PyTesseract OCR** extraction pipeline
+- AI extracts structured need items from uploaded documents
+- Admin **reviews and approves** AI output before it creates actual `NeedItem` records
+- Document statuses: `PENDING` → `PROCESSED` → `APPROVED` / `FAILED`
+
+### 🔍 Search & Discovery
+- **Cross-entity search** across organisations and needs from a single endpoint
+- Filter by `priority`, `org_type`, pagination (`limit`, `offset`)
+- Exclude fulfilled needs from results with `exclude_fulfilled=true`
+- **System-wide statistics** endpoint: provinces covered, verified hospitals, donors onboarded, delivery success rate
+
+### 📧 Email Notifications
+- Org Admin **approval email** with login link and account details
+- Org Admin **rejection email** with reason (sent before account deletion)
+- **Admin invitation email** with temporary credentials when inviting co-admins
+- **Password reset email** with secure tokenised link
+
+### 🐳 Docker & Local Dev
+- Single command startup: `docker-compose up --build`
+- **3-service stack**: PostgreSQL, Django backend, Next.js frontend
+- Health checks — backend waits for DB to be ready before starting
+- **Volume persistence** — data and media files survive container restarts
+- Dev startup scripts for PowerShell and CMD (`dev-start.ps1`, `dev-start.bat`)
+
+### 🚀 CI/CD & Kubernetes
+- **7-stage GitHub Actions pipeline**: test → lint → build → Trivy security scan → Docker push → K8s deploy
+- **Trivy vulnerability scanning** (HIGH/CRITICAL) on every pull request
+- Automatic **Docker Hub image push** tagged with both `:latest` and commit SHA
+- **Rolling deployment** to k3s with zero-downtime strategy (`maxUnavailable: 0`)
+- **Kubernetes Secrets** injection — no credentials in manifests
+- Production URL: **`https://rebuild-app.duckdns.org`**
+
+### 📊 Monitoring & Observability
+- **Prometheus metrics** exposed at `/metrics` via `django-prometheus`
+- Metrics cover: HTTP request counts & latency, DB query performance, model events
+- **Grafana dashboard** at `https://grafana.rebuild-app.duckdns.org`
+- Prometheus scrapes: Django backend, Kubernetes node exporter, kube-state-metrics
 
 ---
 
 ## Tech Stack
 
-| Layer    | Technology                                                   |
-| -------- | ------------------------------------------------------------ |
-| Backend  | Django 6.x · Django REST Framework · PostgreSQL (Docker)     |
-| Frontend | Next.js 15 · TypeScript · Tailwind CSS v4                    |
-| Auth     | Django session / token (role-based: Admin, Org Admin, Donor) |
+| Layer       | Technology                                                              |
+| ----------- | ----------------------------------------------------------------------- |
+| **Backend** | Django 5.1 · Django REST Framework 3.15 · PostgreSQL 15                 |
+| **Frontend**| Next.js 15 · TypeScript · Tailwind CSS v4                               |
+| **Auth**    | JWT (SimpleJWT) · Role-based: `ADMIN`, `ORG_ADMIN`, `DONOR`            |
+| **AI**      | Google Gemini (`google-generativeai`) · PyTesseract OCR · PyPDF2        |
+| **DevOps**  | Docker · Docker Compose · GitHub Actions · k3s Kubernetes               |
+| **Monitoring** | Prometheus · Grafana · `django-prometheus` · Node Exporter           |
+| **Email**   | Django SMTP (Gmail) — password reset, approval/rejection notifications  |
+
+---
+
+## Architecture
+
+```
+                         ┌──────────────────────────────────────┐
+                         │            Browser / Client           │
+                         └────────────────┬─────────────────────┘
+                                          │
+                         ┌────────────────▼─────────────────────┐
+                         │      Next.js Frontend (:3000)         │
+                         │   App Router · TypeScript · Tailwind  │
+                         └────────────────┬─────────────────────┘
+                                          │ REST API (JWT)
+                         ┌────────────────▼─────────────────────┐
+                         │      Django Backend (:8000)           │
+                         │   DRF · JWT Auth · Gemini AI · SMTP   │
+                         └──────┬──────────────────┬────────────┘
+                                │ SQL               │ /metrics
+                   ┌────────────▼──────┐   ┌────────▼───────────┐
+                   │  PostgreSQL (:5433)│   │  Prometheus + Grafana│
+                   │  (Docker / K8s)   │   │  (monitoring ns)    │
+                   └───────────────────┘   └─────────────────────┘
+```
+
+**Production (K8s — `rebuild-app.duckdns.org`):**
+
+```
+Internet → Traefik Ingress → frontend (svc:3000)
+                           → /api/**  → backend (svc:8000)
+                           → /metrics → backend (svc:8000)
+grafana.rebuild-app.duckdns.org → Grafana (monitoring ns)
+```
+
+---
+
+## Features
+
+### Frontend
+
+| Feature | Description |
+|---|---|
+| **Authentication** | JWT login with auto-refresh on 401, login by username **or** email |
+| **Role-based Dashboards** | Separate views for `ADMIN`, `ORG_ADMIN`, and `DONOR` |
+| **Organization Management** | Full CRUD — create, view, edit, delete organisations with geo-coordinates |
+| **Section Management** | Add / edit / delete sections within an organisation |
+| **Need Tracking** | Track needs per section — priority (`CRITICAL`, `ESSENTIAL`, `NICE`), quantity, unit |
+| **Donation System** | Private & government donor flows, confirmation, cancellation, receipt lifecycle |
+| **Document Upload & AI** | Upload PDFs → trigger Gemini AI processing → approve extracted need items |
+| **Search** | Cross-entity search across organisations and needs with filters |
+| **Public Donations Feed** | Public view of recent donations without authentication |
+| **Impact Page** | System-wide stats: provinces covered, hospitals, donors, delivery rate |
+| **Profile Management** | Users can update profile info and change password |
+| **Password Reset** | Email-based forgot-password / reset flow |
+| **Org Admin Approval** | Registration requests with admin approve/reject workflow |
+| **Admin Panel** | Approve/reject org admin registrations, manage donors |
+| **Responsive Design** | Mobile-friendly layout with Tailwind CSS |
+
+### Backend
+
+| Feature | Description |
+|---|---|
+| **REST API** | Full Django REST Framework with viewsets and custom actions |
+| **JWT Authentication** | `djangorestframework-simplejwt` with custom claims (role embedded in token) |
+| **3-Level RBAC** | `ADMIN` (global), `ORG_ADMIN` (own org only), `DONOR` (read + donate) |
+| **Org Admin Approval Workflow** | Pending → Approved/Rejected with email notifications |
+| **AI Document Processing** | Google Gemini + PyTesseract OCR + PyPDF2 pipeline |
+| **Email Notifications** | SMTP via Gmail — approval, rejection, invitation, password reset |
+| **Password Reset** | Secure token-based reset with 1-hour expiry |
+| **Prometheus Metrics** | `/metrics` endpoint via `django-prometheus` |
+| **Pagination** | DRF pagination with `results` envelope, handled gracefully on frontend |
+| **CORS** | `django-cors-headers` configured for local and production origins |
+| **Media Files** | Uploaded documents persisted in `media/` volume |
+| **Celery + Redis** | Included in dependencies for optional async background tasks |
+
+### Database
+
+| Feature | Description |
+|---|---|
+| **PostgreSQL 15** | Primary database — containerised in Docker and K8s |
+| **21 Migrations** | All applied and tracked in version control |
+| **Volume Persistence** | Data survives container restarts via named Docker/K8s volumes |
+| **Health Checks** | `pg_isready` probe in Docker Compose and Kubernetes |
+| **Relationships** | Org → Sections → Needs → Donations; User → Organisation |
+
+### DevOps
+
+| Feature | Description |
+|---|---|
+| **Docker Compose** | 3-service stack (db, backend, frontend) with health checks and network isolation |
+| **Multi-stage Builds** | Optimised Docker images for backend and frontend |
+| **GitHub Actions CI/CD** | Automated test → security scan → Docker build → push → K8s deploy |
+| **Trivy Scanning** | Vulnerability scan (HIGH/CRITICAL) and infrastructure policy check on every PR |
+| **K8s (k3s)** | Production deployment with rolling-update strategy, secrets from K8s Secrets |
+| **Traefik Ingress** | HTTP/HTTPS routing in production cluster |
+| **Prometheus + Grafana** | Live metrics for Django backend, node, and kube-state |
 
 ---
 
 ## Project Structure
 
 ```
-rebuild_man_project/
-├── backend/                  # Django REST API
-│   ├── config/               # Project settings, URLs, WSGI/ASGI
-│   ├── core/                 # Main app — models, serializers, views, URLs
-│   │   └── migrations/       # Database migrations
-│   ├── manage.py
-│   └── requirements.txt
-└── frontend/                 # Next.js application
-    ├── app/                  # App Router pages
-    │   ├── documents/        # Document upload page
-    │   ├── needs/            # Needs listing page
-    │   └── organizations/    # Organisation CRUD pages
-    ├── components/           # Reusable React components
-    └── lib/
-        └── api.ts            # Centralised API client
+rebuild_man/
+│
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml               # GitHub Actions — test, scan, build, push, deploy
+│
+├── k8s/                            # Kubernetes manifests (namespace: rikili001)
+│   ├── backend.yaml                # Deployment + Service (reads K8s Secrets)
+│   ├── frontend.yaml               # Deployment + Service
+│   ├── postgres.yaml               # StatefulSet + PVC + Service
+│   ├── ingress.yaml                # Traefik Ingress (rebuild-app.duckdns.org)
+│   ├── grafana-ingress.yaml        # Grafana ingress (grafana.rebuild-app.duckdns.org)
+│   └── prometheus-scrape-config.yaml # Prometheus ConfigMap (scrapes Django /metrics)
+│
+├── backend/                        # Django REST API
+│   ├── config/                     # Project settings, URLs, WSGI/ASGI
+│   │   ├── settings.py             # JWT, CORS, DB, email, Prometheus config
+│   │   └── urls.py
+│   ├── core/                       # Main application
+│   │   ├── models.py               # User, Organisation, Section, NeedItem, DocumentUpload, Donation
+│   │   ├── views.py                # ViewSets + auth views (login, register, approval, reset)
+│   │   ├── serializers.py          # All DRF serializers
+│   │   ├── serializers_jwt.py      # Custom JWT token claims
+│   │   ├── permissions.py          # IsAdminOrReadOnly, IsAdminUser, IsOrgAdminOfThisOrg
+│   │   ├── ai_service.py           # Gemini AI + OCR document processor
+│   │   └── migrations/             # 21 database migrations
+│   ├── Dockerfile                  # Multi-stage Django image (Python 3.12)
+│   ├── entrypoint.sh               # Auto-migrate + create default admin on startup
+│   ├── requirements.txt
+│   └── .env.example                # All supported environment variables
+│
+├── frontend/                       # Next.js 15 application
+│   ├── app/                        # App Router pages
+│   │   ├── page.tsx                # Landing / home page
+│   │   ├── login/                  # Login page
+│   │   ├── admin/                  # Admin dashboard (approval management, donors)
+│   │   ├── org-admin/              # Org Admin dashboard
+│   │   ├── organizations/          # Organisation CRUD pages
+│   │   ├── needs/                  # Needs listing and management
+│   │   ├── documents/              # Document upload and AI processing
+│   │   ├── search/                 # Search page
+│   │   ├── impact/                 # Impact / stats page
+│   │   ├── profile/                # User profile
+│   │   ├── forgot-password/        # Password reset request
+│   │   ├── reset-password/         # Password reset confirm
+│   │   ├── about/                  # About page
+│   │   ├── contact/                # Contact page
+│   │   ├── terms/                  # Terms of service
+│   │   └── privacy/                # Privacy policy
+│   ├── components/                 # Reusable React components
+│   ├── lib/
+│   │   ├── api.ts                  # Centralised API client (JWT auto-refresh on 401)
+│   │   ├── AuthContext.tsx         # Global auth state + token management
+│   │   └── useAuthGuard.ts         # Route protection hook
+│   ├── Dockerfile                  # Multi-stage Next.js image (Node 22)
+│   └── next.config.ts              # API proxy rewrites
+│
+├── docker-compose.yml              # Production-style 3-service stack
+├── docker-compose.dev.yml          # Dev overrides
+├── dev-start.ps1 / dev-start.bat   # Quick local dev startup scripts
+├── run-docker.ps1 / run-docker.bat # Docker startup scripts
+├── setup-manual.ps1                # Full automated local setup
+└── docs/                           # Additional documentation
 ```
 
 ---
@@ -40,14 +286,18 @@ rebuild_man_project/
 
 ### Prerequisites
 
-- Python 3.12+
-- Node.js 18+
-- Docker Desktop
-- Git
+| Tool | Version |
+|------|---------|
+| Python | 3.12+ |
+| Node.js | 18+ (22 recommended) |
+| Docker Desktop | Latest |
+| Git | Any |
 
 ---
 
-### Backend Setup
+### Local Development (Manual)
+
+#### 1. Backend
 
 ```bash
 cd backend
@@ -55,38 +305,40 @@ cd backend
 # Start PostgreSQL via Docker
 docker compose up -d
 
-# Create and activate virtual environment
+# Create virtual environment
 python -m venv venv
-# Windows
+
+# Activate (Windows)
 venv\Scripts\activate
-# macOS/Linux
+# Activate (macOS/Linux)
 source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Run database migrations
+# Apply database migrations
 python manage.py migrate
+
+# Create default admin (optional — entrypoint.sh does this in Docker)
+python manage.py create_default_admin
 
 # Start development server
 python manage.py runserver
 ```
 
-The API will be available at `http://localhost:8000/api/`.
+API available at: **`http://localhost:8000/api/`**
 
-Database defaults are configured for Docker PostgreSQL:
+Default DB (Docker PostgreSQL):
 
-- Host: `localhost`
-- Port: `5433`
-- Database: `rebuild_db`
-- User: `postgres`
-- Password: `admin1234`
+| Setting | Value |
+|---|---|
+| Host | `localhost` |
+| Port | `5433` |
+| Database | `rebuild_db` |
+| User | `postgres` |
+| Password | `admin1234` |
 
-You can override these via environment variables (`USE_POSTGRES`, `POSTGRES_*`). See `backend/.env.example`.
-
----
-
-### Frontend Setup
+#### 2. Frontend
 
 ```bash
 cd frontend
@@ -98,36 +350,312 @@ npm install
 npm run dev
 ```
 
-The app will be available at `http://localhost:3000`.
+Frontend available at: **`http://localhost:3000`**
 
 ---
 
-## API Endpoints
+### Docker (Recommended)
 
-| Method | Endpoint                  | Description               |
-| ------ | ------------------------- | ------------------------- |
-| GET    | `/api/organizations/`     | List all organisations    |
-| POST   | `/api/organizations/`     | Create an organisation    |
-| GET    | `/api/organizations/:id/` | Retrieve an organisation  |
-| PUT    | `/api/organizations/:id/` | Update an organisation    |
-| DELETE | `/api/organizations/:id/` | Delete an organisation    |
-| GET    | `/api/sections/`          | List all sections         |
-| POST   | `/api/sections/`          | Create a section          |
-| GET    | `/api/needs/`             | List all need items       |
-| POST   | `/api/needs/`             | Create a need item        |
-| GET    | `/api/documents/`         | List all document uploads |
-| POST   | `/api/documents/`         | Upload a document         |
+#### First run (builds images from source):
+
+```bash
+docker-compose up --build
+```
+
+#### Subsequent runs:
+
+```bash
+docker-compose up
+```
+
+#### Useful Docker commands:
+
+```bash
+# View all running services
+docker-compose ps
+
+# Tail logs for a specific service
+docker-compose logs -f backend
+
+# Restart a single service after code change
+docker-compose restart backend
+
+# Rebuild a single service after dependency change
+docker-compose up --build backend
+
+# Full reset (removes volumes — deletes all data)
+docker-compose down -v && docker-compose up --build
+```
+
+Access points after startup:
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:8000/api/ |
+| Django Admin | http://localhost:8000/admin |
+| Prometheus Metrics | http://localhost:8000/metrics |
+
+**Default credentials:** `admin` / `Admin@1234`
 
 ---
 
-## Features
+## Environment Variables
 
-- **Organisations** — Create, view, edit, and delete organisations
-- **Sections** — Add, edit, and delete sections within an organisation
-- **Needs** — Track need items per section with priority, quantity, and status
-- **Documents** — Upload supporting documents per organisation
-- **Filtering** — Filter needs by priority level
-- **Responsive UI** — Mobile-friendly layout with Tailwind CSS
+Copy `backend/.env.example` to `backend/.env` and fill in values.
+
+| Variable | Description | Default |
+|---|---|---|
+| `SECRET_KEY` | Django secret key | (required in prod) |
+| `DEBUG` | Enable debug mode | `True` |
+| `ALLOWED_HOSTS` | Comma-separated allowed hosts | `localhost,127.0.0.1` |
+| `DB_NAME` | PostgreSQL database name | `rebuild_db` |
+| `DB_USER` | PostgreSQL user | `postgres` |
+| `DB_PASSWORD` | PostgreSQL password | `admin1234` |
+| `DB_HOST` | PostgreSQL host | `localhost` |
+| `DB_PORT` | PostgreSQL port | `5432` |
+| `FRONTEND_URL` | Frontend base URL for email links | `http://localhost:3000` |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated CORS origins | `http://localhost:3000` |
+| `EMAIL_HOST` | SMTP host | `smtp.gmail.com` |
+| `EMAIL_PORT` | SMTP port | `587` |
+| `EMAIL_USE_TLS` | Enable TLS | `True` |
+| `EMAIL_HOST_USER` | SMTP email address | (required for email) |
+| `EMAIL_HOST_PASSWORD` | SMTP app password | (required for email) |
+| `DEFAULT_FROM_EMAIL` | Sender address | Same as `EMAIL_HOST_USER` |
+| `GEMINI_API_KEY` | Google Gemini API key | (required for AI features) |
+
+Frontend (`.env.local`):
+
+| Variable | Description | Default |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | API base URL visible to browser | `/api` (Docker) or `http://localhost:8000/api` (local) |
+| `BACKEND_URL` | Server-side backend URL (Next.js rewrites) | `http://backend:8000` |
+
+---
+
+## API Reference
+
+### Authentication
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/login/` | None | Login (username or email) — returns JWT tokens |
+| `POST` | `/api/auth/register/` | None | Register as Donor |
+| `POST` | `/api/auth/register-org-admin/` | None | Register as Org Admin (requires approval) |
+| `POST` | `/api/auth/refresh/` | None | Refresh access token |
+| `GET` | `/api/auth/me/` | JWT | Get current user profile |
+| `PATCH` | `/api/auth/me/` | JWT | Update profile / change password |
+| `POST` | `/api/auth/forgot-password/` | None | Request password reset email |
+| `POST` | `/api/auth/reset-password/` | None | Confirm password reset with token |
+
+### Admin — Org Admin Approvals
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/admin/approvals/` | ADMIN | List pending approval requests |
+| `GET` | `/api/admin/approvals/{id}/` | ADMIN | Get single approval request |
+| `POST` | `/api/admin/approvals/{id}/approve/` | ADMIN | Approve registration + send email |
+| `POST` | `/api/admin/approvals/{id}/reject/` | ADMIN | Reject registration + send email + delete account |
+| `GET` | `/api/admin/approvals/approved_list/` | ADMIN | List approved org admins |
+| `GET` | `/api/admin/approvals/rejected_list/` | ADMIN | List rejected org admins |
+
+### Organisations
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/organizations/` | Public | List all organisations |
+| `POST` | `/api/organizations/` | ADMIN / ORG_ADMIN | Create an organisation |
+| `GET` | `/api/organizations/{id}/` | Public | Retrieve an organisation |
+| `PATCH` | `/api/organizations/{id}/` | ADMIN / ORG_ADMIN | Update an organisation |
+| `DELETE` | `/api/organizations/{id}/` | ADMIN | Delete an organisation |
+| `GET` | `/api/organizations/{id}/hierarchy/` | Public | Full org → sections → needs tree |
+| `GET` | `/api/organizations/{id}/admins/` | ORG_ADMIN | List admins of this org |
+| `POST` | `/api/organizations/{id}/invite_admin/` | ORG_ADMIN | Invite another admin (sends email) |
+
+### Sections
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/sections/` | Public | List sections |
+| `POST` | `/api/sections/` | ADMIN / ORG_ADMIN | Create a section |
+| `GET` | `/api/sections/{id}/` | Public | Retrieve a section |
+| `PATCH` | `/api/sections/{id}/` | ADMIN / ORG_ADMIN | Update a section |
+| `DELETE` | `/api/sections/{id}/` | ADMIN / ORG_ADMIN | Delete a section |
+
+### Needs
+
+| Method | Endpoint | Auth | Query Params | Description |
+|---|---|---|---|---|
+| `GET` | `/api/needs/` | Public | `priority`, `exclude_fulfilled` | List need items |
+| `POST` | `/api/needs/` | ADMIN / ORG_ADMIN | | Create a need item |
+| `GET` | `/api/needs/{id}/` | Public | | Retrieve a need item |
+| `PATCH` | `/api/needs/{id}/` | ADMIN / ORG_ADMIN | | Update a need item |
+| `DELETE` | `/api/needs/{id}/` | ADMIN / ORG_ADMIN | | Delete a need item |
+
+### Documents & AI
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/documents/` | ADMIN / ORG_ADMIN | List uploaded documents |
+| `POST` | `/api/documents/` | ADMIN / ORG_ADMIN | Upload a document (`multipart/form-data`) |
+| `POST` | `/api/documents/{id}/process_with_ai/` | ADMIN / ORG_ADMIN | Run Gemini AI extraction |
+| `POST` | `/api/documents/{id}/approve_and_create_needs/` | ADMIN / ORG_ADMIN | Approve AI output → create NeedItems |
+
+### Donations
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/donations/` | JWT | List donations (role-filtered) |
+| `POST` | `/api/donations/` | JWT | Create a donation pledge |
+| `GET` | `/api/donations/{id}/` | JWT | Get a donation |
+| `PATCH` | `/api/donations/{id}/` | JWT | Update a donation |
+| `DELETE` | `/api/donations/{id}/` | ADMIN | Delete a donation |
+| `POST` | `/api/donations/{id}/confirm/` | ADMIN / ORG_ADMIN | Confirm a donation |
+| `POST` | `/api/donations/{id}/cancel/` | ADMIN / ORG_ADMIN | Cancel a donation |
+| `POST` | `/api/donations/{id}/receive/` | ADMIN / ORG_ADMIN | Mark donation as received |
+| `GET` | `/api/donations/public_recent/` | Public | Recent donations (public feed) |
+
+### Other Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/donors/` | ADMIN | List all donor users |
+| `GET` | `/api/search/` | Public | Cross-entity search (`q`, `type`, `priority`, `org_type`) |
+| `GET` | `/api/stats/` | Public | System stats (provinces, hospitals, donors, delivery rate) |
+| `GET` | `/metrics` | Public | Prometheus metrics (Django, DB, requests) |
+
+---
+
+## CI/CD Pipeline
+
+The pipeline is defined in [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) and runs on every push to `main` and every pull request.
+
+```
+Push / PR to main
+      │
+      ├─► backend-test          (Python 3.12, Django check + manage.py test, live Postgres)
+      ├─► frontend-test         (Node 22, npm ci, ESLint, next build)
+      │
+      └─── (both pass) ─────────────────────────────────────────────────────────────────┐
+                                                                                        │
+            ├─► trivy-vulnerability-scan   (HIGH/CRITICAL deps — backend + frontend)   │
+            └─► trivy-policy-check         (Dockerfile + infra misconfig scan)         │
+                                                                                        │
+                    (all pass, push to main only) ──────────────────────────────────────┤
+                                                                                        │
+                          ├─► docker-build     (builds backend + frontend images)      │
+                          └─► push-images      (push to Docker Hub as :latest + :sha)  │
+                                                                                        │
+                                    (push-images done) ─────────────────────────────────┘
+                                                                                        │
+                                          └─► deploy-k3s  (kubectl apply k8s manifests,
+                                                            rolling update with new SHA tag,
+                                                            apply Prometheus scrape config,
+                                                            apply Grafana ingress)
+```
+
+### Required GitHub Secrets
+
+| Secret | Description |
+|---|---|
+| `DB_PASSWORD` | PostgreSQL password used in test job |
+| `DOCKER_PASSWORD` | Docker Hub access token |
+| `DJANGO_SECRET_KEY` | Django secret key for production |
+| `KUBECONFIG` | Base64-encoded kubeconfig for production k3s cluster |
+| `EMAIL_HOST_USER` | SMTP email address |
+| `EMAIL_HOST_PASSWORD` | SMTP app password |
+
+---
+
+## Kubernetes Deployment
+
+Production runs on a self-hosted **k3s** cluster under namespace `rikili001`.
+
+**Public URL:** `https://rebuild-app.duckdns.org`
+
+### Manifests Overview
+
+| File | Resource | Description |
+|---|---|---|
+| `k8s/postgres.yaml` | StatefulSet + PVC + Service | PostgreSQL with persistent volume |
+| `k8s/backend.yaml` | Deployment + Service | Django app, pulls secrets from K8s Secrets |
+| `k8s/frontend.yaml` | Deployment + Service | Next.js app, rolling update strategy |
+| `k8s/ingress.yaml` | Ingress (Traefik) | Routes `/api` → backend, `/` → frontend |
+| `k8s/grafana-ingress.yaml` | Ingress (Traefik) | Routes `grafana.rebuild-app.duckdns.org` → Grafana |
+| `k8s/prometheus-scrape-config.yaml` | ConfigMap | Prometheus scrape jobs for Django, node, kube-state |
+
+### Manual Deployment
+
+```bash
+# Apply all at once
+kubectl apply -f k8s/
+
+# Or individually
+kubectl apply -f k8s/postgres.yaml
+kubectl apply -f k8s/backend.yaml
+kubectl apply -f k8s/frontend.yaml
+kubectl apply -f k8s/ingress.yaml
+kubectl apply -f k8s/grafana-ingress.yaml
+kubectl apply -f k8s/prometheus-scrape-config.yaml
+
+# Check status
+kubectl get pods -n rikili001
+kubectl get ingress -n rikili001
+```
+
+### K8s Secrets (created by CI or manually)
+
+```bash
+kubectl create secret generic backend-secrets \
+  --from-literal=SECRET_KEY="your-secret-key" \
+  --from-literal=DB_PASSWORD="your-db-password" \
+  --from-literal=EMAIL_HOST_USER="your@email.com" \
+  --from-literal=EMAIL_HOST_PASSWORD="your-app-password" \
+  --from-literal=DEFAULT_FROM_EMAIL="your@email.com" \
+  -n rikili001
+```
+
+---
+
+## Monitoring & Observability
+
+### Prometheus
+
+Prometheus is deployed in the `monitoring` namespace and scrapes three targets:
+
+| Job | Target | Interval |
+|---|---|---|
+| `django-backend` | `backend.rikili001.svc.cluster.local:8000/metrics` | 30s |
+| `node-exporter` | `prometheus-prometheus-node-exporter.monitoring:9100` | 15s |
+| `kube-state-metrics` | `prometheus-kube-state-metrics.monitoring:8080` | 15s |
+
+Prometheus metrics are exposed by `django-prometheus` and include:
+- HTTP request counts and latency by view/method/status
+- Database query counts and latency
+- Django model creation/deletion events
+
+### Grafana
+
+Grafana is available at: `https://grafana.rebuild-app.duckdns.org`
+
+Dashboards can be built from the Prometheus data source to visualise:
+- Request throughput and error rates
+- Database performance
+- Node CPU / memory usage
+- Kubernetes pod health
+
+---
+
+## Branch Strategy
+
+| Branch | Purpose |
+|---|---|
+| `main` | Production-ready code — triggers full CI/CD and K8s deployment |
+| `sadev` | Sadev's development branch |
+| `dev-dilhan` | Dilhan's development branch |
+| `dev-pasindu` | Pasindu's development branch |
+
+> **Note:** Only merges into `main` trigger Docker image pushes and Kubernetes deployment.
 
 ---
 
@@ -135,548 +663,45 @@ The app will be available at `http://localhost:3000`.
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Commit your changes: `git commit -m "feat: add your feature"`
+3. Commit your changes using conventional commits: `git commit -m "feat: add your feature"`
 4. Push to the branch: `git push origin feature/your-feature-name`
-5. Open a Pull Request
+5. Open a Pull Request against `main`
+
+CI will automatically run tests, lint, and security scans on your PR.
 
 ---
 
-## Branch Strategy
+## Production Checklist
 
-| Branch        | Purpose                      |
-| ------------- | ---------------------------- |
-| `main`        | Production-ready code        |
-| `sadev`       | Sadev's development branch   |
-| `dev-dilhan`  | Dilhan's development branch  |
-| `dev-pasindu` | Pasindu's development branch |
+Before going live, ensure:
+
+- [ ] `SECRET_KEY` is a unique, randomly generated value
+- [ ] `DEBUG=False`
+- [ ] `ALLOWED_HOSTS` set to your actual domain
+- [ ] CORS origins locked to production frontend URL
+- [ ] All K8s Secrets populated (no defaults)
+- [ ] HTTPS / TLS configured via Traefik or cert-manager
+- [ ] Database backups scheduled
+- [ ] Prometheus and Grafana dashboards set up
+- [ ] Email SMTP credentials verified
+- [ ] Gemini AI API key configured
+
+---
+
+## System Requirements
+
+### Minimum (Docker Compose local)
+
+| Resource | Minimum | Recommended |
+|---|---|---|
+| RAM | 4 GB | 8 GB |
+| Disk | 2 GB free | 5 GB free |
+| CPU | 2 cores | 4+ cores |
+
+> First Docker build downloads ~1 GB of base images and takes 5–10 minutes. Subsequent builds are fast due to layer caching.
 
 ---
 
 ## License
 
-This project is for internal/educational use under the Rebuild Man initiative.
-
-## Newly added chages with complete ride 
-
-# 🎉 REBUILD SYSTEM - COMPLETE DELIVERABLE
-
-## 📦 What You're Getting
-
-Your complete, production-ready full-stack application with comprehensive Docker setup and detailed documentation.
-
----
-
-## ✅ COMPLETED ITEMS
-
-### 1. **Bug Fixes Applied** (26+ bugs fixed)
-- ✅ Admin role issue (DONOR → ADMIN) - FIXED & IMPROVED
-- ✅ JWT token refresh mechanism - WORKING
-- ✅ API pagination response handling - FIXED
-- ✅ Permission class conflicts - RESOLVED
-- ✅ Null reference errors - PROTECTED
-- ✅ Database migrations - ALL 21 APPLIED
-- ✅ Docker image version conflicts - RESOLVED
-
-### 2. **Docker Infrastructure** (Production Ready)
-- ✅ Backend Dockerfile (Django 5.1 + Python 3.12)
-- ✅ Frontend Dockerfile (Next.js 16 + Node 22, multi-stage optimized)
-- ✅ docker-compose.yml (3 services orchestrated)
-- ✅ .dockerignore files (optimized images)
-- ✅ Health checks (automatic service monitoring)
-- ✅ Volume persistence (data survives restarts)
-- ✅ Network isolation (secure communication)
-
-### 3. **Startup Scripts**
-- ✅ run-docker.ps1 (PowerShell Docker startup)
-- ✅ run-docker.bat (Batch Docker startup)
-- ✅ setup-manual.ps1 (Automatic local setup)
-
-### 4. **Comprehensive Documentation**
-- ✅ SYSTEM_SETUP_GUIDE.md (500+ lines, complete instructions)
-- ✅ DOCKER_AND_SETUP.md (Quick reference for Docker)
-- ✅ DOCKERIZATION_COMPLETE.md (Full technical breakdown)
-- ✅ ADMIN_ROLE_FIX_GUIDE.md (Step-by-step admin fix)
-- ✅ ROLE_BUG_ANALYSIS.md (Root cause analysis)
-- ✅ VERIFICATION_CHECKLIST.md (Testing checklist)
-- ✅ CONNECTIVITY_REPORT.md (System verification)
-- ✅ COMPLETE_GUIDE.md (End-to-end user guide)
-
-### 5. **Code Improvements** (Security & Maintainability)
-- ✅ User model auto-fix safeguard
-- ✅ Enhanced management commands
-- ✅ Consolidated permission classes
-- ✅ Type safety improvements
-- ✅ Null reference protections
-- ✅ Code documentation
-
----
-
-## 🚀 QUICK START GUIDE
-
-### Option 1: Docker (Recommended, 2 minutes)
-```bash
-cd rebuild_man
-docker-compose up --build
-```
-Then access: http://localhost:3000 (admin/Admin@1234)
-
-### Option 2: Manual Local (3 terminals, 5 minutes)
-```bash
-cd rebuild_man
-.\setup-manual.ps1
-# Then open 3 terminals for backend, frontend, and browser
-```
-
----
-
-## 📊 SYSTEM ARCHITECTURE
-
-```
-Browser
-   ↓
-Frontend (Next.js :3000)
-   ↓ [REST API with JWT]
-Backend (Django :8000)
-   ↓ [SQL Queries]
-Database (PostgreSQL :5433)
-```
-
-**In Docker:**
-- All services in same network (secure, isolated communication)
-- Health checks ensure readiness
-- Volumes ensure data persistence
-- Multi-stage builds optimize image size
-
----
-
-## 🎯 FEATURES WORKING
-
-### Frontend Features ✅
-- User authentication (JWT with auto-refresh)
-- Role-based dashboard (Admin vs Donor)
-- Organization CRUD operations
-- Section management
-- Need tracking system
-- Document upload & management
-- Real-time statistics
-- Responsive design
-
-### Backend Features ✅
-- REST API (Django REST Framework)
-- JWT authentication
-- Role-based access control (3 levels)
-- Database persistence
-- Google Gemini AI integration
-- Document processing
-- Error handling
-
-### Database Features ✅
-- PostgreSQL 15
-- 21 migrations applied
-- Relationships maintained
-- Data constraints enforced
-- Auto-backup ready
-
-### DevOps Features ✅
-- Docker containerization
-- Multi-stage builds (optimized)
-- Health checks (monitoring)
-- Volume persistence
-- Network isolation
-- Environment configuration
-- Auto-initialization
-
----
-
-## 📁 PROJECT STRUCTURE
-
-```
-rebuild_man/
-├── 📄 Documentation Files (8 files)
-│   ├── SYSTEM_SETUP_GUIDE.md
-│   ├── DOCKER_AND_SETUP.md
-│   ├── DOCKERIZATION_COMPLETE.md
-│   ├── VERIFICATION_CHECKLIST.md
-│   ├── ADMIN_ROLE_FIX_GUIDE.md
-│   ├── ROLE_BUG_ANALYSIS.md
-│   ├── CONNECTIVITY_REPORT.md
-│   └── COMPLETE_GUIDE.md
-│
-├── 🚀 Startup Scripts (3 files)
-│   ├── run-docker.ps1
-│   ├── run-docker.bat
-│   └── setup-manual.ps1
-│
-├── 🐳 Docker Configuration
-│   ├── docker-compose.yml (NEW/UPDATED)
-│   ├── backend/Dockerfile (NEW)
-│   ├── backend/.dockerignore (NEW)
-│   ├── frontend/Dockerfile (NEW)
-│   └── frontend/.dockerignore (NEW)
-│
-├── 🔧 Backend (Tested & Fixed)
-│   ├── manage.py
-│   ├── requirements.txt
-│   ├── config/
-│   │   ├── settings.py (UPDATED with JWT)
-│   │   ├── urls.py
-│   │   └── wsgi.py
-│   ├── core/
-│   │   ├── models.py (UPDATED - auto-fix)
-│   │   ├── views.py (FIXED - cleaned duplicates)
-│   │   ├── permissions.py (FIXED - consolidated)
-│   │   ├── serializers.py (FIXED - null checks)
-│   │   ├── ai_service.py (FIXED - types)
-│   │   └── management/commands/create_default_admin.py (ENHANCED)
-│   └── migrations/ (21/21 APPLIED)
-│
-├── 🎨 Frontend (Tested & Fixed)
-│   ├── app/
-│   │   ├── page.tsx (FIXED - role display)
-│   │   ├── layout.tsx
-│   │   └── [routes]
-│   ├── components/
-│   │   ├── Navbar.tsx
-│   │   ├── OrganizationCard.tsx
-│   │   └── [other components]
-│   ├── lib/
-│   │   ├── api.ts (CRITICAL FIX - pagination)
-│   │   ├── AuthContext.tsx (JWT & refresh)
-│   │   └── useAuthGuard.ts
-│   ├── .env.local (CREATED)
-│   ├── package.json
-│   └── next.config.ts
-│
-└── 📚 Additional Files
-    ├── Validation scripts
-    ├── Test utilities
-    └── Configuration files
-```
-
----
-
-## 🧪 VERIFICATION STATUS
-
-### Pre-Deployment Checks ✅
-- [x] All services containerized
-- [x] Health checks enabled
-- [x] Database migrations automated
-- [x] Admin user auto-creation enabled
-- [x] Environment configuration ready
-- [x] Environment variables documented
-
-### Functional Tests ✅
-- [x] Authentication working
-- [x] Dashboard displaying correctly
-- [x] Organizations can be created
-- [x] API endpoints responsive
-- [x] Database persisting data
-- [x] Frontend-backend communication verified
-
-### Security Checks ✅
-- [x] JWT tokens working
-- [x] Role-based access control active
-- [x] Credentials not hardcoded
-- [x] CORS configured correctly
-- [x] SQL injection protections active
-- [x] XSS protections enabled
-
-### Performance Checks ✅
-- [x] API response time <500ms
-- [x] Frontend load time <2s
-- [x] Image sizes optimized
-- [x] Build time reasonable (5-10 min first time)
-- [x] Runtime memory usage acceptable
-- [x] Database queries optimized
-
----
-
-## 📋 NEXT STEPS
-
-### Immediate (This Week)
-1. **Test Docker Setup**
-   ```bash
-   docker-compose up --build
-   # Verify all services start and are healthy
-   ```
-
-2. **Run Verification Checklist**
-   - Open VERIFICATION_CHECKLIST.md
-   - Go through each test
-   - Document results
-
-3. **Test Complete Workflow**
-   - Login with admin/Admin@1234
-   - Create organization
-   - Create section
-   - Create need
-   - Upload document
-   - Verify persistence
-
-### Short Term (This Sprint)
-1. **Commit to GitHub**
-   ```bash
-   git add .
-   git commit -m "Add Docker support and admin role fixes"
-   git push origin main
-   ```
-
-2. **Set Up CI/CD** (GitHub Actions)
-   - Automated Docker builds
-   - Test automation
-   - Deployment triggers
-
-3. **Environment Configuration**
-   - Create `.env.production`
-   - Update SECRET_KEY for production
-   - Configure proper CORS origins
-   - Set DEBUG=False
-
-### Medium Term (Production)
-1. **Cloud Deployment**
-   - Choose platform (Azure, AWS, etc.)
-   - Set up deployment pipeline
-   - Configure SSL/TLS
-   - Set up monitoring
-
-2. **Scaling**
-   - Add Redis caching
-   - Implement Celery for background tasks
-   - Set up load balancing
-   - Database replication
-
-3. **Monitoring**
-   - Application logging
-   - Performance monitoring
-   - Error tracking (Sentry)
-   - Uptime monitoring
-
----
-
-## 📞 DOCUMENTATION GUIDE
-
-| Document | Use When | Key Content |
-|----------|----------|-------------|
-| SYSTEM_SETUP_GUIDE.md | Setting up system | Complete manual & Docker instructions |
-| DOCKER_AND_SETUP.md | Quick Docker help | Fast reference for Docker commands |
-| DOCKERIZATION_COMPLETE.md | Understanding Docker | Technical breakdown of setup |
-| VERIFICATION_CHECKLIST.md | Testing system | Step-by-step verification tests |
-| ADMIN_ROLE_FIX_GUIDE.md | Admin issues | Admin role troubleshooting |
-| ROLE_BUG_ANALYSIS.md | Understanding bug | Root cause & technical analysis |
-| CONNECTIVITY_REPORT.md | API verification | System connectivity verification |
-| COMPLETE_GUIDE.md | Full workflow | End-to-end user workflows |
-
----
-
-## 🎓 WHAT YOU LEARNED
-
-### Architecture Knowledge
-- Multi-container Docker setup
-- Service orchestration with docker-compose
-- Network isolation & communication
-- Volume persistence strategies
-- Health check implementation
-
-### Code Quality
-- Permission management best practices
-- Role-based access control
-- Secure authentication (JWT)
-- API pagination handling
-- Type safety in Python/TypeScript
-
-### Development Practices
-- Proper .gitignore and .dockerignore
-- Environment variable management
-- Multi-stage Docker builds
-- Automated migrations
-- Production-ready configurations
-
----
-
-## 🚀 KEY IMPROVEMENTS MADE
-
-### Before This Session
-- ❌ 26+ bugs in codebase
-- ❌ Admin showing as Donor
-- ❌ Can't create organizations
-- ❌ No Docker support
-- ❌ Manual setup required
-
-### After This Session
-- ✅ All 26+ bugs fixed
-- ✅ Admin role corrected with safeguards
-- ✅ Full CRUD operations working
-- ✅ Production-ready Docker setup
-- ✅ Automated setup scripts
-- ✅ Comprehensive documentation
-- ✅ Code improvements & security hardening
-
----
-
-## 💡 TIPS FOR SUCCESS
-
-### Docker
-1. First build takes 5-10 min (downloading base images)
-2. Subsequent builds are faster (cached layers)
-3. Network name matters: `rebuild_network`
-4. Always use `--build` first time: `docker-compose up --build`
-
-### Development
-1. Make code changes → restart container: `docker-compose restart backend`
-2. Change dependencies → rebuild: `docker-compose up --build backend`
-3. Reset everything: `docker-compose down -v && docker-compose up --build`
-
-### Deployment
-1. Update environment variables for production
-2. Change DEBUG=False
-3. Use proper SECRET_KEY
-4. Set ALLOWED_HOSTS correctly
-5. Enable HTTPS
-
----
-
-## 📊 SYSTEM REQUIREMENTS
-
-### Minimum
-- 4 GB RAM
-- 2 GB free disk space
-- Modern CPU (2+ cores)
-- Internet connection (for first build)
-
-### Recommended
-- 8 GB RAM
-- 5 GB free disk space
-- 4+ CPU cores
-- Docker Desktop with 4 GB RAM allocated
-
-### First Run
-- Network bandwidth: ~1 GB (downloading base images)
-- Build time: 5-10 minutes
-- After first run: Instant (cached)
-
----
-
-## ✨ PRODUCTION CHECKLIST
-
-Before deploying to production:
-
-- [ ] Update environment variables
-- [ ] Change SECRET_KEY to unique value
-- [ ] Set DEBUG=False
-- [ ] Configure ALLOWED_HOSTS
-- [ ] Set up HTTPS/SSL
-- [ ] Configure proper CORS origins
-- [ ] Set up database backup
-- [ ] Enable logging & monitoring
-- [ ] Set up error tracking (Sentry)
-- [ ] Configure rate limiting
-- [ ] Set up auto-scaling
-- [ ] Test complete workflow
-- [ ] Security audit completed
-
----
-
-## 🎯 RECOMMENDED WORKFLOW
-
-### Day 1: Testing
-```bash
-# Test Docker setup
-docker-compose up --build
-
-# Verify all services
-docker-compose ps
-
-# Run through verification checklist
-# Test all features
-```
-
-### Day 2-3: Development
-```bash
-# Make code changes
-# Test locally
-
-# Commit changes
-git add .
-git commit -m "Feature: ..."
-git push
-```
-
-### Day 4+: Deployment
-```bash
-# Set up cloud infrastructure
-# Configure CI/CD
-# Deploy containers
-# Monitor in production
-```
-
----
-
-## 🎉 YOU'RE ALL SET!
-
-Your system is:
-- ✅ **Fully functional** - All features working
-- ✅ **Tested** - Bugs fixed, verified working
-- ✅ **Documented** - Comprehensive guides provided
-- ✅ **Containerized** - Docker ready
-- ✅ **Scalable** - Architecture supports growth
-- ✅ **Secure** - Security best practices applied
-- ✅ **Production-ready** - Just needs config updates
-
----
-
-## 🚀 GET STARTED NOW
-
-### Option 1 (Docker - Recommended)
-```bash
-cd rebuild_man
-docker-compose up --build
-```
-
-### Option 2 (Manual)
-```bash
-cd rebuild_man
-.\setup-manual.ps1
-```
-
-Then access:
-- **Frontend**: http://localhost:3000
-- **Backend**: http://localhost:8000
-- **Admin**: http://localhost:8000/admin
-
-**Login**: admin / Admin@1234
-
----
-
-## 📞 SUPPORT
-
-- **Need help?** Check the documentation files
-- **Docker issues?** See SYSTEM_SETUP_GUIDE.md troubleshooting section
-- **Auth issues?** See ADMIN_ROLE_FIX_GUIDE.md
-- **Connectivity issues?** See CONNECTIVITY_REPORT.md
-
----
-
-## 🎓 SUMMARY
-
-| Item | Status | Location |
-|------|--------|----------|
-| Code | ✅ Fixed (26 bugs) | rebuild_man/{backend,frontend} |
-| Docker | ✅ Ready | docker-compose.yml + Dockerfiles |
-| Docs | ✅ Complete | .md files in rebuild_man/ |
-| Scripts | ✅ Created | run-docker.ps1, setup-manual.ps1 |
-| Tests | ✅ Verified | VERIFICATION_CHECKLIST.md |
-| Admin | ✅ Fixed | Role now ADMIN, dashboard works |
-| API | ✅ Working | All endpoints functional |
-| Database | ✅ Ready | 21 migrations applied |
-
----
-
-**You have completed a full-stack application rebuild!** 
-
-Everything is now:
-- Tested ✅
-- Documented ✅
-- Containerized ✅  
-- Ready for deployment ✅
-
-## 🎊 Happy Coding! 🚀
+This project is for internal and educational use under the **Rebuild Man** initiative.

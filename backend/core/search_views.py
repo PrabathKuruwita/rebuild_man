@@ -68,9 +68,16 @@ def search(request):
     
     # Search Needs
     if search_type in ('need', 'all'):
+        from django.db.models import Sum, Q
+        from django.db.models.functions import Coalesce
         need_query = NeedItem.objects.filter(
             Q(name__icontains=query) | Q(description__icontains=query)
-        ).select_related('section', 'section__organization')
+        ).select_related('section', 'section__organization').annotate(
+            quantity_confirmed=Coalesce(
+                Sum('donations__quantity', filter=Q(donations__status__in=['CONFIRMED', 'FULFILLED'])),
+                0
+            )
+        )
         
         # Filter by priority if provided
         if priority:
@@ -79,7 +86,7 @@ def search(request):
         # Filter out fulfilled needs if requested
         if exclude_fulfilled and exclude_fulfilled.lower() in ('true', '1'):
             from django.db.models import F
-            need_query = need_query.exclude(quantity_received__gte=F('quantity_required'))
+            need_query = need_query.exclude(quantity_confirmed__gte=F('quantity_required'))
         
         # Apply pagination
         need_results = need_query[offset:offset + limit]

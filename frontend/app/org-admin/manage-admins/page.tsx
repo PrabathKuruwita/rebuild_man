@@ -11,7 +11,7 @@ import {
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useRouter } from "next/navigation";
-import { Users, Mail, UserPlus, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Users, Mail, UserPlus, ArrowLeft, Eye, EyeOff, Phone } from "lucide-react";
 import Link from "next/link";
 
 export default function ManageAdminsPage() {
@@ -26,6 +26,7 @@ export default function ManageAdminsPage() {
   const [inviteData, setInviteData] = useState({
     username: "",
     email: "",
+    phone_number: "",
     password: "",
     first_name: "",
     last_name: "",
@@ -71,7 +72,7 @@ export default function ManageAdminsPage() {
     try {
       await inviteOrgAdmin(org.id, inviteData);
       setInviteSuccess("Admin invited successfully!");
-      setInviteData({ username: "", email: "", password: "", first_name: "", last_name: "" });
+      setInviteData({ username: "", email: "", phone_number: "", password: "", first_name: "", last_name: "" });
 
       // Refresh list
       const adminsList = await getOrgAdmins(org.id);
@@ -261,6 +262,27 @@ export default function ManageAdminsPage() {
                     required
                     className="w-full pl-10 p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow bg-slate-50 focus:bg-white"
                     placeholder="john@example.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Phone
+                </label>
+                <div className="relative">
+                  <Phone
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    value={inviteData.phone_number}
+                    onChange={(e) =>
+                      setInviteData({ ...inviteData, phone_number: e.target.value })
+                    }
+                    className="w-full pl-10 p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow bg-slate-50 focus:bg-white"
+                    placeholder="e.g. +94 76 337 2067"
                   />
                 </div>
               </div>

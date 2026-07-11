@@ -190,7 +190,8 @@ class OrgAdminRegisterSerializer(serializers.ModelSerializer):
 class AdminApprovalSerializer(serializers.ModelSerializer):
     organization_name = serializers.SerializerMethodField()
     organization_type = serializers.SerializerMethodField()
-    approval_decided_by_username = serializers.CharField(source='approval_decided_by.username', read_only=True, allow_null=True)
+    approval_decided_by_username = serializers.SerializerMethodField()
+    approval_decided_at = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -202,28 +203,72 @@ class AdminApprovalSerializer(serializers.ModelSerializer):
             'approval_decided_by_username'
         ]
         read_only_fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone_number',
-                           'approval_requested_at', 'approval_decided_at', 'approval_decided_by',
-                           'approval_decided_by_username']
+                           'approval_requested_at', 'approval_decided_by']
     
     def get_organization_name(self, obj):
-        # Use the organization name submitted during registration
-        if obj.requested_organization_name:
-            return obj.requested_organization_name
-        # Fallback to organization's name if it exists and is linked
-        if obj.requested_organization:
-            return obj.requested_organization.name
-        # Default to N/A
-        return 'Not assigned'
+        current_name = None
+        if obj.organization:
+            current_name = obj.organization.name
+        elif obj.requested_organization:
+            current_name = obj.requested_organization.name
+            
+        requested_name = obj.requested_organization_name
+        
+        if requested_name:
+            if current_name and current_name != requested_name:
+                return f"{requested_name} (changed to {current_name})"
+            return requested_name
+            
+        return current_name or 'Not assigned'
     
     def get_organization_type(self, obj):
-        # Use the organization type submitted during registration
-        if obj.requested_organization_type:
-            return obj.requested_organization_type
-        # Fallback to organization's type if it exists
-        if obj.requested_organization:
-            return obj.requested_organization.org_type
-        # Default to N/A
-        return 'N/A'
+        current_type = None
+        if obj.organization:
+            current_type = obj.organization.org_type
+        elif obj.requested_organization:
+            current_type = obj.requested_organization.org_type
+            
+        requested_type = obj.requested_organization_type
+        
+        if requested_type:
+            if current_type and current_type != requested_type:
+                return f"{requested_type} (changed to {current_type})"
+            return requested_type
+            
+        return current_type or 'N/A'
+
+    def get_approval_decided_by_username(self, obj):
+        decider = obj.approval_decided_by
+        
+        # If approval_decided_by is not set, use the fallback logic for ORG_ADMIN
+        if not decider:
+            if obj.role == 'ORG_ADMIN' and obj.organization:
+                # Find the oldest active admin in the same organization
+                decider = User.objects.filter(
+                    organization=obj.organization,
+                    role='ORG_ADMIN'
+                ).exclude(id=obj.id).order_by('date_joined').first()
+        
+        if decider:
+            if decider.role == 'ORG_ADMIN':
+                first = decider.first_name or ''
+                last = decider.last_name or ''
+                full_name = f"{first} {last}".strip()
+                if not full_name:
+                    full_name = decider.username
+                return f"Org Admin ({full_name})"
+            elif decider.role == 'ADMIN':
+                return 'System Admin'
+            else:
+                return decider.username
+                
+        return 'System Admin'
+
+    def get_approval_decided_at(self, obj):
+        if obj.approval_decided_at:
+            return obj.approval_decided_at
+        # Fall back to date_joined for invited users
+        return obj.date_joined
 
 class SectionDetailSerializer(serializers.ModelSerializer):
     organization_name = serializers.SerializerMethodField()
@@ -241,6 +286,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
 class NeedItemSerializer(serializers.ModelSerializer):
     section_detail = SectionDetailSerializer(source='section', read_only=True)
     quantity_received = serializers.IntegerField(read_only=True)
+    quantity_confirmed = serializers.SerializerMethodField()
     created_at = serializers.DateTimeField(read_only=True)
     description = serializers.CharField(required=False, allow_blank=True)
     name = serializers.CharField(required=True, max_length=200)
@@ -249,9 +295,18 @@ class NeedItemSerializer(serializers.ModelSerializer):
         model = NeedItem
         fields = [
             'id', 'section', 'section_detail', 'name', 'priority', 
-            'quantity_required', 'quantity_received', 'unit', 
+            'quantity_required', 'quantity_received', 'quantity_confirmed', 'unit', 
             'description', 'created_at'
         ]
+
+    def get_quantity_confirmed(self, obj):
+        if hasattr(obj, 'quantity_confirmed'):
+            return obj.quantity_confirmed
+        from django.db.models import Sum
+        result = obj.donations.filter(
+            status__in=['CONFIRMED', 'FULFILLED']
+        ).aggregate(total=Sum('quantity'))
+        return result['total'] or 0
 
 # 3. Section Serializer (Includes the needs inside it)
 class SectionSerializer(serializers.ModelSerializer):
@@ -351,8 +406,11 @@ class NeedItemDetailSerializer(serializers.ModelSerializer):
 class DonationSerializer(serializers.ModelSerializer):
     need_item_detail = NeedItemDetailSerializer(source='need_item', read_only=True)
     confirmed_by_name = serializers.SerializerMethodField()
+    confirmed_by_role = serializers.SerializerMethodField()
     cancelled_by_name = serializers.SerializerMethodField()
+    cancelled_by_role = serializers.SerializerMethodField()
     received_by_name = serializers.SerializerMethodField()
+    received_by_role = serializers.SerializerMethodField()
     
     class Meta:
         model = Donation
@@ -363,8 +421,8 @@ class DonationSerializer(serializers.ModelSerializer):
             'donor_email', 'donor_phone', 'government_department', 'government_program',
             'government_officer_name', 'government_officer_designation',
             'government_officer_contact', 'government_email', 'donation_letter_file',
-            'confirmed_by_name', 'cancelled_by_name', 'cancellation_reason', 'cancelled_at',
-            'received_by_name'
+            'confirmed_by_name', 'confirmed_by_role', 'cancelled_by_name', 'cancelled_by_role', 'cancellation_reason', 'cancelled_at',
+            'received_by_name', 'received_by_role'
         ]
 
     def get_confirmed_by_name(self, obj):
@@ -374,6 +432,11 @@ class DonationSerializer(serializers.ModelSerializer):
             return obj.confirmed_by.username
         return None
 
+    def get_confirmed_by_role(self, obj):
+        if obj.confirmed_by:
+            return getattr(obj.confirmed_by, 'role', None)
+        return None
+
     def get_cancelled_by_name(self, obj):
         if obj.cancelled_by:
             if obj.cancelled_by.first_name or obj.cancelled_by.last_name:
@@ -381,10 +444,20 @@ class DonationSerializer(serializers.ModelSerializer):
             return obj.cancelled_by.username
         return None
 
+    def get_cancelled_by_role(self, obj):
+        if obj.cancelled_by:
+            return getattr(obj.cancelled_by, 'role', None)
+        return None
+
     def get_received_by_name(self, obj):
         if obj.received_by:
             if obj.received_by.first_name or obj.received_by.last_name:
                 return f"{obj.received_by.first_name} {obj.received_by.last_name}".strip()
             return obj.received_by.username
+        return None
+
+    def get_received_by_role(self, obj):
+        if obj.received_by:
+            return getattr(obj.received_by, 'role', None)
         return None
 

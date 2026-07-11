@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { registerOrgAdmin } from "@/lib/api";
+import { registerOrgAdmin, getSystemStats } from "@/lib/api";
 import {
   LogIn,
   HandHeart,
@@ -28,20 +28,20 @@ const modes: {
   icon: React.ElementType;
   tagline: string;
 }[] = [
-  { id: "login", label: "Sign In", icon: LogIn, tagline: "Already a member" },
-  {
-    id: "register",
-    label: "Donor Register",
-    icon: HandHeart,
-    tagline: "Start giving today",
-  },
-  {
-    id: "org-admin",
-    label: "Organization Register",
-    icon: Building2,
-    tagline: "List your hospital",
-  },
-];
+    { id: "login", label: "Sign In", icon: LogIn, tagline: "Already a member" },
+    {
+      id: "register",
+      label: "Donor Register",
+      icon: HandHeart,
+      tagline: "Start giving today",
+    },
+    {
+      id: "org-admin",
+      label: "Organization Register",
+      icon: Building2,
+      tagline: "List your hospital",
+    },
+  ];
 
 const ORG_TYPE_OPTIONS = [
   { value: "HOSPITAL", label: "Hospital" },
@@ -125,6 +125,21 @@ export default function LoginContent() {
   const [loading, setLoading] = useState(false);
   const { login, register: authRegister } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [verifiedOrgsCount, setVerifiedOrgsCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const stats = await getSystemStats();
+        if (stats && typeof stats.verified_hospitals === "number") {
+          setVerifiedOrgsCount(stats.verified_hospitals);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch system stats for login page:", err);
+      }
+    }
+    loadStats();
+  }, []);
 
   // Common form states
   const [username, setUsername] = useState("");
@@ -273,18 +288,16 @@ export default function LoginContent() {
                   <button
                     key={m.id}
                     onClick={() => handleTabChange(m.id)}
-                    className={`group flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
-                      active
+                    className={`group flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${active
                         ? `${activeBorderColor} ${activeBgColor} shadow-sm`
                         : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-                        active
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${active
                           ? `${activeIconBg} text-white`
                           : "bg-gray-100 text-gray-600"
-                      }`}
+                        }`}
                     >
                       <Icon className="h-5 w-5" />
                     </span>
@@ -796,7 +809,7 @@ export default function LoginContent() {
                   <li className="flex gap-3">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
                     <span className="text-gray-600">
-                      Verified hospitals and transparent needs.
+                      Verified organizations and transparent needs.
                     </span>
                   </li>
                   <li className="flex gap-3">
@@ -817,7 +830,7 @@ export default function LoginContent() {
                     Trusted by
                   </p>
                   <p className="mt-1 text-xl font-bold text-gray-900">
-                    120+ hospitals
+                    {verifiedOrgsCount !== null ? verifiedOrgsCount : "120"} organizations
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
                     across the country

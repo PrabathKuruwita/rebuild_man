@@ -116,7 +116,7 @@ export default function OrganizationDetailPage() {
       ...section,
       needs:
         section.needs?.filter(
-          (need) => need.quantity_received < need.quantity_required,
+          (need) => need.quantity_confirmed < need.quantity_required,
         ) || [],
     })) || [];
 
@@ -140,7 +140,7 @@ export default function OrganizationDetailPage() {
       (acc, section) =>
         acc +
         (section.needs?.filter(
-          (n) => n.quantity_received >= n.quantity_required,
+          (n) => n.quantity_confirmed >= n.quantity_required,
         ).length || 0),
       0,
     ) || 0;

@@ -49,7 +49,8 @@ class DonationSplitTests(APITestCase):
 
     def test_confirm_full_quantity_without_split(self):
         """
-        Confirming the full pledge of 50 units increases received count and does not create surplus.
+        Confirming the full pledge of 50 units does not increase received count immediately,
+        but marking it received increases received count.
         """
         donation = Donation.objects.create(
             need_item=self.need_item,
@@ -60,20 +61,27 @@ class DonationSplitTests(APITestCase):
             donor_email='john@example.com'
         )
         
-        url = reverse('donation-confirm', kwargs={'pk': donation.id})
-        response = self.client.post(url, {}, format='json')
-        
+        # Confirm donation
+        url_confirm = reverse('donation-confirm', kwargs={'pk': donation.id})
+        response = self.client.post(url_confirm, {}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        # Refresh from database
+        # Refresh and check that received quantity is still 30 (not updated on confirm)
         donation.refresh_from_db()
         self.need_item.refresh_from_db()
-        
-        # The received quantity should now be 30 + 50 = 80
-        self.assertEqual(self.need_item.quantity_received, 80)
-        
-        # Since we removed automatic fulfillment, status should be CONFIRMED
+        self.assertEqual(self.need_item.quantity_received, 30)
         self.assertEqual(donation.status, 'CONFIRMED')
+        
+        # Now mark as received
+        url_receive = reverse('donation-receive', kwargs={'pk': donation.id})
+        response = self.client.post(url_receive, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Refresh and check that received quantity has increased to 30 + 50 = 80
+        donation.refresh_from_db()
+        self.need_item.refresh_from_db()
+        self.assertEqual(self.need_item.quantity_received, 80)
+        self.assertEqual(donation.status, 'FULFILLED')
         
         # No extra donations should have been created (total count is 1)
         self.assertEqual(Donation.objects.count(), 1)
@@ -81,7 +89,8 @@ class DonationSplitTests(APITestCase):
     def test_confirm_partial_quantity_with_split(self):
         """
         Confirming partial quantity (remaining needed = 20 units) updates the original record to 20 units,
-        marks it as confirmed/fulfilled, and splits the remaining 30 units into a CANCELLED surplus record.
+        and splits the remaining 30 units into a CANCELLED surplus record.
+        Marking it received then increases need_item.quantity_received by 20.
         """
         donation = Donation.objects.create(
             need_item=self.need_item,
@@ -93,10 +102,9 @@ class DonationSplitTests(APITestCase):
             message="Glad to help!"
         )
         
-        url = reverse('donation-confirm', kwargs={'pk': donation.id})
+        url_confirm = reverse('donation-confirm', kwargs={'pk': donation.id})
         # Explicitly confirm only 20 units (the remaining needed amount)
-        response = self.client.post(url, {'confirmed_quantity': 20}, format='json')
-        
+        response = self.client.post(url_confirm, {'confirmed_quantity': 20}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         # Refresh from database
@@ -105,8 +113,20 @@ class DonationSplitTests(APITestCase):
         
         # The original donation quantity should be adjusted to 20
         self.assertEqual(donation.quantity, 20)
-        self.assertEqual(donation.status, 'CONFIRMED') # Remains CONFIRMED until physically received
+        self.assertEqual(donation.status, 'CONFIRMED') 
+        # Received count should still be 30
+        self.assertEqual(self.need_item.quantity_received, 30)
+        
+        # Mark the adjusted donation as received
+        url_receive = reverse('donation-receive', kwargs={'pk': donation.id})
+        response = self.client.post(url_receive, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        donation.refresh_from_db()
+        self.need_item.refresh_from_db()
+        # The received count should now be 30 + 20 = 50
         self.assertEqual(self.need_item.quantity_received, 50)
+        self.assertEqual(donation.status, 'FULFILLED')
         
         # There should now be 2 donations in the database (original + surplus)
         self.assertEqual(Donation.objects.count(), 2)
@@ -144,6 +164,38 @@ class DonationSplitTests(APITestCase):
         self.assertEqual(donation.status, 'CANCELLED')
         self.assertEqual(donation.cancellation_reason, 'Incorrect item type')
         self.assertIsNotNone(donation.cancelled_at)
+
+    def test_cancel_donation_sends_email_with_critical_needs(self):
+        """
+        Cancelling a donation sends a cancellation email containing a list of top unfulfilled needs.
+        """
+        from django.core import mail
+        
+        # Clear outbox
+        mail.outbox = []
+        
+        donation = Donation.objects.create(
+            need_item=self.need_item,
+            quantity=10,
+            status='PENDING',
+            donor_type='private',
+            donor_name='Bob Smith',
+            donor_email='bob@example.com'
+        )
+        
+        # Trigger cancellation
+        url = reverse('donation-cancel', kwargs={'pk': donation.id})
+        response = self.client.post(url, {'reason': 'Incorrect item type'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Verify email is sent
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertIn("Donation Cancelled", email.subject)
+        
+        # Check that the email body contains critical needs from the organization
+        self.assertIn("Here are some of the most important needs at Test General Hospital that still require support:", email.body)
+        self.assertIn(self.need_item.name, email.body)
 
     def test_receive_donation_sends_thank_you_email(self):
         """
@@ -276,4 +328,90 @@ class OrganizationGeocodingTests(APITestCase):
         self.assertEqual(org.latitude, 7.2906)
         self.assertEqual(org.longitude, 80.6337)
         self.assertTrue(mock_urlopen.called)
+
+
+class AdminApprovalSerializerTests(APITestCase):
+    def setUp(self):
+        self.org = Organization.objects.create(
+            name="Test Serializer Hospital",
+            registration_number="REG-SER-01",
+            address="123 Serializer St",
+            district="Colombo"
+        )
+        # Sys admin
+        self.sys_admin = User.objects.create_user(
+            username="sysadmin",
+            email="sysadmin@example.com",
+            password="password",
+            role="ADMIN"
+        )
+        # Org admin with name
+        self.org_admin_with_name = User.objects.create_user(
+            username="orgadmin_name",
+            email="name@example.com",
+            password="password",
+            role="ORG_ADMIN",
+            first_name="Pasindu",
+            last_name="Promodaya",
+            organization=self.org
+        )
+        # Org admin without name
+        self.org_admin_no_name = User.objects.create_user(
+            username="orgadmin_noname",
+            email="noname@example.com",
+            password="password",
+            role="ORG_ADMIN",
+            organization=self.org
+        )
+
+    def test_decided_by_sys_admin(self):
+        user = User.objects.create_user(
+            username="new_user_1",
+            email="new1@example.com",
+            password="password",
+            role="ORG_ADMIN",
+            approval_decided_by=self.sys_admin
+        )
+        from core.serializers import AdminApprovalSerializer
+        serializer = AdminApprovalSerializer(user)
+        self.assertEqual(serializer.data['approval_decided_by_username'], "System Admin")
+
+    def test_decided_by_org_admin_with_name(self):
+        user = User.objects.create_user(
+            username="new_user_2",
+            email="new2@example.com",
+            password="password",
+            role="ORG_ADMIN",
+            approval_decided_by=self.org_admin_with_name
+        )
+        from core.serializers import AdminApprovalSerializer
+        serializer = AdminApprovalSerializer(user)
+        self.assertEqual(serializer.data['approval_decided_by_username'], "Org Admin (Pasindu Promodaya)")
+
+    def test_decided_by_org_admin_without_name(self):
+        user = User.objects.create_user(
+            username="new_user_3",
+            email="new3@example.com",
+            password="password",
+            role="ORG_ADMIN",
+            approval_decided_by=self.org_admin_no_name
+        )
+        from core.serializers import AdminApprovalSerializer
+        serializer = AdminApprovalSerializer(user)
+        self.assertEqual(serializer.data['approval_decided_by_username'], "Org Admin (orgadmin_noname)")
+
+    def test_fallback_to_oldest_org_admin(self):
+        # approval_decided_by is None, but user belongs to an organization that has orgadmin_name as oldest
+        user = User.objects.create_user(
+            username="new_user_4",
+            email="new4@example.com",
+            password="password",
+            role="ORG_ADMIN",
+            organization=self.org,
+            approval_decided_by=None
+        )
+        from core.serializers import AdminApprovalSerializer
+        serializer = AdminApprovalSerializer(user)
+        self.assertEqual(serializer.data['approval_decided_by_username'], "Org Admin (Pasindu Promodaya)")
+
 

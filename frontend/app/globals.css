@@ -92,7 +92,7 @@ input[type="password"]::-ms-clear {
   --color-blue-300: #93c5fd;
 
   /* Marquee custom animation */
-  --animate-marquee: marquee 35s linear infinite;
+  --animate-marquee: marquee 75s linear infinite;
 
   @keyframes marquee {
     from {
@@ -104,15 +104,24 @@ input[type="password"]::-ms-clear {
   }
 }
 
-/* Force light mode for consistent appearance */
+/* Force light mode for consistent appearance and prevent horizontal overflow page scroll */
 html {
   color-scheme: light;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   background-color: var(--color-gray-50);
   color: var(--color-gray-900);
   font-family: var(--font-sans);
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+main {
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* Ensure form elements have proper text colors */

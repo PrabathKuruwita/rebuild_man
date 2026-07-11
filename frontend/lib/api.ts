@@ -52,6 +52,7 @@ export interface OrgAdminInviteData {
   password: string;
   first_name: string;
   last_name: string;
+  phone_number?: string;
 }
 
 export interface AdminApprovalRequest {
@@ -90,6 +91,7 @@ export interface NeedItem {
   priority: "CRITICAL" | "ESSENTIAL" | "NICE";
   quantity_required: number;
   quantity_received: number;
+  quantity_confirmed: number;
   unit: "UNIT" | "BOX" | "KG" | "LITER";
   description: string;
   created_at: string;
@@ -173,10 +175,13 @@ export interface Donation {
   government_email: string;
   donation_letter_file: string | null;
   confirmed_by_name?: string;
+  confirmed_by_role?: string;
   cancelled_by_name?: string;
+  cancelled_by_role?: string;
   cancellation_reason?: string;
   cancelled_at?: string;
   received_by_name?: string;
+  received_by_role?: string;
   need_item_detail?: {
     id: number;
     name: string;
@@ -564,6 +569,13 @@ export interface PublicDonation {
 
 export const getPublicRecentDonations = async (): Promise<PublicDonation[]> => {
   return fetchAPI<PublicDonation[]>("/donations/public_recent/");
+};
+
+export const getPublicImpactDonations = async (): Promise<Donation[]> => {
+  const response = await fetchAPI<ApiListResponse<Donation> | Donation[]>(
+    "/donations/public_impact/",
+  );
+  return unwrapListResponse(response);
 };
 
 export const getDonations = async () => {

@@ -4,16 +4,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { updateCurrentUser } from "@/lib/api";
-import { Search, UserCircle, Menu, X } from "lucide-react";
+import { Search, UserCircle } from "lucide-react";
 import MobileNav from "./MobileNav";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, setUser } = useAuth();
+  const { user, logout } = useAuth();
   const [showProfile, setShowProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState<"info" | "password">("info");
   const [searchQuery, setSearchQuery] = useState("");
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -30,99 +28,6 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showProfile]);
 
-  const [saving, setSaving] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
-  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
-  const [profileForm, setProfileForm] = useState({
-    first_name: user?.first_name || "",
-    last_name: user?.last_name || "",
-    email: user?.email || "",
-  });
-
-  const handleProfileSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setProfileError(null);
-    setProfileSuccess(null);
-    try {
-      const updated = await updateCurrentUser(profileForm);
-      setUser(updated);
-      setProfileSuccess("Profile updated successfully.");
-    } catch (err: unknown) {
-      setProfileError(
-        err instanceof Error ? err.message : "Failed to update profile.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const [passwordForm, setPasswordForm] = useState({
-    current_password: "",
-    new_password: "",
-    new_password2: "",
-  });
-
-  const handlePasswordSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setProfileError(null);
-    setProfileSuccess(null);
-    try {
-      await updateCurrentUser(passwordForm);
-      setPasswordForm({
-        current_password: "",
-        new_password: "",
-        new_password2: "",
-      });
-      setProfileSuccess("Password changed successfully.");
-    } catch (err: unknown) {
-      setProfileError(
-        err instanceof Error ? err.message : "Failed to change password.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const isAdmin = user?.role === "ADMIN" || user?.role === "ORG_ADMIN";
-
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery("");
-    }
-  };
-
-  const publicNavLinks = [
-    { href: "/", label: "Home" },
-    { href: "/needs", label: "Current Needs" },
-  ];
-
-  const navLinks = isAdmin
-    ? [
-      { href: "/", label: "Dashboard" },
-      { href: "/organizations", label: user?.role === "ORG_ADMIN" ? "Organization" : "Organizations" },
-      { href: "/needs", label: "All Needs" },
-      ...(user?.role === "ADMIN"
-        ? [
-          { href: "/admin/approvals", label: "Approvals" },
-          { href: "/admin/donors", label: "Donors" },
-        ]
-        : []),
-      ...(user?.role === "ORG_ADMIN"
-        ? [
-          { href: "/documents", label: "Documents" },
-          { href: "/admin/donations", label: "Donations" },
-        ]
-        : []),
-    ]
-    : [
-      { href: "/", label: "Dashboard" },
-      { href: "/needs", label: "Current Needs" },
-    ];
-
   const handleNavMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const navEl = navRef.current;
     if (!navEl) return;
@@ -137,7 +42,7 @@ export default function Navbar() {
     <nav
       ref={navRef}
       onMouseMove={handleNavMouseMove}
-      className="bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50"
+      className="bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-[1020]"
     >
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
@@ -198,13 +103,13 @@ export default function Navbar() {
               <>
                 <Link
                   href="/"
-                  className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
+                  className={`text-sm font-medium transition-colors ${pathname === "/" ? "text-blue-600 font-semibold" : "text-slate-600 hover:text-blue-600"}`}
                 >
-                  Home
+                  {user?.role === "DONOR" ? "Dashboard" : "Home"}
                 </Link>
                 <Link
                   href="/needs"
-                  className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
+                  className={`text-sm font-medium transition-colors ${pathname === "/needs" ? "text-blue-600 font-semibold" : "text-slate-600 hover:text-blue-600"}`}
                 >
                   Current Needs
                 </Link>
@@ -259,10 +164,10 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="hidden sm:flex items-center gap-2 relative" ref={panelRef}>
-                {(user.role === "ADMIN" || user.role === "ORG_ADMIN") && (
+                {user.role && (
                   <div className="hidden md:flex flex-col items-end mr-1">
                     <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                      {user.role === "ADMIN" ? "Admin" : "Org Admin"}
+                      {user.role === "ADMIN" ? "Admin" : user.role === "ORG_ADMIN" ? "Org Admin" : "Donor"}
                     </span>
                   </div>
                 )}

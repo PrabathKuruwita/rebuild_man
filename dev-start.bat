@@ -23,7 +23,7 @@ timeout /t 5 /nobreak
 REM Step 2: Start Backend
 echo.
 echo [2/3] Starting Django Backend...
-start cmd /k "cd backend && python manage.py runserver 0.0.0.0:8000"
+start cmd /k "cd backend && .venv\Scripts\python.exe manage.py runserver 0.0.0.0:8000"
 
 REM Step 3: Start Frontend
 echo.

@@ -16,7 +16,7 @@ Start-Sleep -Seconds 5
 Write-Host ""
 Write-Host "🔧 Starting Django Backend on http://localhost:8000" -ForegroundColor Cyan
 Write-Host "   (Running in separate terminal...)" -ForegroundColor Gray
-Start-Process -NoNewWindow -FilePath "powershell.exe" -ArgumentList "-Command `"cd backend; python manage.py runserver`""
+Start-Process -NoNewWindow -FilePath "powershell.exe" -ArgumentList "-Command `"cd backend; .venv\Scripts\python.exe manage.py runserver`""
 
 # Step 3: Navigate to frontend and start it
 Write-Host ""

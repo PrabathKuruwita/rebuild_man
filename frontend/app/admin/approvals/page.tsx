@@ -11,7 +11,7 @@ import {
   getRejectedOrgAdmins,
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { Check, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, X, ChevronDown, ChevronUp, Search, Filter } from "lucide-react";
 
 interface ConfirmationDialog {
   isOpen: boolean;
@@ -27,6 +27,17 @@ function sortByNewest(requests: ApprovalRequest[]): ApprovalRequest[] {
     return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
 }
+
+const ORG_TYPES = [
+  { value: "ALL", label: "All Organization Types" },
+  { value: "HOSPITAL", label: "Hospital" },
+  { value: "CLINIC", label: "Clinic" },
+  { value: "SCHOOL", label: "School" },
+  { value: "NGO", label: "NGO" },
+  { value: "CHARITY", label: "Charity" },
+  { value: "GOVERNMENT", label: "Government" },
+  { value: "OTHER", label: "Other" },
+];
 
 export default function ApprovalsPage() {
   const { user } = useAuth();
@@ -51,6 +62,32 @@ export default function ApprovalsPage() {
     userId: null,
     userName: "",
   });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedOrgType, setSelectedOrgType] = useState("ALL");
+
+  const filterRequests = (requests: ApprovalRequest[]) => {
+    return requests.filter((req) => {
+      const fullName = `${req.first_name || ""} ${req.last_name || ""}`.toLowerCase();
+      const username = (req.username || "").toLowerCase();
+      const orgName = (req.organization_name || "").toLowerCase();
+      const query = searchQuery.toLowerCase();
+      
+      const matchesSearch =
+        fullName.includes(query) ||
+        username.includes(query) ||
+        orgName.includes(query);
+        
+      const matchesOrgType =
+        selectedOrgType === "ALL" ||
+        (req.organization_type || "").toUpperCase().includes(selectedOrgType.toUpperCase());
+        
+      return matchesSearch && matchesOrgType;
+    });
+  };
+
+  const filteredPending = filterRequests(pendingRequests);
+  const filteredApproved = filterRequests(approvedRequests);
+  const filteredRejected = filterRequests(rejectedRequests);
 
   useEffect(() => {
     let cancelled = false;
@@ -264,6 +301,50 @@ export default function ApprovalsPage() {
           </div>
         ) : (
           <>
+            {/* Search and Filters */}
+            <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 flex flex-col md:flex-row gap-4 items-center justify-between transition-all duration-300 hover:shadow-md">
+              <div className="relative w-full md:max-w-md">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <Search size={18} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search by name or organization..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+              
+              <div className="relative w-full md:w-64">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <Filter size={18} />
+                </span>
+                <select
+                  value={selectedOrgType}
+                  onChange={(e) => setSelectedOrgType(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none transition-all duration-200"
+                >
+                  {ORG_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                  <ChevronDown size={18} />
+                </span>
+              </div>
+            </div>
+
             {/* Pending Requests Tab */}
             {activeTab === "pending" && (
               <div>
@@ -273,9 +354,15 @@ export default function ApprovalsPage() {
                       No pending approval requests
                     </p>
                   </div>
+                ) : filteredPending.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
+                    <p className="text-gray-600">
+                      No matching pending requests found
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-4">
-                    {pendingRequests.map((req) => (
+                    {filteredPending.map((req) => (
                       <RequestCard
                         key={req.id}
                         req={req}
@@ -310,9 +397,15 @@ export default function ApprovalsPage() {
                   <div className="text-center py-12 bg-white rounded-lg">
                     <p className="text-gray-600">No approved admin requests</p>
                   </div>
+                ) : filteredApproved.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
+                    <p className="text-gray-600">
+                      No matching approved requests found
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-4">
-                    {approvedRequests.map((req) => (
+                    {filteredApproved.map((req) => (
                       <RequestCard
                         key={req.id}
                         req={req}
@@ -337,9 +430,15 @@ export default function ApprovalsPage() {
                   <div className="text-center py-12 bg-white rounded-lg">
                     <p className="text-gray-600">No rejected admin requests</p>
                   </div>
+                ) : filteredRejected.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
+                    <p className="text-gray-600">
+                      No matching rejected requests found
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-4">
-                    {rejectedRequests.map((req) => (
+                    {filteredRejected.map((req) => (
                       <RequestCard
                         key={req.id}
                         req={req}
@@ -530,7 +629,11 @@ function RequestCard({
                 <label className="text-sm font-medium text-gray-600">
                   Decided By
                 </label>
-                <p className="text-gray-900">System Admin</p>
+                <p className="text-gray-900">
+                  {req.approval_decided_by_username === "admin" || req.approval_decided_by_username === "system_admin"
+                    ? "System Admin"
+                    : req.approval_decided_by_username}
+                </p>
               </div>
             )}
           </div>

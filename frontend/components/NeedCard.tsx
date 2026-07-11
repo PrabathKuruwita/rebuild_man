@@ -25,7 +25,6 @@ interface NeedCardProps {
 
 export default function NeedCard({
   need,
-  showSection,
   sectionName,
   organizationName,
   onDonationSuccess,
@@ -37,10 +36,10 @@ export default function NeedCard({
 
   const progress =
     need.quantity_required > 0
-      ? Math.min((need.quantity_received / need.quantity_required) * 100, 100)
+      ? Math.min((need.quantity_confirmed / need.quantity_required) * 100, 100)
       : 0;
 
-  const remaining = need.quantity_required - need.quantity_received;
+  const remaining = need.quantity_required - need.quantity_confirmed;
 
   const handleDonationSuccess = () => {
     setIsDonateModalOpen(false);
@@ -131,8 +130,7 @@ export default function NeedCard({
           </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className={`need-card__progress-fill ${
-                progress >= 100
+              className={`need-card__progress-fill ${progress >= 100
                   ? "need-card__progress-fill--complete"
                   : progress >= 75
                     ? "need-card__progress-fill--75to100"
@@ -141,7 +139,7 @@ export default function NeedCard({
                       : progress >= 25
                         ? "need-card__progress-fill--25to50"
                         : "need-card__progress-fill--0to25"
-              }`}
+                }`}
               data-progress={Math.round(progress)}
             />
           </div>
@@ -150,9 +148,12 @@ export default function NeedCard({
         {/* Quantities */}
         <div className="flex justify-between text-sm mb-4">
           <div>
-            <span className="text-gray-500">Received: </span>
+            <span className="text-gray-500">Confirmed: </span>
             <span className="font-medium text-green-600">
-              {need.quantity_received} {unitLabels[need.unit]}
+              {need.quantity_confirmed} {unitLabels[need.unit]}
+            </span>
+            <span className="text-xs text-gray-400 ml-1">
+              ({need.quantity_received} received)
             </span>
           </div>
           <div>

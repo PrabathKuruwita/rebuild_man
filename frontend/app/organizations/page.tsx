@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import {
   Organization,
@@ -19,10 +19,14 @@ import AddSectionModal from "@/components/AddSectionModal";
 import ManualNeedEntryForm from "@/components/ManualNeedEntryForm";
 import EditNeedModal from "@/components/EditNeedModal";
 import EditSectionModal from "@/components/EditSectionModal";
+import { useSearchParams } from "next/navigation";
 
-export default function OrganizationsPage() {
+function OrganizationsContent() {
   const { authorized, isLoading: authLoading } = useAdminGuard();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const sectionParam = searchParams.get("section");
+  const targetSectionId = sectionParam ? Number(sectionParam) : null;
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
@@ -80,6 +84,18 @@ export default function OrganizationsPage() {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authorized]);
+
+  useEffect(() => {
+    if (!loading && targetSectionId) {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`section-${targetSectionId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, targetSectionId]);
 
   const findNeedById = (needId: number): NeedItem | null => {
     if (!organization?.sections) return null;
@@ -158,7 +174,7 @@ export default function OrganizationsPage() {
       ...section,
       needs:
         section.needs?.filter(
-          (need) => need.quantity_received < need.quantity_required,
+          (need) => need.quantity_confirmed < need.quantity_required,
         ) || [],
     })) || [];
 
@@ -590,48 +606,49 @@ export default function OrganizationsPage() {
             {organization.sections && organization.sections.length > 0 ? (
               <div className="space-y-4">
                 {sectionsWithUnfulfilledNeeds.map((section, index) => (
-                  <SectionAccordion
-                    key={section.id}
-                    section={section}
-                    defaultOpen={index === 0}
-                    onAddNeed={
-                      user?.role === "ORG_ADMIN"
-                        ? () =>
-                            setAddNeedForSection({
-                              orgId: organization.id,
-                              sectionId: section.id,
-                            })
-                        : undefined
-                    }
-                    onEditNeed={
-                      user?.role === "ORG_ADMIN"
-                        ? (needId) => {
-                            const n = findNeedById(needId);
-                            if (n) setEditNeed(n);
-                          }
-                        : undefined
-                    }
-                    onDeleteNeed={
-                      user?.role === "ORG_ADMIN"
-                        ? (needId) => {
-                            const n = findNeedById(needId);
-                            if (n) setDeleteNeedConfirm(n);
-                          }
-                        : undefined
-                    }
-                    onEditSection={
-                      user?.role === "ORG_ADMIN"
-                        ? () => setEditSectionConfirm(section)
-                        : undefined
-                    }
-                    onDeleteSection={
-                      user?.role === "ORG_ADMIN"
-                        ? async () => {
-                            setDeleteSectionConfirm(section);
-                          }
-                        : undefined
-                    }
-                  />
+                  <div id={`section-${section.id}`} key={section.id} className="scroll-mt-6">
+                    <SectionAccordion
+                      section={section}
+                      defaultOpen={targetSectionId ? section.id === targetSectionId : index === 0}
+                      onAddNeed={
+                        user?.role === "ORG_ADMIN"
+                          ? () =>
+                              setAddNeedForSection({
+                                orgId: organization.id,
+                                sectionId: section.id,
+                              })
+                          : undefined
+                      }
+                      onEditNeed={
+                        user?.role === "ORG_ADMIN"
+                          ? (needId) => {
+                              const n = findNeedById(needId);
+                              if (n) setEditNeed(n);
+                            }
+                          : undefined
+                      }
+                      onDeleteNeed={
+                        user?.role === "ORG_ADMIN"
+                          ? (needId) => {
+                              const n = findNeedById(needId);
+                              if (n) setDeleteNeedConfirm(n);
+                            }
+                          : undefined
+                      }
+                      onEditSection={
+                        user?.role === "ORG_ADMIN"
+                          ? () => setEditSectionConfirm(section)
+                          : undefined
+                      }
+                      onDeleteSection={
+                        user?.role === "ORG_ADMIN"
+                          ? async () => {
+                              setDeleteSectionConfirm(section);
+                            }
+                          : undefined
+                      }
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -994,5 +1011,13 @@ export default function OrganizationsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function OrganizationsPage() {
+  return (
+    <Suspense fallback={<PageLoading />}>
+      <OrganizationsContent />
+    </Suspense>
   );
 }

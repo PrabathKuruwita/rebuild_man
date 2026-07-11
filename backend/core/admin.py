@@ -18,7 +18,7 @@ class CustomUserAdmin(UserAdmin):
             'description': 'Approval/rejection tracking for organization admin requests'
         }),
     ]
-    readonly_fields = ('approval_requested_at', 'approval_decided_at', 'approval_decided_by')
+    readonly_fields = ('approval_requested_at',)
 
 
 # 2. Register Organization

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import {
   getOrganizations,
@@ -78,11 +77,11 @@ export default function AdminDashboard() {
         const critical = allNeeds.filter((n) => n.priority === "CRITICAL");
 
         const unfulfilledNeeds = allNeeds.filter(
-          (n) => n.quantity_received < n.quantity_required,
+          (n) => n.quantity_confirmed < n.quantity_required,
         );
 
         const unfulfilledCritical = critical
-          .filter((n) => n.quantity_received < n.quantity_required)
+          .filter((n) => n.quantity_confirmed < n.quantity_required)
           .sort(
             (a, b) =>
               new Date(b.created_at).getTime() -
@@ -91,7 +90,7 @@ export default function AdminDashboard() {
 
         // Calculate dynamic delivery rate
         const validDonations = allDonations.filter(
-          (d) => d.status !== "CANCELLED",
+          (d) => d.status === "CONFIRMED" || d.status === "FULFILLED",
         );
         const fulfilledDonations = allDonations.filter(
           (d) => d.status === "FULFILLED",
@@ -99,8 +98,8 @@ export default function AdminDashboard() {
         const deliveryRate =
           validDonations.length > 0
             ? Math.round(
-                (fulfilledDonations.length / validDonations.length) * 100,
-              )
+              (fulfilledDonations.length / validDonations.length) * 100,
+            )
             : 0;
 
         setStats({
@@ -276,7 +275,7 @@ export default function AdminDashboard() {
                 </h3>
                 <p className="text-slate-300 text-sm leading-relaxed mb-8">
                   Monitoring platform transactions, donor engagement, and
-                  hospital fulfillment rates across 9 provinces.
+                  organization fulfillment rates across 9 provinces.
                 </p>
 
                 <div className="space-y-6">
@@ -423,7 +422,7 @@ function StatCard({
 
 function CriticalNeedRow({ need }: { need: NeedItem }) {
   const percent = Math.round(
-    (need.quantity_received / need.quantity_required) * 100,
+    (need.quantity_confirmed / need.quantity_required) * 100,
   );
 
   return (
@@ -462,15 +461,18 @@ function CriticalNeedRow({ need }: { need: NeedItem }) {
         </div>
         <div className="flex justify-between items-center pt-1">
           <span className="text-xs font-medium text-slate-600">
-            Received:{" "}
-            <span className="text-emerald-600 font-bold">
-              {need.quantity_received} Units
+            Confirmed:{" "}
+            <span className="text-green-600 font-bold">
+              {need.quantity_confirmed} Units
+            </span>
+            <span className="text-[10px] text-slate-400 ml-1">
+              ({need.quantity_received} received)
             </span>
           </span>
           <span className="text-xs font-medium text-slate-600">
             Needed:{" "}
             <span className="text-rose-600 font-bold">
-              {need.quantity_required - need.quantity_received} Units
+              {Math.max(0, need.quantity_required - need.quantity_confirmed)} Units
             </span>
           </span>
         </div>

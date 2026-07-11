@@ -305,6 +305,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         password = request.data.get('password')
         first_name = request.data.get('first_name', '')
         last_name = request.data.get('last_name', '')
+        phone_number = request.data.get('phone_number', '')
         
         if not email or not username or not password:
             return Response(
@@ -325,8 +326,14 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             role='ORG_ADMIN',
             approval_status='APPROVED',
             organization=org,
+            requested_organization=org,
+            requested_organization_name=org.name,
+            requested_organization_type=org.org_type,
+            approval_decided_at=timezone.now(),
+            approval_decided_by=request.user,
             first_name=first_name,
-            last_name=last_name
+            last_name=last_name,
+            phone_number=phone_number
         )
         
         # Send invitation email
@@ -413,7 +420,14 @@ class NeedItemViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filter needs based on user role and organization ownership"""
-        queryset = NeedItem.objects.select_related('section', 'section__organization')
+        from django.db.models import Sum, Q
+        from django.db.models.functions import Coalesce
+        queryset = NeedItem.objects.select_related('section', 'section__organization').annotate(
+            quantity_confirmed=Coalesce(
+                Sum('donations__quantity', filter=Q(donations__status__in=['CONFIRMED', 'FULFILLED'])),
+                0
+            )
+        )
         user = self.request.user
         
         # Handle unauthenticated users
@@ -432,12 +446,12 @@ class NeedItemViewSet(viewsets.ModelViewSet):
         if priority:
             queryset = queryset.filter(priority=priority)
         
-        # Filter out fulfilled needs if requested (when quantity_received >= quantity_required)
+        # Filter out fulfilled needs if requested (when quantity_confirmed >= quantity_required)
         exclude_fulfilled = self.request.query_params.get('exclude_fulfilled')
         if exclude_fulfilled and exclude_fulfilled.lower() in ('true', '1'):
-            # Only return needs that are NOT fulfilled
+            # Only return needs that are NOT fulfilled (based on confirmed pledges)
             from django.db.models import F
-            queryset = queryset.exclude(quantity_received__gte=F('quantity_required'))
+            queryset = queryset.exclude(quantity_confirmed__gte=F('quantity_required'))
         
         return queryset
 
@@ -877,6 +891,25 @@ class DonationViewSet(viewsets.ModelViewSet):
             })
         return Response(data)
     
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def public_impact(self, request):
+        """Get sanitized donation data for the public impact page"""
+        donations = Donation.objects.all().order_by('-created_at')
+        data = []
+        for donation in donations:
+            data.append({
+                'id': donation.id,
+                'status': donation.status,
+                'donor_type': donation.donor_type,
+                'donor_name': donation.donor_name,
+                'donor_organization': donation.donor_organization,
+                'government_department': donation.government_department,
+                'need_item': donation.need_item_id,
+                'quantity': donation.quantity,
+                'created_at': donation.created_at.isoformat()
+            })
+        return Response(data)
+    
     def get_queryset(self):
         """Filter donations based on user role and organization ownership"""
         queryset = Donation.objects.select_related('donor', 'need_item').all()
@@ -898,9 +931,9 @@ class DonationViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Allow authenticated users to create donations and view their own, admins can manage all"""
-        if self.action == 'public_recent':
+        if self.action in ['public_recent', 'public_impact']:
             return [AllowAny()]
-        if self.action in ['create', 'list', 'retrieve']:
+        if self.action in ['create', 'list', 'retrieve', 'cancel', 'update', 'partial_update']:
             return [IsAuthenticated()]
         return [IsAdminUser()]
     
@@ -910,6 +943,19 @@ class DonationViewSet(viewsets.ModelViewSet):
             serializer.save(donor=self.request.user)
         else:
             serializer.save()
+
+    def update(self, request, *args, **kwargs):
+        donation = self.get_object()
+        user = request.user
+        
+        # If user is a DONOR, enforce rules
+        if hasattr(user, 'role') and user.role == 'DONOR':
+            if donation.donor != user:
+                return Response({'status': 'You can only edit your own donations'}, status=status.HTTP_403_FORBIDDEN)
+            if donation.status != 'PENDING':
+                return Response({'status': 'You can only edit donations that are still pending verification'}, status=status.HTTP_400_BAD_REQUEST)
+                
+        return super().update(request, *args, **kwargs)
 
     def _send_donation_email(self, donation, action):
         from django.core.mail import send_mail
@@ -957,6 +1003,48 @@ class DonationViewSet(viewsets.ModelViewSet):
             )
         elif action == 'cancel':
             subject = "Donation Cancelled: {} – NeedTracker".format(org_name)
+            
+            # Fetch up to 3 most important unfulfilled needs for this organization
+            from django.db.models import F, Q, Sum, Case, When, Value, IntegerField
+            from django.db.models.functions import Coalesce
+            from .models import NeedItem
+            
+            org = donation.need_item.section.organization
+            needs_qs = NeedItem.objects.filter(
+                section__organization=org
+            ).annotate(
+                confirmed_qty=Coalesce(
+                    Sum('donations__quantity', filter=Q(donations__status__in=['CONFIRMED', 'FULFILLED'])),
+                    0
+                )
+            ).filter(
+                confirmed_qty__lt=F('quantity_required')
+            )
+            
+            # Sort by priority: CRITICAL -> ESSENTIAL -> NICE
+            needs_qs = needs_qs.annotate(
+                priority_order=Case(
+                    When(priority='CRITICAL', then=Value(1)),
+                    When(priority='ESSENTIAL', then=Value(2)),
+                    When(priority='NICE', then=Value(3)),
+                    default=Value(4),
+                    output_field=IntegerField(),
+                )
+            ).order_by('priority_order', 'created_at')[:3]
+            
+            needs_list = []
+            for n in needs_qs:
+                needs_list.append(f"- {n.name} ({n.get_priority_display()}) for {n.section.name}")
+                
+            important_needs_str = ""
+            if needs_list:
+                needs_bullet_points = "\n".join(needs_list)
+                important_needs_str = (
+                    "\n\nHere are some of the most important needs at {org_name} that still require support:\n"
+                    "{needs_bullet_points}\n\n"
+                    "If you are able to help with any of the above, please visit the NeedTracker platform to make a new pledge."
+                ).format(org_name=org.name, needs_bullet_points=needs_bullet_points)
+                
             message = (
                 "Dear {donor_name},\n\n"
                 "We wanted to inform you that your donation pledge of {quantity} {unit}(s) of '{need_name}' for {section_name} "
@@ -964,7 +1052,7 @@ class DonationViewSet(viewsets.ModelViewSet):
                 "This may happen if the need has already been fulfilled by other donors, or if the "
                 "organization's requirements have changed.\n\n"
                 "We truly appreciate your willingness to help. Please check the NeedTracker platform "
-                "for other critical needs that you can support.\n\n"
+                "for other most important needs that you can support.{important_needs_str}\n\n"
                 "— The NeedTracker Team"
             ).format(
                 donor_name=donor_name,
@@ -972,7 +1060,8 @@ class DonationViewSet(viewsets.ModelViewSet):
                 unit=unit,
                 need_name=need_name,
                 section_name=section_name,
-                org_name=org_name
+                org_name=org_name,
+                important_needs_str=important_needs_str
             )
         elif action == 'receive':
             subject = "Donation Received: Thank You! – NeedTracker"
@@ -1051,10 +1140,6 @@ class DonationViewSet(viewsets.ModelViewSet):
                 # Adjust original donation
                 donation.quantity = confirmed_quantity
 
-            # Update the need item's quantity_received
-            need_item.quantity_received += donation.quantity
-            need_item.save()
-            
             # Set this donation to CONFIRMED
             donation.status = 'CONFIRMED'
             donation.confirmed_by = request.user
@@ -1074,9 +1159,14 @@ class DonationViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
-        """Cancel a pending donation"""
+        """Cancel a pending or confirmed donation"""
         donation = self.get_object()
-        if donation.status == 'PENDING':
+        
+        # Security check: If request user is a DONOR, they can only cancel their own donation
+        if hasattr(request.user, 'role') and request.user.role == 'DONOR' and donation.donor != request.user:
+            return Response({'status': 'You do not have permission to cancel this donation'}, status=status.HTTP_403_FORBIDDEN)
+            
+        if donation.status in ['PENDING', 'CONFIRMED']:
             reason = request.data.get('reason', '')
             donation.status = 'CANCELLED'
             donation.cancelled_by = request.user
@@ -1088,13 +1178,17 @@ class DonationViewSet(viewsets.ModelViewSet):
             self._send_donation_email(donation, 'cancel')
             
             return Response({'status': 'Donation cancelled'}, status=status.HTTP_200_OK)
-        return Response({'status': 'Only pending donations can be cancelled'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'status': 'Only pending or confirmed donations can be cancelled'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def receive(self, request, pk=None):
         """Mark a confirmed donation as physically received (status FULFILLED)"""
         donation = self.get_object()
         if donation.status == 'CONFIRMED':
+            need_item = donation.need_item
+            need_item.quantity_received += donation.quantity
+            need_item.save()
+            
             donation.status = 'FULFILLED'
             donation.received_by = request.user
             donation.save()
@@ -1162,11 +1256,22 @@ def system_stats(request):
     
     # 4. Calculate delivery success rate
     fulfilled = Donation.objects.filter(status='FULFILLED').count()
-    cancelled = Donation.objects.filter(status='CANCELLED').count()
     
-    total_completed = fulfilled + cancelled
-    if total_completed > 0:
-        delivery_success_rate = round((fulfilled / total_completed) * 100)
+    # Filter out cancellations that are NOT donor delivery failures (e.g. surplus, met by other means, duplicate)
+    from django.db.models import Q
+    cancelled_failures = Donation.objects.filter(status='CANCELLED').exclude(
+        Q(cancellation_reason__icontains='surplus') |
+        Q(cancellation_reason__icontains='exceeding') |
+        Q(cancellation_reason__icontains='already met') |
+        Q(cancellation_reason__icontains='already fulfilled') |
+        Q(cancellation_reason__icontains='no longer needed') |
+        Q(cancellation_reason__icontains='change in requirement') |
+        Q(cancellation_reason__icontains='duplicate')
+    ).count()
+    
+    total_relevant = fulfilled + cancelled_failures
+    if total_relevant > 0:
+        delivery_success_rate = round((fulfilled / total_relevant) * 100)
     else:
         delivery_success_rate = 98  # Default/fallback from design
         
