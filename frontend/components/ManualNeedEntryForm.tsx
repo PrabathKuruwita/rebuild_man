@@ -130,7 +130,7 @@ export default function ManualNeedEntryForm({
   return (
     /* Backdrop */
     <div
-      className="fixed inset-0 z-50 flex items-center justify-end bg-black/40"
+      className="fixed inset-0 z-[1100] flex items-center justify-end bg-black/40"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -205,7 +205,7 @@ export default function ManualNeedEntryForm({
             >
               {/* Organization */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="form-label">
                   Organization <span className="text-red-500">*</span>
                 </label>
                 {loadingOrgs ? (
@@ -221,7 +221,7 @@ export default function ManualNeedEntryForm({
                     required
                     title="Organization"
                     aria-label="Organization"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                    className="form-select w-full bg-white text-gray-900"
                   >
                     <option value="">Select organization…</option>
                     {Array.isArray(organizations)
@@ -237,7 +237,7 @@ export default function ManualNeedEntryForm({
 
               {/* Section */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="form-label">
                   Section / Department <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -249,7 +249,7 @@ export default function ManualNeedEntryForm({
                   disabled={!form.organization_id || sections.length === 0}
                   aria-label="Section / Department"
                   title="Section / Department"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="form-select w-full bg-white text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">
                     {!form.organization_id
@@ -271,7 +271,7 @@ export default function ManualNeedEntryForm({
 
               {/* Need Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="form-label">
                   Need Item Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -282,13 +282,13 @@ export default function ManualNeedEntryForm({
                   }
                   placeholder="e.g., Saline Bottles, Surgical Gloves, Rice Bags…"
                   required
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+                  className="form-input w-full text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 
               {/* Priority */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="form-label mb-2">
                   Priority Level <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -324,7 +324,7 @@ export default function ManualNeedEntryForm({
               {/* Quantity + Unit */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="form-label">
                     Quantity Required <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -339,11 +339,11 @@ export default function ManualNeedEntryForm({
                     }
                     required
                     title="Quantity Required"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="form-input w-full text-gray-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="form-label">
                     Unit
                   </label>
                   <select
@@ -355,7 +355,7 @@ export default function ManualNeedEntryForm({
                       }))
                     }
                     aria-label="Unit"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                    className="form-select w-full bg-white text-gray-900"
                   >
                     {Object.entries(unitLabels).map(([k, v]) => (
                       <option key={k} value={k}>
@@ -368,7 +368,7 @@ export default function ManualNeedEntryForm({
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="form-label">
                   Description
                 </label>
                 <textarea
@@ -378,7 +378,7 @@ export default function ManualNeedEntryForm({
                     setForm((f) => ({ ...f, description: e.target.value }))
                   }
                   placeholder="Optional details, specifications, context…"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400 resize-none"
+                  className="form-input w-full text-gray-900 placeholder:text-gray-400 resize-none"
                 />
               </div>
 
@@ -411,14 +411,14 @@ export default function ManualNeedEntryForm({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              className="btn btn-secondary flex-1"
             >
               Cancel
             </button>
             <button
               onClick={() => submitForm()}
               disabled={submitting || loadingOrgs}
-              className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              className="btn btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import {
   Donation,
@@ -42,6 +43,9 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function DonorDashboard() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const donationIdParam = searchParams.get("donation");
   const [donations, setDonations] = useState<Donation[]>([]);
   const [needsMap, setNeedsMap] = useState<Map<number, NeedItem>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -55,6 +59,7 @@ export default function DonorDashboard() {
   // Dialog / Modal States
   const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [cancelReasonOption, setCancelReasonOption] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
   const [viewingDonation, setViewingDonation] = useState<Donation | null>(null);
 
@@ -130,6 +135,16 @@ export default function DonorDashboard() {
       mounted = false;
     };
   }, [fetchData]);
+
+  useEffect(() => {
+    if (donationIdParam && donations.length > 0) {
+      const donationId = parseInt(donationIdParam, 10);
+      const found = donations.find((d) => d.id === donationId);
+      if (found) {
+        setViewingDonation(found);
+      }
+    }
+  }, [donationIdParam, donations]);
 
   const handleStartEdit = (donation: Donation) => {
     setEditingDonation(donation);
@@ -301,6 +316,7 @@ export default function DonorDashboard() {
       setMessage("Your pledge was cancelled successfully.");
       setCancelTargetId(null);
       setCancelReason("");
+      setCancelReasonOption("");
       await fetchData();
       setTimeout(() => setMessage(""), 3500);
     } catch (err: unknown) {
@@ -328,7 +344,7 @@ export default function DonorDashboard() {
                 Welcome back, {user?.username}!
               </h1>
               <p className="text-blue-100 mt-2 text-sm max-w-xl leading-relaxed">
-                Thank you for your generosity. You have supported {totalOrgsSupported} organizations. Let&apos;s see your real-time impact metrics below.
+                {`Thank you for your generosity. You have supported ${totalOrgsSupported} organizations. Let's see your real-time impact metrics below.`}
               </p>
             </div>
             <a
@@ -794,29 +810,29 @@ export default function DonorDashboard() {
           </div>
 
           {filteredHistory.length > 0 ? (
-            <div className="overflow-x-auto w-full max-w-full">
-              <table className="w-full min-w-[700px]">
+            <div className="overflow-x-auto overflow-y-auto max-h-[600px] w-full max-w-full">
+              <table className="w-full min-w-[700px] border-separate border-spacing-0">
                 <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Status
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Need Item
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Organization
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Section
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Pledged Qty
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Created Date
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Actions
                     </th>
                   </tr>
@@ -1041,22 +1057,59 @@ export default function DonorDashboard() {
               Cancel Donation Pledge?
             </h3>
             <p className="text-xs text-slate-500 text-center mb-6 leading-relaxed">
-              Are you sure you want to cancel this pledge? Please enter a brief reason below to inform the hospital.
+              Are you sure you want to cancel this pledge? Please select a reason below to inform the hospital.
             </p>
-            <div className="mb-6">
-              <textarea
-                placeholder="e.g. Unable to travel this week, or no longer have supply..."
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm min-h-[100px] text-slate-800"
+            
+            <div className="mb-4">
+              <label htmlFor="donor-cancel-reason" className="block text-xs font-bold text-slate-450 uppercase tracking-wider mb-2">
+                Cancellation Reason
+              </label>
+              <select
+                id="donor-cancel-reason"
+                value={cancelReasonOption}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCancelReasonOption(val);
+                  if (val !== "Other") {
+                    setCancelReason(val);
+                  } else {
+                    setCancelReason("");
+                  }
+                }}
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white text-gray-900 font-medium transition"
                 required
-              />
+              >
+                <option value="" disabled>Select a reason...</option>
+                <option value="No longer have supply of this item / Out of stock">No longer have supply / Out of stock</option>
+                <option value="Unable to transport or deliver the items to the hospital">Unable to transport or deliver the items</option>
+                <option value="Made a mistake in the pledge details (quantity, item, etc.)">Made a mistake in the pledge details</option>
+                <option value="Accidental submission of the pledge">Accidental submission of the pledge</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
-            <div className="flex gap-4">
+
+            {cancelReasonOption === "Other" && (
+              <div className="mb-6 animate-fade-in">
+                <label htmlFor="donor-cancel-other" className="block text-xs font-bold text-slate-450 uppercase tracking-wider mb-2">
+                  Please specify
+                </label>
+                <textarea
+                  id="donor-cancel-other"
+                  placeholder="Please specify your cancellation reason..."
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm min-h-[100px] text-slate-800 bg-white"
+                  required
+                />
+              </div>
+            )}
+
+            <div className="flex gap-4 mt-6">
               <button
                 onClick={() => {
                   setCancelTargetId(null);
                   setCancelReason("");
+                  setCancelReasonOption("");
                 }}
                 className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-250 text-slate-700 rounded-xl text-sm font-bold transition"
                 disabled={isCancelling}
@@ -1066,7 +1119,7 @@ export default function DonorDashboard() {
               <button
                 onClick={handleCancelSubmit}
                 className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-xl text-sm font-bold transition"
-                disabled={isCancelling || !cancelReason.trim()}
+                disabled={isCancelling || !cancelReasonOption || (cancelReasonOption === "Other" && !cancelReason.trim())}
               >
                 {isCancelling ? "Cancelling..." : "Cancel Pledge"}
               </button>
@@ -1084,7 +1137,10 @@ export default function DonorDashboard() {
                 Pledge Receipt Details
               </h3>
               <button
-                onClick={() => setViewingDonation(null)}
+                onClick={() => {
+                  setViewingDonation(null);
+                  router.replace("/");
+                }}
                 className="text-slate-400 hover:text-slate-700 text-sm font-semibold"
               >
                 Close

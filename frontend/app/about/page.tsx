@@ -31,8 +31,8 @@ export default function AboutPage() {
             NeedTracker helps organizations publish urgent needs, donors discover where support matters most, and administrators monitor how contributions change outcomes.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/impact" className="rounded-lg bg-white px-5 py-3 text-sm font-semibold text-blue-700 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
-              View Impact Analytics
+            <Link href="/" className="rounded-lg bg-white px-5 py-3 text-sm font-semibold text-blue-700 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
+              View Impact Stories
             </Link>
             <Link href="/needs" className="rounded-lg border border-white/40 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20">
               Browse Active Needs

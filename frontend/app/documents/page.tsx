@@ -55,20 +55,20 @@ export default function DocumentsPage() {
   if (loading) return <PageLoading />;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
-      <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="page-header-container flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="page-title">
             Document Processing
           </h1>
-          <p className="text-gray-500 mt-1">
+          <p className="page-subtitle">
             Upload PDF documents for AI-powered needs extraction
           </p>
         </div>
         <button
           onClick={() => setShowManualForm(true)}
-          className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
+          className="btn btn-primary flex-shrink-0"
         >
           <svg
             className="w-4 h-4"

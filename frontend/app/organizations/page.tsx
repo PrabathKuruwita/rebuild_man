@@ -20,6 +20,7 @@ import ManualNeedEntryForm from "@/components/ManualNeedEntryForm";
 import EditNeedModal from "@/components/EditNeedModal";
 import EditSectionModal from "@/components/EditSectionModal";
 import { useSearchParams } from "next/navigation";
+import { Search, Filter, ChevronDown, X } from "lucide-react";
 
 function OrganizationsContent() {
   const { authorized, isLoading: authLoading } = useAdminGuard();
@@ -52,6 +53,8 @@ function OrganizationsContent() {
     null,
   );
   const [orgToDelete, setOrgToDelete] = useState<Organization | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [orgTypeFilter, setOrgTypeFilter] = useState("");
 
   const fetchOrganizations = async () => {
     try {
@@ -96,6 +99,42 @@ function OrganizationsContent() {
       return () => clearTimeout(timer);
     }
   }, [loading, targetSectionId]);
+
+  const isProfileTab = searchParams.get("profile") === "true";
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (isProfileTab) {
+      if (window.location.hash) {
+        window.history.replaceState(
+          null,
+          "",
+          window.location.pathname + window.location.search
+        );
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    const handleHashScroll = () => {
+      if (window.location.hash === "#sections-needs") {
+        const element = document.getElementById("sections-needs");
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+    };
+
+    if (!loading) {
+      const timer = setTimeout(handleHashScroll, 150);
+      window.addEventListener("hashchange", handleHashScroll);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener("hashchange", handleHashScroll);
+      };
+    }
+  }, [loading, isProfileTab]);
 
   const findNeedById = (needId: number): NeedItem | null => {
     if (!organization?.sections) return null;
@@ -178,17 +217,35 @@ function OrganizationsContent() {
         ) || [],
     })) || [];
 
+  const orgTypes = [
+    "Hospital",
+    "Clinic",
+    "School",
+    "NGO",
+    "Charity",
+    "Government",
+    "Other"
+  ];
+
+  const filteredOrgs = organizations.filter((org) => {
+    const matchesSearch = org.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = orgTypeFilter
+      ? org.org_type?.toLowerCase() === orgTypeFilter.toLowerCase()
+      : true;
+    return matchesSearch && matchesType;
+  });
+
   if (authLoading || !authorized || loading) return <PageLoading />;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
             {user?.role === "ADMIN" ? "Organizations" : "Organization"}
           </h1>
-          <p className="text-gray-500 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             {user?.role === "ADMIN"
               ? `View all organizations (Total: ${organizations.length})`
               : "View and manage the organization"}
@@ -268,101 +325,168 @@ function OrganizationsContent() {
 
       {/* Content */}
       {user?.role === "ADMIN" && !organization ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {organizations.map((org) => (
-            <div
-              key={org.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between hover:shadow-md transition-shadow"
-            >
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg
-                      className="w-6 h-6 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-gray-900 line-clamp-1">
-                      {org.name}
-                    </h2>
-                    <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full font-medium">
-                      {org.org_type}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Reg:</span>
-                    <span className="text-gray-900 font-medium">
-                      {org.registration_number}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">District:</span>
-                    <span className="text-gray-900 font-medium">
-                      {org.district}
-                    </span>
-                  </div>
-                  {org.phone && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Phone:</span>
-                      <span className="text-gray-900">{org.phone}</span>
-                    </div>
-                  )}
-                  {org.email_contact && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Email:</span>
-                      <span className="text-gray-900 truncate ml-2">
-                        {org.email_contact}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
+        <div className="space-y-8">
+          {/* Search & Filter Controls */}
+          <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 flex flex-col sm:flex-row gap-4 items-center justify-between transition-all duration-300 hover:shadow-md">
+            <div className="search-bar-container">
+              <Search className="search-bar-icon" />
+              <input
+                type="text"
+                placeholder="Search by name or organization..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-bar-input"
+              />
+              {searchTerm && (
                 <button
-                  onClick={() => setOrganization(org)}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
                 >
-                  View Details
+                  <X size={16} />
                 </button>
-                <button
-                  onClick={() => {
-                    setOrgToDelete(org);
-                    setShowDeleteConfirm(true);
-                  }}
-                  className="inline-flex items-center justify-center p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                  title="Delete Organization"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
-              </div>
+              )}
             </div>
-          ))}
+            
+            <div className="relative w-full sm:w-64">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                <Filter size={18} />
+              </span>
+              <select
+                value={orgTypeFilter}
+                onChange={(e) => setOrgTypeFilter(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none transition-all duration-200"
+              >
+                <option value="">All Organization Types</option>
+                {orgTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+              <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                <ChevronDown size={18} />
+              </span>
+            </div>
+          </div>
+
+          {filteredOrgs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredOrgs.map((org) => (
+                <div
+                  key={org.id}
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between hover:shadow-md transition-shadow"
+                >
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg
+                          className="w-6 h-6 text-blue-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <h2 className="font-bold text-gray-900 line-clamp-1">
+                          {org.name}
+                        </h2>
+                        <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full font-medium">
+                          {org.org_type}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mb-6">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Reg:</span>
+                        <span className="text-gray-900 font-medium">
+                          {org.registration_number}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">District:</span>
+                        <span className="text-gray-900 font-medium">
+                          {org.district}
+                        </span>
+                      </div>
+                      {org.phone && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Phone:</span>
+                          <span className="text-gray-900">{org.phone}</span>
+                        </div>
+                      )}
+                      {org.email_contact && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Email:</span>
+                          <span className="text-gray-900 truncate ml-2">
+                            {org.email_contact}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setOrganization(org)}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                    >
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => {
+                        setOrgToDelete(org);
+                        setShowDeleteConfirm(true);
+                      }}
+                      className="inline-flex items-center justify-center p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                      title="Delete Organization"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-xs">
+              <svg
+                className="w-16 h-16 text-slate-300 mx-auto mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">No Matching Organizations</h3>
+              <p className="text-sm text-slate-500">
+                No organizations match your current search or type filtering criteria.
+              </p>
+            </div>
+          )}
         </div>
       ) : organization ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 transition-all">
@@ -575,7 +699,7 @@ function OrganizationsContent() {
           )}
 
           {/* Sections & Needs */}
-          <div className="mt-8 pt-8 border-t border-gray-100">
+          <div id="sections-needs" className="mt-8 pt-8 border-t border-gray-100 scroll-mt-24">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">
                 Sections & Needs
@@ -836,7 +960,7 @@ function OrganizationsContent() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-[1100] overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4">
             <div
               className="fixed inset-0 bg-black/30"
@@ -897,7 +1021,7 @@ function OrganizationsContent() {
 
       {/* Delete Section Confirmation Modal */}
       {deleteSectionConfirm && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-[1100] overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4">
             <div
               className="fixed inset-0 bg-black/30"

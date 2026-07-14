@@ -4,19 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
-interface MobileNavProps {
-  searchQuery: string;
-  onSearchChange: (value: string) => void;
-  onSearch: (query: string) => void;
-}
+interface MobileNavProps {}
 
-export default function MobileNav({
-  searchQuery,
-  onSearchChange,
-  onSearch,
-}: MobileNavProps) {
+export default function MobileNav({}: MobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout } = useAuth();
   const pathname = usePathname();
@@ -43,14 +35,6 @@ export default function MobileNav({
     }
   }, [isOpen]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      onSearch(searchQuery);
-      setIsOpen(false);
-    }
-  };
-
   const isAdmin = user?.role === "ADMIN" || user?.role === "ORG_ADMIN";
 
   return (
@@ -75,25 +59,6 @@ export default function MobileNav({
           style={{ maxWidth: "calc(100vw - 1rem)" }}
         >
           <div className="max-h-[80vh] overflow-y-auto">
-            {/* Search Bar */}
-            <div className="p-4 border-b border-gray-100">
-              <form onSubmit={handleSearch}>
-                <div className="relative flex items-center">
-                  <Search
-                    className="absolute left-3 text-slate-400"
-                    size={18}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 touch-manipulation"
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                  />
-                </div>
-              </form>
-            </div>
-
             {/* Navigation Links */}
             <nav className="flex flex-col py-2 px-2">
               {isAdmin ? (

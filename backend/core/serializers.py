@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from .models import Organization, Section, NeedItem, DocumentUpload, Donation
+from .models import Organization, Section, NeedItem, DocumentUpload, Donation, Notification
 
 User = get_user_model()
 
@@ -460,4 +460,18 @@ class DonationSerializer(serializers.ModelSerializer):
         if obj.received_by:
             return getattr(obj.received_by, 'role', None)
         return None
+
+
+# 7. Notification Serializer
+class NotificationSerializer(serializers.ModelSerializer):
+    sender_username = serializers.CharField(source='sender.username', read_only=True, allow_null=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            'id', 'recipient', 'sender', 'sender_username', 'notification_type', 
+            'title', 'message', 'action_url', 'is_read', 'created_at', 'read_at'
+        ]
+        read_only_fields = ['id', 'recipient', 'sender', 'sender_username', 'created_at', 'read_at']
+
 
