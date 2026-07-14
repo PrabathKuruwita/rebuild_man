@@ -2,11 +2,11 @@
 
 import { useAuthGuard } from "@/lib/useAuthGuard";
 import { useNotifications } from "@/lib/NotificationContext";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Bell, CheckCheck, Trash2, Inbox, ChevronRight, AlertCircle, Eye, EyeOff } from "lucide-react";
 
-export default function NotificationsPage() {
+function NotificationsContent() {
   const { authorized, isLoading } = useAuthGuard();
   const { 
     notifications, 
@@ -345,5 +345,17 @@ export default function NotificationsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function NotificationsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <NotificationsContent />
+    </Suspense>
   );
 }
