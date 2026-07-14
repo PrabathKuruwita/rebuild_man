@@ -11,8 +11,7 @@ import {
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useRouter } from "next/navigation";
-import { Users, Mail, UserPlus, ArrowLeft, Eye, EyeOff, Phone } from "lucide-react";
-import Link from "next/link";
+import { Mail, UserPlus, Eye, EyeOff, Phone } from "lucide-react";
 
 export default function ManageAdminsPage() {
   const { user } = useAuth();
@@ -97,21 +96,13 @@ export default function ManageAdminsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <Link
-            href="/org-admin"
-            className="text-emerald-600 hover:text-emerald-700 flex items-center gap-2 mb-2 font-medium text-sm transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Back to Dashboard
-          </Link>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Users className="text-emerald-500" />
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
             Manage Organization Admins
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             {org
               ? `Manage admins for ${org.name}`
               : "Invite additional administrators"}

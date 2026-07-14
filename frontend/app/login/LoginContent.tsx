@@ -73,7 +73,7 @@ const PasswordInput = ({
         type={show ? "text" : "password"}
         required
         placeholder={placeholder}
-        className="block w-full pl-9 pr-10 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 border bg-white"
+        className="form-input block w-full pl-9 pr-10 bg-white"
         value={value}
         onChange={onChange}
       />
@@ -112,7 +112,7 @@ const IconInput = ({
       type={type}
       required
       placeholder={placeholder}
-      className="block w-full pl-9 pr-3 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 border bg-white"
+      className="form-input block w-full pl-9 pr-3 bg-white"
       value={value}
       onChange={onChange}
     />
@@ -425,7 +425,7 @@ export default function LoginContent() {
                         <button
                           type="submit"
                           disabled={loading}
-                          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+                          className="btn btn-primary w-full flex items-center justify-center gap-2 py-2.5 px-4 disabled:opacity-50"
                         >
                           {loading ? "Signing in..." : "Sign In"}{" "}
                           <ArrowRight className="w-4 h-4" />
@@ -475,7 +475,7 @@ export default function LoginContent() {
                               type="text"
                               required
                               placeholder="John"
-                              className="block w-full px-3 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 border bg-white"
+                              className="form-input block w-full bg-white"
                               value={firstName}
                               onChange={(e) => setFirstName(e.target.value)}
                             />
@@ -492,7 +492,7 @@ export default function LoginContent() {
                               type="text"
                               required
                               placeholder="Doe"
-                              className="block w-full px-3 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 border bg-white"
+                              className="form-input block w-full bg-white"
                               value={lastName}
                               onChange={(e) => setLastName(e.target.value)}
                             />
@@ -588,15 +588,22 @@ export default function LoginContent() {
                             htmlFor="terms"
                             className="text-xs text-gray-500 leading-relaxed"
                           >
-                            I agree to NeedTracker&apos;s Terms of Service and
-                            Privacy Policy.
+                            I agree to NeedTracker&apos;s{" "}
+                            <Link href="/terms" className="text-blue-600 hover:underline">
+                              Terms of Service
+                            </Link>{" "}
+                            and{" "}
+                            <Link href="/privacy" className="text-blue-600 hover:underline">
+                              Privacy Policy
+                            </Link>
+                            .
                           </label>
                         </div>
 
                         <button
                           type="submit"
                           disabled={loading}
-                          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
+                          className="btn btn-primary bg-green-600 hover:bg-green-700 shadow-green-600/15 w-full flex items-center justify-center gap-2 py-2.5 px-4 disabled:opacity-50"
                         >
                           {loading ? "Creating..." : "Create Donor Account"}{" "}
                           <ArrowRight className="w-4 h-4" />
@@ -648,7 +655,7 @@ export default function LoginContent() {
                           <select
                             id="orgType"
                             required
-                            className="block w-full pl-3 pr-10 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 border bg-white text-gray-900"
+                            className="form-select block w-full bg-white text-gray-900"
                             value={selectedOrgType}
                             onChange={(e) => setSelectedOrgType(e.target.value)}
                           >
@@ -676,7 +683,7 @@ export default function LoginContent() {
                               type="text"
                               required
                               placeholder="Jane"
-                              className="block w-full px-3 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 border bg-white"
+                              className="form-input block w-full bg-white"
                               value={firstName}
                               onChange={(e) => setFirstName(e.target.value)}
                             />
@@ -693,7 +700,7 @@ export default function LoginContent() {
                               type="text"
                               required
                               placeholder="Smith"
-                              className="block w-full px-3 py-2 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 border bg-white"
+                              className="form-input block w-full bg-white"
                               value={lastName}
                               onChange={(e) => setLastName(e.target.value)}
                             />
@@ -782,10 +789,33 @@ export default function LoginContent() {
                           </div>
                         </div>
 
+                        <div className="flex items-start gap-2 rounded-lg bg-gray-50 p-3 border border-gray-100">
+                          <input
+                            id="org-terms"
+                            type="checkbox"
+                            required
+                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-600"
+                          />
+                          <label
+                            htmlFor="org-terms"
+                            className="text-xs text-gray-500 leading-relaxed"
+                          >
+                            I agree to NeedTracker&apos;s{" "}
+                            <Link href="/terms" className="text-blue-600 hover:underline">
+                              Terms of Service
+                            </Link>{" "}
+                            and{" "}
+                            <Link href="/privacy" className="text-blue-600 hover:underline">
+                              Privacy Policy
+                            </Link>
+                            .
+                          </label>
+                        </div>
+
                         <button
                           type="submit"
                           disabled={loading}
-                          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-600 disabled:opacity-50 transition-colors mt-2"
+                          className="btn btn-primary bg-orange-600 hover:bg-orange-700 shadow-orange-600/15 w-full flex items-center justify-center gap-2 py-2.5 px-4 disabled:opacity-50 mt-2"
                         >
                           {loading
                             ? "Submitting..."

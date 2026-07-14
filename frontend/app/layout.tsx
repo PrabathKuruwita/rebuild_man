@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 // import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import OrgAdminLayoutWrapper from "@/components/OrgAdminLayoutWrapper";
 import { AuthProvider } from "@/lib/AuthContext";
+import { NotificationProvider } from "@/lib/NotificationContext";
 
 /*
 const geistSans = Geist({
@@ -34,8 +36,12 @@ export default function RootLayout({
         className={`antialiased bg-gray-50 text-gray-900`}
       >
         <AuthProvider>
-          <Navbar />
-          <main className="min-h-screen">{children}</main>
+          <NotificationProvider>
+            <Navbar />
+            <OrgAdminLayoutWrapper>
+              {children}
+            </OrgAdminLayoutWrapper>
+          </NotificationProvider>
         </AuthProvider>
       </body>
     </html>

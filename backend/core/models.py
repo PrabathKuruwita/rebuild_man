@@ -301,3 +301,31 @@ class Donation(models.Model):
     def __str__(self):
         return f"Donation {self.id} - {self.quantity} units of {self.need_item.name}"
 
+
+# 7. NOTIFICATIONS
+class Notification(models.Model):
+    NOTIFICATION_TYPES = (
+        ('PLEDGE_CREATED', 'New Pledge Created'),
+        ('PLEDGE_CONFIRMED', 'Pledge Confirmed'),
+        ('PLEDGE_CANCELLED', 'Pledge Cancelled'),
+        ('PLEDGE_RECEIVED', 'Pledge Marked Received'),
+        ('ADMIN_APPROVAL_REQUEST', 'Org Admin Approval Request'),
+        ('REGISTRATION_DECISION', 'Registration Request Actioned'),
+    )
+
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sent_notifications')
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=150)
+    message = models.TextField()
+    action_url = models.CharField(max_length=255, blank=True, null=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for {self.recipient.username} - {self.title}"
+

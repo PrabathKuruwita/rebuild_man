@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/AuthContext';
+import { useAuth } from './AuthContext';
 
 export function useAdminGuard() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -45,3 +45,21 @@ export function useOrgAdminGuard() {
     user,
   };
 }
+
+export function useAuthGuard() {
+  const { user, loading, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [loading, isAuthenticated, router]);
+
+  return {
+    authorized: isAuthenticated,
+    isLoading: loading,
+    user,
+  };
+}
+
