@@ -136,15 +136,14 @@ export default function DonorDashboard() {
     };
   }, [fetchData]);
 
-  useEffect(() => {
+  const selectedViewingDonation = (() => {
     if (donationIdParam && donations.length > 0) {
       const donationId = parseInt(donationIdParam, 10);
       const found = donations.find((d) => d.id === donationId);
-      if (found) {
-        setViewingDonation(found);
-      }
+      if (found) return found;
     }
-  }, [donationIdParam, donations]);
+    return viewingDonation;
+  })();
 
   const handleStartEdit = (donation: Donation) => {
     setEditingDonation(donation);
@@ -1129,7 +1128,7 @@ export default function DonorDashboard() {
       )}
 
       {/* View Donation Details Modal */}
-      {viewingDonation !== null && (
+      {selectedViewingDonation !== null && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex flex-col items-center justify-start overflow-y-auto p-4 sm:p-10 z-50 animate-fade-in w-screen h-screen">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl animate-scale-up my-auto shrink-0">
             <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
@@ -1152,13 +1151,13 @@ export default function DonorDashboard() {
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Item Pledges</p>
                   <p className="font-bold text-slate-800 text-base mt-1 break-words">
-                    {viewingDonation.need_item_detail?.name}
+                    {selectedViewingDonation.need_item_detail?.name}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Quantity</p>
                   <p className="font-bold text-slate-800 text-base mt-1 break-words">
-                    {viewingDonation.quantity} {viewingDonation.need_item_detail?.unit || "units"}
+                    {selectedViewingDonation.quantity} {selectedViewingDonation.need_item_detail?.unit || "units"}
                   </p>
                 </div>
               </div>
@@ -1167,14 +1166,14 @@ export default function DonorDashboard() {
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Recipient Organization</p>
                   <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                    {needsMap.get(viewingDonation.need_item)?.section_detail?.organization_name || "Colombo South Teaching Hospital"}
+                    {needsMap.get(selectedViewingDonation.need_item)?.section_detail?.organization_name || "Colombo South Teaching Hospital"}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Section</p>
                   <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                    {needsMap.get(viewingDonation.need_item)?.section_detail?.name || "-"}
+                    {needsMap.get(selectedViewingDonation.need_item)?.section_detail?.name || "-"}
                   </p>
                 </div>
 
@@ -1182,80 +1181,80 @@ export default function DonorDashboard() {
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pledge Status</p>
                     <span
-                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 ${viewingDonation.status === "FULFILLED"
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 ${selectedViewingDonation.status === "FULFILLED"
                         ? "bg-purple-100 text-purple-800"
-                        : viewingDonation.status === "CONFIRMED"
+                        : selectedViewingDonation.status === "CONFIRMED"
                           ? "bg-emerald-100 text-emerald-800"
-                          : viewingDonation.status === "CANCELLED"
+                          : selectedViewingDonation.status === "CANCELLED"
                             ? "bg-red-100 text-red-800"
                             : "bg-amber-100 text-amber-800"
                         }`}
                     >
-                      {viewingDonation.status === "FULFILLED" ? "Delivered" : viewingDonation.status}
+                      {selectedViewingDonation.status === "FULFILLED" ? "Delivered" : selectedViewingDonation.status}
                     </span>
                   </div>
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pledged On</p>
                     <p className="font-medium text-slate-800 mt-1">
-                      {new Date(viewingDonation.created_at).toLocaleDateString()}
+                      {new Date(selectedViewingDonation.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
 
-                {viewingDonation.estimated_delivery_date && (
+                {selectedViewingDonation.estimated_delivery_date && (
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Estimated Delivery Date</p>
                     <p className="font-semibold text-slate-800 mt-0.5">
-                      {new Date(viewingDonation.estimated_delivery_date).toLocaleDateString()}
+                      {new Date(selectedViewingDonation.estimated_delivery_date).toLocaleDateString()}
                     </p>
                   </div>
                 )}
 
-                {viewingDonation.message && (
+                {selectedViewingDonation.message && (
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Your Message</p>
                     <p className="text-slate-600 italic bg-slate-50 p-3 rounded-xl mt-1 border border-slate-100 break-words">
-                      &quot;{viewingDonation.message}&quot;
+                      &quot;{selectedViewingDonation.message}&quot;
                     </p>
                   </div>
                 )}
 
-                {viewingDonation.confirmed_by_name && (
+                {selectedViewingDonation.confirmed_by_name && (
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Confirmed By</p>
                     <p className="font-semibold text-green-700 mt-0.5 break-words">
-                      {viewingDonation.confirmed_by_name}
-                      {viewingDonation.confirmed_by_role && ` (${viewingDonation.confirmed_by_role.replace("_", " ")})`}
+                      {selectedViewingDonation.confirmed_by_name}
+                      {selectedViewingDonation.confirmed_by_role && ` (${selectedViewingDonation.confirmed_by_role.replace("_", " ")})`}
                     </p>
                   </div>
                 )}
 
-                {viewingDonation.received_by_name && (
+                {selectedViewingDonation.received_by_name && (
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Received By</p>
                     <p className="font-semibold text-purple-700 mt-0.5 break-words">
-                      {viewingDonation.received_by_name}
-                      {viewingDonation.received_by_role && ` (${viewingDonation.received_by_role.replace("_", " ")})`}
+                      {selectedViewingDonation.received_by_name}
+                      {selectedViewingDonation.received_by_role && ` (${selectedViewingDonation.received_by_role.replace("_", " ")})`}
                     </p>
                   </div>
                 )}
 
-                {viewingDonation.status === "CANCELLED" && (
+                {selectedViewingDonation.status === "CANCELLED" && (
                   <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl">
                     <p className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">Cancellation Details</p>
                     <p className="text-slate-700 text-xs mt-1 leading-relaxed break-words">
                       <strong>Cancelled By:</strong>{" "}
-                      {viewingDonation.cancelled_by_name || "System/Admin"}
-                      {viewingDonation.cancelled_by_role && ` (${viewingDonation.cancelled_by_role.replace("_", " ")})`}
+                      {selectedViewingDonation.cancelled_by_name || "System/Admin"}
+                      {selectedViewingDonation.cancelled_by_role && ` (${selectedViewingDonation.cancelled_by_role.replace("_", " ")})`}
                     </p>
-                    {viewingDonation.cancellation_reason && (
+                    {selectedViewingDonation.cancellation_reason && (
                       <p className="text-slate-700 text-xs mt-1 leading-relaxed break-words">
-                        <strong>Reason:</strong> {viewingDonation.cancellation_reason}
+                        <strong>Reason:</strong> {selectedViewingDonation.cancellation_reason}
                       </p>
                     )}
-                    {viewingDonation.cancelled_at && (
+                    {selectedViewingDonation.cancelled_at && (
                       <p className="text-[10px] text-slate-400 mt-1.5 font-semibold">
-                        Cancelled on: {new Date(viewingDonation.cancelled_at).toLocaleString()}
+                        Cancelled on: {new Date(selectedViewingDonation.cancelled_at).toLocaleString()}
                       </p>
                     )}
                   </div>

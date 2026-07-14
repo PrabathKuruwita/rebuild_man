@@ -487,7 +487,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {stories.map((story, index) => (
+            {stories.map((story) => (
               <div
                 key={story.title}
                 className="bg-slate-50/50 p-8 rounded-3xl border border-slate-100 hover:shadow-xl hover:bg-white transition-all duration-500 group animate-fade-in"

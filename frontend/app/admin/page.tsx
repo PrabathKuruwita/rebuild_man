@@ -17,10 +17,7 @@ import {
   Layers,
   ClipboardList,
   AlertTriangle,
-  Search,
   Users,
-  FileText,
-  BarChart3,
   ArrowRight,
   Activity,
   Map as MapIcon,
@@ -620,7 +617,7 @@ export default function AdminDashboard() {
             </p>
           ) : (
             <div className="space-y-4">
-              {districtImpact.map((item, index) => {
+              {districtImpact.map((item) => {
                 const width = item.requested > 0
                   ? Math.min(100, Math.round((item.received / item.requested) * 100))
                   : 0;
@@ -658,7 +655,7 @@ export default function AdminDashboard() {
               A snapshot of needs that received strong donor support
             </p>
             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
-              {stories.map((story, index) => (
+              {stories.map((story) => (
                 <div
                   key={story.title}
                   className="rounded-xl border border-amber-100 bg-gradient-to-b from-amber-50/70 to-white p-4"
@@ -907,44 +904,3 @@ function CriticalNeedRow({ need }: { need: NeedItem }) {
   );
 }
 
-function ControlTile({
-  label,
-  desc,
-  icon,
-  href,
-  color,
-}: {
-  label: string;
-  desc: string;
-  icon: React.ReactNode;
-  href: string;
-  color: string;
-}) {
-  const colorMap: Record<string, string> = {
-    blue: "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
-    indigo:
-      "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20",
-    rose: "bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
-    violet:
-      "bg-violet-500/10 text-violet-400 border-violet-500/20 hover:bg-violet-500/20",
-    emerald:
-      "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
-    amber:
-      "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
-  };
-
-  return (
-    <Link
-      href={href}
-      className={`p-6 rounded-2xl border transition-all hover:-translate-y-1 ${colorMap[color]}`}
-    >
-      <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mb-4">
-        {icon}
-      </div>
-      <h4 className="font-bold text-white text-sm mb-2">{label}</h4>
-      <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-        {desc}
-      </p>
-    </Link>
-  );
-}

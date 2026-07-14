@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { UserCircle, Bell, Search } from "lucide-react";
+import { UserCircle, Bell } from "lucide-react";
 import MobileNav from "./MobileNav";
 import { useNotifications } from "@/lib/NotificationContext";
 

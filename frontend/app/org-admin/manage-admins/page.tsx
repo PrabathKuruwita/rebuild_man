@@ -11,8 +11,7 @@ import {
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useRouter } from "next/navigation";
-import { Users, Mail, UserPlus, ArrowLeft, Eye, EyeOff, Phone } from "lucide-react";
-import Link from "next/link";
+import { Mail, UserPlus, Eye, EyeOff, Phone } from "lucide-react";
 
 export default function ManageAdminsPage() {
   const { user } = useAuth();

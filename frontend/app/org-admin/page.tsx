@@ -23,12 +23,9 @@ import {
   HeartHandshake,
   FileText,
   BarChart3,
-  PieChart,
-  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { ReactNode } from "react";
 
 interface SectionMetric {
   label: string;

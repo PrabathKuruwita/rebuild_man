@@ -13,7 +13,12 @@ export default function OrgAdminLayoutWrapper({
 }) {
   const pathname = usePathname();
   const { user, loading } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sidebar-collapsed") === "true";
+    }
+    return false;
+  });
 
   const isOrgAdminPath =
     pathname.startsWith("/org-admin") ||
@@ -34,15 +39,6 @@ export default function OrgAdminLayoutWrapper({
   const showSidebar = !loading && user?.role === "ORG_ADMIN" && isOrgAdminPath;
   const showAdminSidebar = !loading && user?.role === "ADMIN" && isAdminPath;
   const hasSidebar = showSidebar || showAdminSidebar;
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const val = localStorage.getItem("sidebar-collapsed");
-      if (val === "true") {
-        setIsCollapsed(true);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {

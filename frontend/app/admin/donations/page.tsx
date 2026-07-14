@@ -164,16 +164,14 @@ function DonationsContent() {
     const qs = params.toString();
     router.replace(`/admin/donations${qs ? `?${qs}` : ""}`);
   };
-
-  useEffect(() => {
+  const selectedDonation = (() => {
     if (donationIdParam && donations.length > 0) {
       const donationId = parseInt(donationIdParam, 10);
       const found = donations.find((d) => d.id === donationId);
-      if (found) {
-        setViewDialog(found);
-      }
+      if (found) return found;
     }
-  }, [donationIdParam, donations]);
+    return viewDialog;
+  })();
 
   const handleConfirm = async (donationId: number) => {
     const donation = donations.find((d) => d.id === donationId);
@@ -439,9 +437,9 @@ function DonationsContent() {
   }
 
   const viewDialogContent = (() => {
-    if (!viewDialog) return null;
+    if (!selectedDonation) return null;
 
-    const donation = viewDialog;
+    const donation = selectedDonation;
     const needName = needsMap.get(donation.need_item)?.name || "Unknown Need";
 
     return (

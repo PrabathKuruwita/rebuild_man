@@ -44,13 +44,21 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Initial load and periodic polling
   useEffect(() => {
     if (!user) {
-      setNotifications([]);
-      setUnreadCount(0);
+      Promise.resolve().then(() => {
+        setNotifications([]);
+        setUnreadCount(0);
+      });
       return;
     }
 
-    setLoading(true);
-    refresh().finally(() => setLoading(false));
+    Promise.resolve().then(async () => {
+      setLoading(true);
+      try {
+        await refresh();
+      } finally {
+        setLoading(false);
+      }
+    });
 
     // Poll every 15 seconds to fetch new notifications
     const interval = setInterval(() => {

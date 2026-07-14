@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getOrganizations } from "@/lib/api";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -27,23 +25,8 @@ export default function OrgAdminSidebar({
 }: OrgAdminSidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [orgId, setOrgId] = useState<number | null>(null);
 
   const isProfileTab = searchParams.get("profile") === "true";
-
-  useEffect(() => {
-    async function loadOrg() {
-      try {
-        const orgs = await getOrganizations();
-        if (orgs.length > 0) {
-          setOrgId(orgs[0].id);
-        }
-      } catch (err) {
-        console.error("Failed to load organization in sidebar:", err);
-      }
-    }
-    loadOrg();
-  }, []);
 
   const navItems = [
     {

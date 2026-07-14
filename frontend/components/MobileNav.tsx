@@ -6,9 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { Menu, X } from "lucide-react";
 
-interface MobileNavProps {}
-
-export default function MobileNav({}: MobileNavProps) {
+export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout } = useAuth();
   const pathname = usePathname();
