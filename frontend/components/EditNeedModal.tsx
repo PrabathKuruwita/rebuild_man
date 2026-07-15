@@ -64,7 +64,6 @@ export default function EditNeedModal({
         name: form.name.trim(),
         priority: form.priority,
         quantity_required: form.quantity_required,
-        quantity_received: form.quantity_received,
         unit: form.unit,
         description: form.description.trim(),
       });
@@ -238,14 +237,9 @@ export default function EditNeedModal({
                     type="number"
                     min={0}
                     value={form.quantity_received}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        quantity_received: parseInt(e.target.value) || 0,
-                      }))
-                    }
+                    disabled
                     placeholder="e.g. 0"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900"
+                    className="w-full px-3 py-2.5 border border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed rounded-lg text-sm focus:outline-none"
                   />
                 </div>
               </div>

@@ -347,9 +347,9 @@ class DonationSplitTests(APITestCase):
         self.assertIn("(in 3 days)", reminder.message)
         self.assertIn("the pledge will be cancelled", reminder.message)
 
-    def test_update_need_quantity_received(self):
+    def test_update_need_quantity_received_is_ignored(self):
         """
-        Updating a NeedItem through the API (PATCH/PUT) correctly saves quantity_received in the database.
+        Updating a NeedItem through the API (PATCH/PUT) ignores quantity_received (read-only field).
         """
         # Ensure initial value
         self.assertEqual(self.need_item.quantity_received, 30)
@@ -359,9 +359,9 @@ class DonationSplitTests(APITestCase):
         response = self.client.patch(url, {'quantity_received': 45}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        # Verify db is updated
+        # Verify db is NOT updated (since it's a read-only field in the serializer)
         self.need_item.refresh_from_db()
-        self.assertEqual(self.need_item.quantity_received, 45)
+        self.assertEqual(self.need_item.quantity_received, 30)
 
 
 class OrganizationGeocodingTests(APITestCase):
