@@ -97,19 +97,14 @@ export default function ManageAdminsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Manage Organization Admins
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {org
-              ? `Manage admins for ${org.name}`
-              : "Invite additional administrators"}
-          </p>
-        </div>
+      <div className="page-header-container">
+        <h1 className="page-title">Manage Organization Admins</h1>
+        <p className="page-subtitle">
+          {org
+            ? `Manage admins for ${org.name}`
+            : "Invite additional administrators"}
+        </p>
       </div>
-
       {error && (
         <div className="mb-6 p-4 bg-rose-50 text-rose-600 rounded-xl border border-rose-100 flex items-center gap-2">
           {error}
