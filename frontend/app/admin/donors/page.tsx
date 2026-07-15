@@ -77,15 +77,11 @@ export default function DonorsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Registered Donors
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            View and monitor donors registered in the platform
-          </p>
-        </div>
+      <div className="page-header-container">
+        <h1 className="page-title">Registered Donors</h1>
+        <p className="page-subtitle">
+          View and monitor donors registered in the platform
+        </p>
       </div>
 
       {error && (

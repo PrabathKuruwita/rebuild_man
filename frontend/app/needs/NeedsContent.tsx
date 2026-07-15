@@ -100,9 +100,9 @@ export default function NeedsContent() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">All Needs</h1>
-        <p className="text-sm text-slate-500 mt-1">
+      <div className="page-header-container">
+        <h1 className="page-title">All Needs</h1>
+        <p className="page-subtitle">
           {user?.role === "ORG_ADMIN"
             ? "View and manage all registered needs of the organization"
             : "View all registered needs across organizations"}

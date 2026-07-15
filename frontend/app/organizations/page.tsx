@@ -240,42 +240,16 @@ function OrganizationsContent() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8 border-b border-slate-100 pb-5">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="page-title">
             {user?.role === "ADMIN" ? "Organizations" : "Organization"}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="page-subtitle">
             {user?.role === "ADMIN"
               ? `View all organizations (Total: ${organizations.length})`
               : "View and manage the organization"}
           </p>
-
-          {/* Organization Selector for ADMIN - Hidden as we show list cards */}
-          {user?.role === "ADMIN" && organizations.length > 1 && false && (
-            <div className="mt-4 max-w-xs">
-              <label
-                htmlFor="org-selector"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Select Organization:
-              </label>
-              <select
-                id="org-selector"
-                value={selectedOrgId || ""}
-                onChange={(e) =>
-                  handleSwitchOrganization(Number(e.target.value))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {organizations.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
 
         {/* Action Buttons - Only for ORG_ADMIN now, ADMIN has buttons on cards */}
