@@ -141,13 +141,17 @@ export default function OrgAdminDashboard() {
           (sum, n) => sum + n.quantity_required,
           0,
         );
+        const baseReceived = myNeeds.reduce(
+          (sum, n) => sum + Math.min(n.quantity_received, n.quantity_required),
+          0,
+        );
         const totalReceived = myNeeds.reduce(
           (sum, n) => sum + n.quantity_received,
           0,
         );
         const fulfillmentRate =
           totalRequired > 0
-            ? Math.round((totalReceived / totalRequired) * 100)
+            ? Math.min(100, Math.round((baseReceived / totalRequired) * 100))
             : 0;
 
         const thisMonthDonations = myDonations.filter((d) => {
