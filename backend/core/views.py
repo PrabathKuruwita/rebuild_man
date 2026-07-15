@@ -1434,13 +1434,12 @@ class DonationViewSet(viewsets.ModelViewSet):
         """Mark a confirmed donation as physically received (status FULFILLED)"""
         donation = self.get_object()
         if donation.status == 'CONFIRMED':
-            need_item = donation.need_item
-            need_item.quantity_received += donation.quantity
-            need_item.save()
-            
             donation.status = 'FULFILLED'
             donation.received_by = request.user
             donation.save()
+            
+            # Refresh need_item to get updated quantity_received value from the signal
+            donation.need_item.refresh_from_db()
             
             # Notify the donor that their donation was marked received
             if donation.donor:

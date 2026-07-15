@@ -947,14 +947,15 @@ function DonationsContent() {
 
   // Calculations for Pie Chart 2: Quantity Fulfillment Status
   const totalRequiredQuantity = chartFilteredNeeds.reduce((sum, n) => sum + n.quantity_required, 0);
-  const totalReceivedQuantity = chartFilteredNeeds.reduce((sum, n) => sum + n.quantity_received, 0);
-  const remainingQuantityRequired = Math.max(0, totalRequiredQuantity - totalReceivedQuantity);
+  const baseReceivedQuantity = chartFilteredNeeds.reduce((sum, n) => sum + Math.min(n.quantity_received, n.quantity_required), 0);
+  const remainingQuantityRequired = chartFilteredNeeds.reduce((sum, n) => sum + Math.max(0, n.quantity_required - n.quantity_received), 0);
+  const overAllocatedQuantity = chartFilteredNeeds.reduce((sum, n) => sum + Math.max(0, n.quantity_received - n.quantity_required), 0);
 
   const chart2Data = [
     {
       name: "Physically Received Quantity",
-      value: totalReceivedQuantity,
-      percentage: totalRequiredQuantity > 0 ? ((totalReceivedQuantity / totalRequiredQuantity) * 100).toFixed(1) : "0.0",
+      value: baseReceivedQuantity,
+      percentage: totalRequiredQuantity > 0 ? ((baseReceivedQuantity / totalRequiredQuantity) * 100).toFixed(1) : "0.0",
     },
     {
       name: "Remaining Quantity Required",
@@ -963,7 +964,15 @@ function DonationsContent() {
     },
   ];
 
-  const CHART2_COLORS = ["#6366F1", "#94A3B8"];
+  if (overAllocatedQuantity > 0) {
+    chart2Data.push({
+      name: "Over Allocated Quantity",
+      value: overAllocatedQuantity,
+      percentage: totalRequiredQuantity > 0 ? ((overAllocatedQuantity / totalRequiredQuantity) * 100).toFixed(1) : "0.0",
+    });
+  }
+
+  const CHART2_COLORS = ["#6366F1", "#94A3B8", "#F59E0B"];
 
 
   return (
