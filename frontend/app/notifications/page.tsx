@@ -69,6 +69,12 @@ function NotificationsContent() {
             <CheckCheck size={18} />
           </div>
         );
+      case "PLEDGE_REMINDER":
+        return (
+          <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center border border-amber-100 shrink-0">
+            <Bell size={18} />
+          </div>
+        );
       case "PLEDGE_CANCELLED":
         return (
           <div className="w-10 h-10 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center border border-rose-100 shrink-0">

@@ -716,7 +716,8 @@ export interface Notification {
     | "PLEDGE_CANCELLED"
     | "PLEDGE_RECEIVED"
     | "ADMIN_APPROVAL_REQUEST"
-    | "REGISTRATION_DECISION";
+    | "REGISTRATION_DECISION"
+    | "PLEDGE_REMINDER";
   title: string;
   message: string;
   action_url: string | null;

@@ -1147,29 +1147,54 @@ class DonationViewSet(viewsets.ModelViewSet):
                 )
                 
             cancellation_reason_text = donation.cancellation_reason or "No specific reason was provided."
-            message = (
-                "Dear {donor_name},\n\n"
-                "We wanted to inform you that your donation pledge of {quantity} {unit}(s) of '{need_name}' for {section_name} "
-                "has been cancelled by the administrators at {org_name}.\n\n"
-                "Reason for cancellation: {cancellation_reason}\n\n"
-                "We truly appreciate your willingness to help. Please check the NeedTracker platform "
-                "for other most important needs that you can support.{important_needs_str}\n\n"
-                "— The NeedTracker Team"
-            ).format(
-                donor_name=donor_name,
-                quantity=quantity,
-                unit=unit,
-                need_name=need_name,
-                section_name=section_name,
-                org_name=org_name,
-                cancellation_reason=cancellation_reason_text,
-                important_needs_str=important_needs_str
-            )
+            is_donor_cancelled = False
+            if donation.cancelled_by and donation.donor and donation.cancelled_by == donation.donor:
+                is_donor_cancelled = True
+
+            if is_donor_cancelled:
+                message = (
+                    "Dear {donor_name},\n\n"
+                    "We wanted to inform you that your donation pledge of {quantity} {unit}(s) of '{need_name}' for {section_name} "
+                    "of {org_name} has been cancelled by you.\n\n"
+                    "Reason for cancellation: {cancellation_reason}\n\n"
+                    "We truly appreciate your willingness to help. Please check the NeedTracker platform "
+                    "for other most important needs that you can support.{important_needs_str}\n\n"
+                    "— The NeedTracker Team"
+                ).format(
+                    donor_name=donor_name,
+                    quantity=quantity,
+                    unit=unit,
+                    need_name=need_name,
+                    section_name=section_name,
+                    org_name=org_name,
+                    cancellation_reason=cancellation_reason_text,
+                    important_needs_str=important_needs_str
+                )
+                headline_text = f"We wanted to inform you that your donation pledge of <strong>{quantity} {unit}(s)</strong> of <strong>'{need_name}'</strong> for <strong>{section_name}</strong> of <strong>{org_name}</strong> has been cancelled by you."
+            else:
+                message = (
+                    "Dear {donor_name},\n\n"
+                    "We wanted to inform you that your donation pledge of {quantity} {unit}(s) of '{need_name}' for {section_name} "
+                    "has been cancelled by the administrators at {org_name}.\n\n"
+                    "Reason for cancellation: {cancellation_reason}\n\n"
+                    "We truly appreciate your willingness to help. Please check the NeedTracker platform "
+                    "for other most important needs that you can support.{important_needs_str}\n\n"
+                    "— The NeedTracker Team"
+                ).format(
+                    donor_name=donor_name,
+                    quantity=quantity,
+                    unit=unit,
+                    need_name=need_name,
+                    section_name=section_name,
+                    org_name=org_name,
+                    cancellation_reason=cancellation_reason_text,
+                    important_needs_str=important_needs_str
+                )
+                headline_text = f"We wanted to inform you that your donation pledge of <strong>{quantity} {unit}(s)</strong> of <strong>'{need_name}'</strong> for <strong>{section_name}</strong> has been cancelled by the administrators at <strong>{org_name}</strong>."
             
             theme_color = "#ef4444"
             box_bg = "#fef2f2"
             box_text_color = "#991b1b"
-            headline_text = f"We wanted to inform you that your donation pledge of <strong>{quantity} {unit}(s)</strong> of <strong>'{need_name}'</strong> for <strong>{section_name}</strong> has been cancelled by the administrators at <strong>{org_name}</strong>."
             extra_sections = (
                 f"<div style='margin-bottom: 25px;'>"
                 f"  <span style='font-size: 11px; font-weight: bold; color: #ef4444; letter-spacing: 0.05em; text-transform: uppercase; display: block; margin-bottom: 8px;'>Reason for Cancellation</span>"

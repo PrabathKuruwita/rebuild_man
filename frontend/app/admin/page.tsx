@@ -745,18 +745,18 @@ export default function AdminDashboard() {
             </div>
             {impactStats.totalOverAllocated > 0 && (
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 bg-amber-500 rounded-sm"></span>
+                <span className="w-3 h-3 bg-rose-500 rounded-sm"></span>
                 <span className="text-slate-600">Over Allocated ({impactStats.totalOverAllocated.toLocaleString()})</span>
               </div>
             )}
           </div>
         </div>
-
+ 
         <div className="space-y-4">
           <div className="flex justify-between items-center text-sm">
             <span className="font-semibold text-slate-700">
               Current needs coverage is at{" "}
-              <span className={impactStats.totalReceived > impactStats.totalRequired ? "text-amber-600 font-bold" : "text-emerald-600 font-bold"}>
+              <span className={impactStats.totalReceived > impactStats.totalRequired ? "text-rose-600 font-bold" : "text-emerald-600 font-bold"}>
                 {impactStats.totalRequired > 0 ? Math.round((impactStats.totalReceived / impactStats.totalRequired) * 100) : 0}%
               </span>
             </span>
@@ -764,7 +764,7 @@ export default function AdminDashboard() {
               Requested: {impactStats.totalRequired.toLocaleString()} units
             </span>
           </div>
-
+ 
           <div className="h-4 w-full rounded-full bg-slate-100 overflow-hidden flex">
             {/* Base Received Segment (emerald-500) */}
             {impactStats.baseReceived > 0 && (
@@ -784,10 +784,9 @@ export default function AdminDashboard() {
                 }}
               />
             )}
-            {/* Over Allocated Segment (amber-500) */}
             {impactStats.totalOverAllocated > 0 && (
               <div
-                className="h-full bg-amber-500 transition-all duration-1000"
+                className="h-full bg-rose-500 transition-all duration-1000"
                 style={{
                   width: `${(impactStats.totalOverAllocated / (impactStats.baseReceived + impactStats.totalRemaining + impactStats.totalOverAllocated)) * 100}%`,
                 }}
