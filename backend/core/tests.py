@@ -347,6 +347,22 @@ class DonationSplitTests(APITestCase):
         self.assertIn("(in 3 days)", reminder.message)
         self.assertIn("the pledge will be cancelled", reminder.message)
 
+    def test_update_need_quantity_received(self):
+        """
+        Updating a NeedItem through the API (PATCH/PUT) correctly saves quantity_received in the database.
+        """
+        # Ensure initial value
+        self.assertEqual(self.need_item.quantity_received, 30)
+        
+        # Call patch need endpoint
+        url = reverse('needitem-detail', kwargs={'pk': self.need_item.id})
+        response = self.client.patch(url, {'quantity_received': 45}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Verify db is updated
+        self.need_item.refresh_from_db()
+        self.assertEqual(self.need_item.quantity_received, 45)
+
 
 class OrganizationGeocodingTests(APITestCase):
     def setUp(self):

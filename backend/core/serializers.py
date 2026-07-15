@@ -285,7 +285,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
 # 2.5 Need Item Serializer with section detail
 class NeedItemSerializer(serializers.ModelSerializer):
     section_detail = SectionDetailSerializer(source='section', read_only=True)
-    quantity_received = serializers.IntegerField(read_only=True)
+    quantity_received = serializers.IntegerField(required=False)
     quantity_confirmed = serializers.SerializerMethodField()
     created_at = serializers.DateTimeField(read_only=True)
     description = serializers.CharField(required=False, allow_blank=True)
