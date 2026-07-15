@@ -972,7 +972,7 @@ function DonationsContent() {
     });
   }
 
-  const CHART2_COLORS = ["#6366F1", "#94A3B8", "#F59E0B"];
+  const CHART2_COLORS = ["#6366F1", "#94A3B8", "#F43F5E"];
 
 
   return (
