@@ -303,16 +303,14 @@ export default function ApprovalsPage() {
           <>
             {/* Search and Filters */}
             <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 flex flex-col md:flex-row gap-4 items-center justify-between transition-all duration-300 hover:shadow-md">
-              <div className="relative w-full md:max-w-md">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
-                  <Search size={18} />
-                </span>
+              <div className="search-bar-container">
+                <Search className="search-bar-icon" />
                 <input
                   type="text"
                   placeholder="Search by name or organization..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                  className="search-bar-input"
                 />
                 {searchQuery && (
                   <button
@@ -536,7 +534,7 @@ function RequestCard({
   showReason = false,
 }: RequestCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="card-container">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900">
@@ -571,24 +569,24 @@ function RequestCard({
         <>
           <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-200">
             <div>
-              <label className="text-sm font-medium text-gray-600">
+              <label className="form-label mb-1">
                 Organization Name
               </label>
               <p className="text-gray-900">{req.organization_name}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">
+              <label className="form-label mb-1">
                 Organization Type
               </label>
               <p className="text-gray-900">{req.organization_type}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Phone</label>
+              <label className="form-label mb-1">Phone</label>
               <p className="text-gray-900">{req.phone_number || "N/A"}</p>
             </div>
             {req.approval_requested_at && (
               <div>
-                <label className="text-sm font-medium text-gray-600">
+                <label className="form-label mb-1">
                   Requested On
                 </label>
                 <p className="text-gray-900">
@@ -607,7 +605,7 @@ function RequestCard({
             )}
             {req.approval_decided_at && (
               <div>
-                <label className="text-sm font-medium text-gray-600">
+                <label className="form-label mb-1">
                   Decided On
                 </label>
                 <p className="text-gray-900">
@@ -626,7 +624,7 @@ function RequestCard({
             )}
             {req.approval_decided_by_username && (
               <div>
-                <label className="text-sm font-medium text-gray-600">
+                <label className="form-label mb-1">
                   Decided By
                 </label>
                 <p className="text-gray-900">
@@ -642,14 +640,14 @@ function RequestCard({
             <div className="flex gap-3">
               <button
                 onClick={() => onApprove && onApprove(req.id)}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                className="btn btn-success flex-1"
               >
                 <Check size={18} />
                 Approve
               </button>
               <button
                 onClick={() => onRejectStart && onRejectStart()}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                className="btn btn-danger flex-1"
               >
                 <X size={18} />
                 Reject
@@ -664,18 +662,18 @@ function RequestCard({
                 }
                 placeholder="Reason for rejection..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500"
+                className="form-input w-full resize-none"
               />
               <div className="flex gap-3">
                 <button
                   onClick={() => onRejectSubmit && onRejectSubmit()}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                  className="btn btn-danger flex-1"
                 >
                   Confirm Rejection
                 </button>
                 <button
                   onClick={() => onRejectCancel && onRejectCancel()}
-                  className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition"
+                  className="btn btn-secondary flex-1"
                 >
                   Cancel
                 </button>

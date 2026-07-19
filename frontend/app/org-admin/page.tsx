@@ -23,12 +23,9 @@ import {
   HeartHandshake,
   FileText,
   BarChart3,
-  PieChart,
-  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { ReactNode } from "react";
 
 interface SectionMetric {
   label: string;
@@ -45,20 +42,7 @@ interface ChartDataPoint {
   fulfilled: number;
 }
 
-const controlTileStyles = {
-  blue: "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
-  emerald:
-    "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
-  indigo:
-    "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20",
-  rose: "bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
-  violet:
-    "bg-violet-500/10 text-violet-400 border-violet-500/20 hover:bg-violet-500/20",
-  amber:
-    "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
-} as const;
 
-type ControlTileColor = keyof typeof controlTileStyles;
 
 export default function OrgAdminDashboard() {
   const router = useRouter();
@@ -157,13 +141,17 @@ export default function OrgAdminDashboard() {
           (sum, n) => sum + n.quantity_required,
           0,
         );
+        const baseReceived = myNeeds.reduce(
+          (sum, n) => sum + Math.min(n.quantity_received, n.quantity_required),
+          0,
+        );
         const totalReceived = myNeeds.reduce(
           (sum, n) => sum + n.quantity_received,
           0,
         );
         const fulfillmentRate =
           totalRequired > 0
-            ? Math.round((totalReceived / totalRequired) * 100)
+            ? Math.min(100, Math.round((baseReceived / totalRequired) * 100))
             : 0;
 
         const thisMonthDonations = myDonations.filter((d) => {
@@ -349,20 +337,21 @@ export default function OrgAdminDashboard() {
     <div className="min-h-screen bg-slate-50/50 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Header */}
-        <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="page-header-container flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold uppercase rounded">
+            <div className="page-badge">
+              <span className="page-badge-dot"></span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">
                 Org Admin
               </span>
-              <span className="text-slate-400 text-sm">
+              <span className="text-[10px] font-medium text-blue-500/70">
                 — {organization.name}
               </span>
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            <h1 className="page-title">
               Organization Dashboard
             </h1>
-            <p className="text-slate-500 mt-1">
+            <p className="page-subtitle">
               Manage your organization&apos;s needs and monitor impact
             </p>
           </div>
@@ -443,68 +432,11 @@ export default function OrgAdminDashboard() {
           />
         </div>
 
-        {/* Management Center */}
-        <div className="bg-slate-950 rounded-3xl p-10 shadow-2xl relative overflow-hidden mb-12">
-          <div className="relative z-10">
-            <div className="mb-10">
-              <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold tracking-widest uppercase text-blue-300 mb-4">
-                Management Center
-              </span>
-              <h2 className="text-3xl font-bold text-white tracking-tight">
-                Manage your organization
-              </h2>
-            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <ControlTile
-                label="Manage Needs"
-                desc="Update or add needs."
-                icon={<ClipboardList size={20} />}
-                href="/organizations"
-                color="blue"
-              />
-              <ControlTile
-                label="Track Donations"
-                desc="See all pledges."
-                icon={<HeartHandshake size={20} />}
-                href="/admin/donations"
-                color="emerald"
-              />
-              <ControlTile
-                label="AI Upload"
-                desc="Extract needs from lists."
-                icon={<FileText size={20} />}
-                href="/documents"
-                color="indigo"
-              />
-              <ControlTile
-                label="View Analytics"
-                desc="Detailed graphs & trends."
-                icon={<PieChart size={20} />}
-                href="#analytics-section"
-                color="rose"
-              />
-              <ControlTile
-                label="Manage Admins"
-                desc="Invite and manage org admins."
-                icon={<Users size={20} />}
-                href="/org-admin/manage-admins"
-                color="violet"
-              />
-              <ControlTile
-                label="Org Profile"
-                desc="Update hospital info."
-                icon={<Building2 size={20} />}
-                href="/organizations/1/edit"
-                color="amber"
-              />
-            </div>
-          </div>
-        </div>
 
         <div className="grid lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="card-container">
               <h3 className="font-bold text-slate-900 mb-6">
                 Recent Critical Needs
               </h3>
@@ -575,31 +507,4 @@ export default function OrgAdminDashboard() {
   );
 }
 
-function ControlTile({
-  label,
-  desc,
-  icon,
-  href,
-  color,
-}: {
-  label: string;
-  desc: string;
-  icon: ReactNode;
-  href: string;
-  color: ControlTileColor;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`p-6 rounded-2xl border transition-all hover:-translate-y-1 ${controlTileStyles[color]}`}
-    >
-      <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mb-4">
-        {icon}
-      </div>
-      <h4 className="font-bold text-white text-sm mb-2">{label}</h4>
-      <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-        {desc}
-      </p>
-    </Link>
-  );
-}
+

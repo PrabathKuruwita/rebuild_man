@@ -703,3 +703,52 @@ export const getSystemStats = async (): Promise<SystemStats> => {
   return fetchAPI<SystemStats>("/stats/");
 };
 
+
+// Notifications
+export interface Notification {
+  id: number;
+  recipient: number;
+  sender: number | null;
+  sender_username: string | null;
+  notification_type:
+    | "PLEDGE_CREATED"
+    | "PLEDGE_CONFIRMED"
+    | "PLEDGE_CANCELLED"
+    | "PLEDGE_RECEIVED"
+    | "ADMIN_APPROVAL_REQUEST"
+    | "REGISTRATION_DECISION";
+  title: string;
+  message: string;
+  action_url: string | null;
+  is_read: boolean;
+  created_at: string;
+  read_at: string | null;
+}
+
+export const getNotifications = async (): Promise<Notification[]> => {
+  const response = await fetchAPI<
+    ApiListResponse<Notification> | Notification[]
+  >("/notifications/");
+  return unwrapListResponse(response);
+};
+
+export const markNotificationAsRead = (id: number) =>
+  fetchAPI<{ status: string }>(`/notifications/${id}/mark_as_read/`, {
+    method: "POST",
+  });
+
+export const markAllNotificationsAsRead = () =>
+  fetchAPI<{ status: string }>("/notifications/mark_all_as_read/", {
+    method: "POST",
+  });
+
+export const deleteNotification = (id: number) =>
+  fetchAPI<void>(`/notifications/${id}/`, {
+    method: "DELETE",
+  });
+
+export const clearAllNotifications = () =>
+  fetchAPI<{ status: string }>("/notifications/clear_all/", {
+    method: "POST",
+  });
+

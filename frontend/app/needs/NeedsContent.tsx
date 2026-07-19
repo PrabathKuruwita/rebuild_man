@@ -98,11 +98,11 @@ export default function NeedsContent() {
   if (loading) return <PageLoading />;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">All Needs</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">All Needs</h1>
+        <p className="text-sm text-slate-500 mt-1">
           {user?.role === "ORG_ADMIN"
             ? "View and manage all registered needs of the organization"
             : "View all registered needs across organizations"}
@@ -142,14 +142,14 @@ export default function NeedsContent() {
 
       {/* Search Bar */}
       <div className="mb-6">
-        <div className="relative max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <div className="search-bar-container">
+          <Search className="search-bar-icon" />
           <input
             type="text"
             placeholder="Search by need, organization, or section..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-sm transition"
+            className="search-bar-input"
           />
         </div>
       </div>

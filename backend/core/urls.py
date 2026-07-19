@@ -20,6 +20,7 @@ from .views import (
     forgot_password,
     reset_password,
     system_stats,
+    NotificationViewSet,
 )
 from .search_views import search
 
@@ -33,6 +34,7 @@ router.register(r'documents', DocumentUploadViewSet)
 router.register(r'donations', DonationViewSet)
 router.register(r'donors', DonorUserViewSet, basename='donors')
 router.register(r'admin/approvals', AdminApprovalViewSet, basename='admin_approval')
+router.register(r'notifications', NotificationViewSet, basename='notification')
 
 # The API URLs are now determined automatically by the router.
 urlpatterns = [

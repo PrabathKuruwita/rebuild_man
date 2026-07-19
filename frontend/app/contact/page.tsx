@@ -57,7 +57,7 @@ export default function ContactPage() {
           <article className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 shadow-sm">
             <h2 className="text-xl font-bold text-gray-900">Quick links</h2>
             <div className="mt-4 space-y-3 text-sm font-semibold">
-              <Link href="/impact" className="block text-emerald-700 hover:text-emerald-800">
+              <Link href="/" className="block text-emerald-700 hover:text-emerald-800">
                 View platform impact
               </Link>
               <Link href="/about" className="block text-emerald-700 hover:text-emerald-800">

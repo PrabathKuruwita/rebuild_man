@@ -16,13 +16,14 @@ export default function Home() {
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentDonations, setRecentDonations] = useState<PublicDonation[]>([]);
+  const [stories, setStories] = useState<{ title: string; body: string; progress: number }[]>([]);
   const { user, loading: authLoading } = useAuth();
 
   const fetchData = async () => {
     try {
-      const [orgs, needs, systemStats, donations] = await Promise.all([
+      const [orgs, allNeeds, systemStats, donations] = await Promise.all([
         getOrganizations(),
-        getNeeds("CRITICAL", true),
+        getNeeds(),
         getSystemStats(),
         getPublicRecentDonations().catch((err) => {
           console.warn("Failed to fetch public donations", err);
@@ -33,8 +34,12 @@ export default function Home() {
       setStats(systemStats);
       setRecentDonations(donations || []);
 
-      if (needs && needs.length > 0) {
-        const sortedNeeds = needs.sort(
+      // Filter and sort for the hero's urgent need
+      const urgentNeeds = allNeeds.filter(
+        (n) => n.priority === "CRITICAL" && n.quantity_confirmed < n.quantity_required
+      );
+      if (urgentNeeds.length > 0) {
+        const sortedNeeds = urgentNeeds.sort(
           (a, b) =>
             b.quantity_required -
             b.quantity_confirmed -
@@ -42,6 +47,35 @@ export default function Home() {
         );
         setUrgentNeed(sortedNeeds[0]);
       }
+
+      // Compute success story needs
+      const topNeeds = allNeeds
+        .filter((n) => n.quantity_required > 0)
+        .map((n) => ({
+          name: n.name,
+          progress: Math.min(
+            100,
+            Math.round((n.quantity_received / n.quantity_required) * 100),
+          ),
+          orgName: n.section_detail?.organization_name || "the community",
+        }))
+        .sort((a, b) => b.progress - a.progress)
+        .slice(0, 3);
+
+      const storiesList = topNeeds.map((item, index) => ({
+        title: `Success Story ${index + 1}`,
+        body: `${item.name} for ${item.orgName} reached ${item.progress}% coverage through community and institutional donations.`,
+        progress: item.progress,
+      }));
+
+      if (storiesList.length === 0) {
+        storiesList.push({
+          title: "Building Momentum",
+          body: "The platform is collecting the first wave of support and preparing measurable success stories.",
+          progress: 0,
+        });
+      }
+      setStories(storiesList);
     } catch (err) {
       console.warn(
         "Backend API not available. Start with: python manage.py runserver",
@@ -431,6 +465,55 @@ export default function Home() {
                 <p className="text-sm text-slate-500 leading-relaxed">
                   {step.desc}
                 </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Impact Stories Section */}
+      <section className="py-24 bg-white relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-3 mb-16">
+            <div className="text-blue-600 font-bold uppercase tracking-widest text-[10px]">
+              Success Highlighted
+            </div>
+            <h2 className="text-3xl font-black text-slate-900">
+              Our Latest Donation Success Stories
+            </h2>
+            <p className="text-sm text-slate-500 max-w-xl mx-auto leading-relaxed">
+              A snapshot of organizational needs that reached high coverage thanks to our active donor community.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {stories.map((story) => (
+              <div
+                key={story.title}
+                className="bg-slate-50/50 p-8 rounded-3xl border border-slate-100 hover:shadow-xl hover:bg-white transition-all duration-500 group animate-fade-in"
+              >
+                <span className="inline-block px-3 py-1 bg-amber-50 rounded-full text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-6">
+                  {story.title}
+                </span>
+                <p className="text-sm leading-relaxed text-slate-600 min-h-[80px]">
+                  {story.body}
+                </p>
+                <div className="mt-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Fulfillment progress
+                    </span>
+                    <span className="text-xs font-bold text-amber-700">
+                      {story.progress}%
+                    </span>
+                  </div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500"
+                      style={{ width: `${story.progress}%` }}
+                    />
+                  </div>
+                </div>
               </div>
             ))}
           </div>

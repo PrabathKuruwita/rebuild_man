@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import {
   Donation,
@@ -42,6 +43,9 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function DonorDashboard() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const donationIdParam = searchParams.get("donation");
   const [donations, setDonations] = useState<Donation[]>([]);
   const [needsMap, setNeedsMap] = useState<Map<number, NeedItem>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -55,6 +59,7 @@ export default function DonorDashboard() {
   // Dialog / Modal States
   const [cancelTargetId, setCancelTargetId] = useState<number | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [cancelReasonOption, setCancelReasonOption] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
   const [viewingDonation, setViewingDonation] = useState<Donation | null>(null);
 
@@ -130,6 +135,15 @@ export default function DonorDashboard() {
       mounted = false;
     };
   }, [fetchData]);
+
+  const selectedViewingDonation = (() => {
+    if (donationIdParam && donations.length > 0) {
+      const donationId = parseInt(donationIdParam, 10);
+      const found = donations.find((d) => d.id === donationId);
+      if (found) return found;
+    }
+    return viewingDonation;
+  })();
 
   const handleStartEdit = (donation: Donation) => {
     setEditingDonation(donation);
@@ -301,6 +315,7 @@ export default function DonorDashboard() {
       setMessage("Your pledge was cancelled successfully.");
       setCancelTargetId(null);
       setCancelReason("");
+      setCancelReasonOption("");
       await fetchData();
       setTimeout(() => setMessage(""), 3500);
     } catch (err: unknown) {
@@ -328,7 +343,7 @@ export default function DonorDashboard() {
                 Welcome back, {user?.username}!
               </h1>
               <p className="text-blue-100 mt-2 text-sm max-w-xl leading-relaxed">
-                Thank you for your generosity. You have supported {totalOrgsSupported} organizations. Let&apos;s see your real-time impact metrics below.
+                {`Thank you for your generosity. You have supported ${totalOrgsSupported} organizations. Let's see your real-time impact metrics below.`}
               </p>
             </div>
             <a
@@ -794,29 +809,29 @@ export default function DonorDashboard() {
           </div>
 
           {filteredHistory.length > 0 ? (
-            <div className="overflow-x-auto w-full max-w-full">
-              <table className="w-full min-w-[700px]">
+            <div className="overflow-x-auto overflow-y-auto max-h-[600px] w-full max-w-full">
+              <table className="w-full min-w-[700px] border-separate border-spacing-0">
                 <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Status
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Need Item
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Organization
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Section
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Pledged Qty
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Created Date
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border-b border-slate-100 sticky top-0 z-10">
                       Actions
                     </th>
                   </tr>
@@ -904,7 +919,7 @@ export default function DonorDashboard() {
 
       {/* Edit Donation Modal */}
       {editingDonation !== null && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[1100] animate-fade-in">
           <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl animate-scale-up max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
               <h3 className="text-lg font-bold text-slate-900">
@@ -1035,28 +1050,65 @@ export default function DonorDashboard() {
 
       {/* Cancellation Reason Modal */}
       {cancelTargetId !== null && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[1100] animate-fade-in">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-scale-up">
             <h3 className="text-xl font-bold text-slate-900 text-center mb-2">
               Cancel Donation Pledge?
             </h3>
             <p className="text-xs text-slate-500 text-center mb-6 leading-relaxed">
-              Are you sure you want to cancel this pledge? Please enter a brief reason below to inform the hospital.
+              Are you sure you want to cancel this pledge? Please select a reason below to inform the hospital.
             </p>
-            <div className="mb-6">
-              <textarea
-                placeholder="e.g. Unable to travel this week, or no longer have supply..."
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm min-h-[100px] text-slate-800"
+            
+            <div className="mb-4">
+              <label htmlFor="donor-cancel-reason" className="block text-xs font-bold text-slate-450 uppercase tracking-wider mb-2">
+                Cancellation Reason
+              </label>
+              <select
+                id="donor-cancel-reason"
+                value={cancelReasonOption}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCancelReasonOption(val);
+                  if (val !== "Other") {
+                    setCancelReason(val);
+                  } else {
+                    setCancelReason("");
+                  }
+                }}
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white text-gray-900 font-medium transition"
                 required
-              />
+              >
+                <option value="" disabled>Select a reason...</option>
+                <option value="No longer have supply of this item / Out of stock">No longer have supply / Out of stock</option>
+                <option value="Unable to transport or deliver the items to the hospital">Unable to transport or deliver the items</option>
+                <option value="Made a mistake in the pledge details (quantity, item, etc.)">Made a mistake in the pledge details</option>
+                <option value="Accidental submission of the pledge">Accidental submission of the pledge</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
-            <div className="flex gap-4">
+
+            {cancelReasonOption === "Other" && (
+              <div className="mb-6 animate-fade-in">
+                <label htmlFor="donor-cancel-other" className="block text-xs font-bold text-slate-450 uppercase tracking-wider mb-2">
+                  Please specify
+                </label>
+                <textarea
+                  id="donor-cancel-other"
+                  placeholder="Please specify your cancellation reason..."
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm min-h-[100px] text-slate-800 bg-white"
+                  required
+                />
+              </div>
+            )}
+
+            <div className="flex gap-4 mt-6">
               <button
                 onClick={() => {
                   setCancelTargetId(null);
                   setCancelReason("");
+                  setCancelReasonOption("");
                 }}
                 className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-250 text-slate-700 rounded-xl text-sm font-bold transition"
                 disabled={isCancelling}
@@ -1066,7 +1118,7 @@ export default function DonorDashboard() {
               <button
                 onClick={handleCancelSubmit}
                 className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-xl text-sm font-bold transition"
-                disabled={isCancelling || !cancelReason.trim()}
+                disabled={isCancelling || !cancelReasonOption || (cancelReasonOption === "Other" && !cancelReason.trim())}
               >
                 {isCancelling ? "Cancelling..." : "Cancel Pledge"}
               </button>
@@ -1076,33 +1128,36 @@ export default function DonorDashboard() {
       )}
 
       {/* View Donation Details Modal */}
-      {viewingDonation !== null && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex flex-col items-center justify-start overflow-y-auto p-4 sm:p-10 z-50 animate-fade-in w-screen h-screen">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl animate-scale-up my-auto shrink-0">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
+      {selectedViewingDonation !== null && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex flex-col items-center justify-start overflow-y-auto p-4 sm:p-10 z-[1100] animate-fade-in w-screen h-screen">
+          <div className="bg-white rounded-xl max-w-lg w-full shadow-2xl animate-scale-up my-auto shrink-0 flex flex-col overflow-hidden max-h-[85vh]">
+            <div className="flex justify-between items-center border-b border-slate-100 p-4 sm:p-6 shrink-0">
               <h3 className="text-lg font-bold text-slate-900">
                 Pledge Receipt Details
               </h3>
               <button
-                onClick={() => setViewingDonation(null)}
+                onClick={() => {
+                  setViewingDonation(null);
+                  router.replace("/");
+                }}
                 className="text-slate-400 hover:text-slate-700 text-sm font-semibold"
               >
                 Close
               </button>
             </div>
 
-            <div className="space-y-4 text-sm">
+            <div className="p-4 sm:p-6 space-y-4 text-sm overflow-y-auto flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl">
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Item Pledges</p>
                   <p className="font-bold text-slate-800 text-base mt-1 break-words">
-                    {viewingDonation.need_item_detail?.name}
+                    {selectedViewingDonation.need_item_detail?.name}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Quantity</p>
                   <p className="font-bold text-slate-800 text-base mt-1 break-words">
-                    {viewingDonation.quantity} {viewingDonation.need_item_detail?.unit || "units"}
+                    {selectedViewingDonation.quantity} {selectedViewingDonation.need_item_detail?.unit || "units"}
                   </p>
                 </div>
               </div>
@@ -1111,14 +1166,14 @@ export default function DonorDashboard() {
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Recipient Organization</p>
                   <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                    {needsMap.get(viewingDonation.need_item)?.section_detail?.organization_name || "Colombo South Teaching Hospital"}
+                    {needsMap.get(selectedViewingDonation.need_item)?.section_detail?.organization_name || "Colombo South Teaching Hospital"}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Section</p>
                   <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                    {needsMap.get(viewingDonation.need_item)?.section_detail?.name || "-"}
+                    {needsMap.get(selectedViewingDonation.need_item)?.section_detail?.name || "-"}
                   </p>
                 </div>
 
@@ -1126,94 +1181,94 @@ export default function DonorDashboard() {
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pledge Status</p>
                     <span
-                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 ${viewingDonation.status === "FULFILLED"
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 ${selectedViewingDonation.status === "FULFILLED"
                         ? "bg-purple-100 text-purple-800"
-                        : viewingDonation.status === "CONFIRMED"
+                        : selectedViewingDonation.status === "CONFIRMED"
                           ? "bg-emerald-100 text-emerald-800"
-                          : viewingDonation.status === "CANCELLED"
+                          : selectedViewingDonation.status === "CANCELLED"
                             ? "bg-red-100 text-red-800"
                             : "bg-amber-100 text-amber-800"
                         }`}
                     >
-                      {viewingDonation.status === "FULFILLED" ? "Delivered" : viewingDonation.status}
+                      {selectedViewingDonation.status === "FULFILLED" ? "Delivered" : selectedViewingDonation.status}
                     </span>
                   </div>
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pledged On</p>
                     <p className="font-medium text-slate-800 mt-1">
-                      {new Date(viewingDonation.created_at).toLocaleDateString()}
+                      {new Date(selectedViewingDonation.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
 
-                {viewingDonation.estimated_delivery_date && (
+                {selectedViewingDonation.estimated_delivery_date && (
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Estimated Delivery Date</p>
                     <p className="font-semibold text-slate-800 mt-0.5">
-                      {new Date(viewingDonation.estimated_delivery_date).toLocaleDateString()}
+                      {new Date(selectedViewingDonation.estimated_delivery_date).toLocaleDateString()}
                     </p>
                   </div>
                 )}
 
-                {viewingDonation.message && (
+                {selectedViewingDonation.message && (
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Your Message</p>
                     <p className="text-slate-600 italic bg-slate-50 p-3 rounded-xl mt-1 border border-slate-100 break-words">
-                      &quot;{viewingDonation.message}&quot;
+                      &quot;{selectedViewingDonation.message}&quot;
                     </p>
                   </div>
                 )}
 
-                {viewingDonation.confirmed_by_name && (
+                {selectedViewingDonation.confirmed_by_name && (
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Confirmed By</p>
                     <p className="font-semibold text-green-700 mt-0.5 break-words">
-                      {viewingDonation.confirmed_by_name}
-                      {viewingDonation.confirmed_by_role && ` (${viewingDonation.confirmed_by_role.replace("_", " ")})`}
+                      {selectedViewingDonation.confirmed_by_name}
+                      {selectedViewingDonation.confirmed_by_role && ` (${selectedViewingDonation.confirmed_by_role.replace("_", " ")})`}
                     </p>
                   </div>
                 )}
 
-                {viewingDonation.received_by_name && (
+                {selectedViewingDonation.received_by_name && (
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Received By</p>
                     <p className="font-semibold text-purple-700 mt-0.5 break-words">
-                      {viewingDonation.received_by_name}
-                      {viewingDonation.received_by_role && ` (${viewingDonation.received_by_role.replace("_", " ")})`}
+                      {selectedViewingDonation.received_by_name}
+                      {selectedViewingDonation.received_by_role && ` (${selectedViewingDonation.received_by_role.replace("_", " ")})`}
                     </p>
                   </div>
                 )}
 
-                {viewingDonation.status === "CANCELLED" && (
+                {selectedViewingDonation.status === "CANCELLED" && (
                   <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl">
                     <p className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">Cancellation Details</p>
                     <p className="text-slate-700 text-xs mt-1 leading-relaxed break-words">
                       <strong>Cancelled By:</strong>{" "}
-                      {viewingDonation.cancelled_by_name || "System/Admin"}
-                      {viewingDonation.cancelled_by_role && ` (${viewingDonation.cancelled_by_role.replace("_", " ")})`}
+                      {selectedViewingDonation.cancelled_by_name || "System/Admin"}
+                      {selectedViewingDonation.cancelled_by_role && ` (${selectedViewingDonation.cancelled_by_role.replace("_", " ")})`}
                     </p>
-                    {viewingDonation.cancellation_reason && (
+                    {selectedViewingDonation.cancellation_reason && (
                       <p className="text-slate-700 text-xs mt-1 leading-relaxed break-words">
-                        <strong>Reason:</strong> {viewingDonation.cancellation_reason}
+                        <strong>Reason:</strong> {selectedViewingDonation.cancellation_reason}
                       </p>
                     )}
-                    {viewingDonation.cancelled_at && (
+                    {selectedViewingDonation.cancelled_at && (
                       <p className="text-[10px] text-slate-400 mt-1.5 font-semibold">
-                        Cancelled on: {new Date(viewingDonation.cancelled_at).toLocaleString()}
+                        Cancelled on: {new Date(selectedViewingDonation.cancelled_at).toLocaleString()}
                       </p>
                     )}
                   </div>
                 )}
               </div>
+            </div>
 
-              <div className="mt-8 border-t border-slate-100 pt-6 flex justify-end">
-                <button
-                  onClick={() => setViewingDonation(null)}
-                  className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition"
-                >
-                  Close
-                </button>
-              </div>
+            <div className="p-4 sm:p-6 border-t border-slate-100 flex justify-end shrink-0 bg-white">
+              <button
+                onClick={() => setViewingDonation(null)}
+                className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

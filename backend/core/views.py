@@ -4,7 +4,7 @@ from rest_framework import viewsets, status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny, IsAuthenticated, BasePermission
-from .models import Organization, Section, NeedItem, DocumentUpload, Donation
+from .models import Organization, Section, NeedItem, DocumentUpload, Donation, Notification
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.tokens import default_token_generator
@@ -25,7 +25,8 @@ from .serializers import (
     AdminApprovalSerializer,
     UserSerializer,
     DonorUserSerializer,
-    UpdateProfileSerializer
+    UpdateProfileSerializer,
+    NotificationSerializer
 )
 from .serializers_jwt import get_tokens_for_user
 
@@ -106,6 +107,21 @@ class OrgAdminRegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        
+        # Notify all System Admins of a new registration request
+        try:
+            system_admins = User.objects.filter(role='ADMIN')
+            for admin in system_admins:
+                Notification.objects.create(
+                    recipient=admin,
+                    sender=user,
+                    notification_type='ADMIN_APPROVAL_REQUEST',
+                    title='New Org Admin Registration Request',
+                    message=f"Org Admin registration request submitted for {user.username} (organization: {user.requested_organization_name or 'New'}).",
+                    action_url=f"/admin/approvals"
+                )
+        except Exception as e:
+            print(f"[Notifications] Error creating registration request notification: {e}")
         
         # Don't generate tokens - user must be approved first
         return Response({
@@ -692,6 +708,19 @@ class AdminApprovalViewSet(viewsets.ViewSet):
             
         user.save()
         
+        # Create DB notification for approved user
+        try:
+            Notification.objects.create(
+                recipient=user,
+                sender=request.user,
+                notification_type='REGISTRATION_DECISION',
+                title='Registration Request Approved!',
+                message=f"Your request to register as an Organization Administrator for {org_name} has been approved.",
+                action_url="/org-admin"
+            )
+        except Exception as e:
+            print(f"[Notifications] Error creating approval notification: {e}")
+        
         # Send approval email
         try:
             frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
@@ -939,10 +968,22 @@ class DonationViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Automatically set the donor to the current user if they're authenticated"""
-        if self.request.user.is_authenticated:
-            serializer.save(donor=self.request.user)
-        else:
-            serializer.save()
+        donation = serializer.save(donor=self.request.user) if self.request.user.is_authenticated else serializer.save()
+        
+        # Notify organization admins of the new pledge
+        try:
+            org = donation.need_item.section.organization
+            for admin in org.admins.all():
+                Notification.objects.create(
+                    recipient=admin,
+                    sender=donation.donor if donation.donor else None,
+                    notification_type='PLEDGE_CREATED',
+                    title='New Donation Pledge Received',
+                    message=f"A new pledge of {donation.quantity} {donation.need_item.unit}(s) of '{donation.need_item.name}' has been registered for your organization.",
+                    action_url=f"/admin/donations?donation={donation.id}"
+                )
+        except Exception as e:
+            print(f"[Notifications] Error creating pledge notification: {e}")
 
     def update(self, request, *args, **kwargs):
         donation = self.get_object()
@@ -983,6 +1024,17 @@ class DonationViewSet(viewsets.ModelViewSet):
         quantity = donation.quantity
         unit = donation.need_item.unit
         
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        login_url = f"{frontend_url}/login"
+        
+        # Default fallback values for HTML layout
+        theme_color = "#3b82f6"
+        box_bg = "#eff6ff"
+        box_text_color = "#1e3a8a"
+        headline_text = ""
+        extra_sections = ""
+        important_needs_str = ""
+        
         if action == 'confirm':
             subject = "Donation Confirmed: {} – NeedTracker".format(org_name)
             message = (
@@ -1001,6 +1053,23 @@ class DonationViewSet(viewsets.ModelViewSet):
                 section_name=section_name,
                 org_name=org_name
             )
+            
+            theme_color = "#10b981"
+            box_bg = "#ecfdf5"
+            box_text_color = "#065f46"
+            headline_text = f"Great news! Your donation pledge of <strong>{quantity} {unit}(s)</strong> of <strong>'{need_name}'</strong> for <strong>{section_name}</strong> has been confirmed by the administrators at <strong>{org_name}</strong>."
+            extra_sections = (
+                f"<p style='margin: 0 0 20px 0; font-size: 14px; color: #475569;'>"
+                f"They are now expecting your contribution. Please arrange the delivery as per the guidelines provided by the organization."
+                f"</p>"
+                f"<p style='margin: 0 0 25px 0; font-size: 14px; color: #475569;'>"
+                f"Your contribution makes a real difference!"
+                f"</p>"
+                f"<div style='text-align: center; margin: 25px 0 10px 0;'>"
+                f"  <a href='{login_url}' style='background-color: #10b981; color: #ffffff; padding: 12px 30px; border-radius: 8px; font-size: 14px; font-weight: bold; text-decoration: none; display: inline-block;'>View Pledge on Dashboard</a>"
+                f"</div>"
+            )
+            
         elif action == 'cancel':
             subject = "Donation Cancelled: {} – NeedTracker".format(org_name)
             
@@ -1037,6 +1106,7 @@ class DonationViewSet(viewsets.ModelViewSet):
                 needs_list.append(f"- {n.name} ({n.get_priority_display()}) for {n.section.name}")
                 
             important_needs_str = ""
+            important_needs_html = ""
             if needs_list:
                 needs_bullet_points = "\n".join(needs_list)
                 important_needs_str = (
@@ -1045,12 +1115,39 @@ class DonationViewSet(viewsets.ModelViewSet):
                     "If you are able to help with any of the above, please visit the NeedTracker platform to make a new pledge."
                 ).format(org_name=org.name, needs_bullet_points=needs_bullet_points)
                 
+                # HTML needs rendering
+                needs_rows_list = []
+                for n in needs_qs:
+                    priority_color = "#ef4444" if n.priority == "CRITICAL" else ("#f59e0b" if n.priority == "ESSENTIAL" else "#3b82f6")
+                    needs_rows_list.append(
+                        f"<tr>"
+                        f"  <td style='padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-weight: 600; color: #1e293b;'>{n.name}</td>"
+                        f"  <td style='padding: 10px 0; border-bottom: 1px solid #f1f5f9; text-align: right;'>"
+                        f"    <span style='background-color: {priority_color}10; color: {priority_color}; font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;'>{n.get_priority_display()}</span>"
+                        f"    <span style='font-size: 12px; color: #64748b; margin-left: 8px;'>for {n.section.name}</span>"
+                        f"  </td>"
+                        f"</tr>"
+                    )
+                needs_table_rows = "".join(needs_rows_list)
+                
+                important_needs_html = (
+                    f"<div style='margin-top: 30px; border-top: 1px dashed #e2e8f0; padding-top: 25px;'>"
+                    f"  <h4 style='margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.05em;'>Most Urgent Needs at {org_name}</h4>"
+                    f"  <table border='0' cellpadding='0' cellspacing='0' width='100%' style='font-size: 14px; color: #475569; border-collapse: collapse;'>"
+                    f"    {needs_table_rows}"
+                    f"  </table>"
+                    f"  <div style='text-align: center; margin-top: 25px; margin-bottom: 10px;'>"
+                    f"    <a href='{frontend_url}/needs' style='background-color: #3b82f6; color: #ffffff; padding: 12px 30px; border-radius: 8px; font-size: 14px; font-weight: bold; text-decoration: none; display: inline-block;'>Make a New Pledge</a>"
+                    f"  </div>"
+                    f"</div>"
+                )
+                
+            cancellation_reason_text = donation.cancellation_reason or "No specific reason was provided."
             message = (
                 "Dear {donor_name},\n\n"
                 "We wanted to inform you that your donation pledge of {quantity} {unit}(s) of '{need_name}' for {section_name} "
                 "has been cancelled by the administrators at {org_name}.\n\n"
-                "This may happen if the need has already been fulfilled by other donors, or if the "
-                "organization's requirements have changed.\n\n"
+                "Reason for cancellation: {cancellation_reason}\n\n"
                 "We truly appreciate your willingness to help. Please check the NeedTracker platform "
                 "for other most important needs that you can support.{important_needs_str}\n\n"
                 "— The NeedTracker Team"
@@ -1061,8 +1158,27 @@ class DonationViewSet(viewsets.ModelViewSet):
                 need_name=need_name,
                 section_name=section_name,
                 org_name=org_name,
+                cancellation_reason=cancellation_reason_text,
                 important_needs_str=important_needs_str
             )
+            
+            theme_color = "#ef4444"
+            box_bg = "#fef2f2"
+            box_text_color = "#991b1b"
+            headline_text = f"We wanted to inform you that your donation pledge of <strong>{quantity} {unit}(s)</strong> of <strong>'{need_name}'</strong> for <strong>{section_name}</strong> has been cancelled by the administrators at <strong>{org_name}</strong>."
+            extra_sections = (
+                f"<div style='margin-bottom: 25px;'>"
+                f"  <span style='font-size: 11px; font-weight: bold; color: #ef4444; letter-spacing: 0.05em; text-transform: uppercase; display: block; margin-bottom: 8px;'>Reason for Cancellation</span>"
+                f"  <div style='background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; font-style: italic; color: #475569; font-size: 14px;'>"
+                f"    \"{cancellation_reason_text}\""
+                f"  </div>"
+                f"</div>"
+                f"<p style='margin: 0 0 20px 0; font-size: 14px; color: #475569;'>"
+                f"  We truly appreciate your willingness to help. Please check the NeedTracker platform for other most important needs that you can support."
+                f"</p>"
+                f"{important_needs_html}"
+            )
+            
         elif action == 'receive':
             subject = "Donation Received: Thank You! – NeedTracker"
             message = (
@@ -1081,8 +1197,92 @@ class DonationViewSet(viewsets.ModelViewSet):
                 section_name=section_name,
                 org_name=org_name
             )
+            
+            theme_color = "#8b5cf6"
+            box_bg = "#f5f3ff"
+            box_text_color = "#5b21b6"
+            headline_text = f"We are pleased to inform you that your donation of <strong>{quantity} {unit}(s)</strong> of <strong>'{need_name}'</strong> has been safely received by the team at <strong>{org_name}</strong>."
+            extra_sections = (
+                f"<p style='margin: 0 0 20px 0; font-size: 14px; color: #475569;'>"
+                f"Your generous support helps us continue our services and fulfill critical needs. We truly appreciate your contribution!"
+                f"</p>"
+                f"<p style='margin: 0 0 25px 0; font-size: 14px; color: #475569;'>"
+                f"A receipt and confirmation of delivery has been logged in the NeedTracker platform."
+                f"</p>"
+                f"<div style='text-align: center; margin: 25px 0 10px 0;'>"
+                f"  <a href='{login_url}' style='background-color: #8b5cf6; color: #ffffff; padding: 12px 30px; border-radius: 8px; font-size: 14px; font-weight: bold; text-decoration: none; display: inline-block;'>View Donation History</a>"
+                f"</div>"
+            )
+            
         else:
             return
+            
+        html_message = """
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #334155; line-height: 1.6;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #f1f5f9; padding: 40px 10px;">
+    <tr>
+      <td align="center">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+          
+          <!-- Header Banner -->
+          <tr>
+            <td align="center" style="background-color: {theme_color}; padding: 30px 20px; color: #ffffff;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: 800; tracking: -0.025em; letter-spacing: 0.5px;">NeedTracker</h1>
+              <p style="margin: 5px 0 0 0; font-size: 11px; font-weight: 700; tracking: 0.1em; text-transform: uppercase; opacity: 0.85;">Donation Management Platform</p>
+            </td>
+          </tr>
+          
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="margin: 0 0 20px 0; font-size: 16px; font-weight: 700; color: #0f172a;">Dear {donor_name},</p>
+              
+              <!-- Highlight Box -->
+              <div style="background-color: {box_bg}; border-left: 4px solid {theme_color}; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <p style="margin: 0; font-size: 15px; color: {box_text_color}; font-weight: 500; line-height: 1.5;">
+                  {headline_text}
+                </p>
+              </div>
+
+              {extra_sections}
+
+              <p style="margin: 25px 0 0 0; font-size: 14px; color: #64748b;">
+                Thank you for your kindness and support.<br>
+                <strong>The NeedTracker Team</strong>
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color: #f8fafc; padding: 25px; border-top: 1px solid #f1f5f9; color: #94a3b8; font-size: 11px;">
+              <p style="margin: 0 0 5px 0;">This is an automatically generated email from NeedTracker.</p>
+              <p style="margin: 0;">&copy; 2026 NeedTracker. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+""".format(
+            subject=subject,
+            theme_color=theme_color,
+            donor_name=donor_name,
+            box_bg=box_bg,
+            box_text_color=box_text_color,
+            headline_text=headline_text,
+            extra_sections=extra_sections
+        )
             
         try:
             send_mail(
@@ -1091,6 +1291,7 @@ class DonationViewSet(viewsets.ModelViewSet):
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[donor_email],
                 fail_silently=False,
+                html_message=html_message
             )
         except Exception as e:
             print(f"Failed to send donation {action} email to {donor_email}: {str(e)}")
@@ -1145,6 +1346,19 @@ class DonationViewSet(viewsets.ModelViewSet):
             donation.confirmed_by = request.user
             donation.save()
             
+            # Notify the donor that the pledge was confirmed
+            if donation.donor:
+                try:
+                    Notification.objects.create(
+                        recipient=donation.donor,
+                        sender=request.user,
+                        notification_type='PLEDGE_CONFIRMED',
+                        title='Donation Pledge Confirmed',
+                        message=f"Your pledge of {donation.quantity} {donation.need_item.unit}(s) of '{donation.need_item.name}' has been verified and confirmed by {donation.need_item.section.organization.name}.",
+                        action_url=f"/?donation={donation.id}"
+                    )
+                except Exception as e:
+                    print(f"[Notifications] Error creating confirm notification: {e}")
 
             # Send confirmation email to donor
             self._send_donation_email(donation, 'confirm')
@@ -1174,6 +1388,37 @@ class DonationViewSet(viewsets.ModelViewSet):
             donation.cancelled_at = timezone.now()
             donation.save()
             
+            # If donor cancels, notify org admins
+            if request.user.role == 'DONOR':
+                try:
+                    org = donation.need_item.section.organization
+                    reason_str = f" Reason: {reason}" if reason else ""
+                    for admin in org.admins.all():
+                        Notification.objects.create(
+                            recipient=admin,
+                            sender=request.user,
+                            notification_type='PLEDGE_CANCELLED',
+                            title='Donation Pledge Cancelled by Donor',
+                            message=f"Donor {donation.donor.username} has cancelled their pledge of {donation.quantity} {donation.need_item.unit}(s) of '{donation.need_item.name}'.{reason_str}",
+                            action_url=f"/admin/donations?donation={donation.id}"
+                        )
+                except Exception as e:
+                    print(f"[Notifications] Error creating donor cancel notification: {e}")
+            # If admin cancels, notify donor
+            else:
+                if donation.donor:
+                    try:
+                        Notification.objects.create(
+                            recipient=donation.donor,
+                            sender=request.user,
+                            notification_type='PLEDGE_CANCELLED',
+                            title='Donation Pledge Cancelled by Hospital',
+                            message=f"Your pledge of {donation.quantity} {donation.need_item.unit}(s) of '{donation.need_item.name}' has been cancelled by the organization. Reason: {reason}",
+                            action_url=f"/?donation={donation.id}"
+                        )
+                    except Exception as e:
+                        print(f"[Notifications] Error creating admin cancel notification: {e}")
+            
             # Send cancellation email to donor
             self._send_donation_email(donation, 'cancel')
             
@@ -1185,13 +1430,26 @@ class DonationViewSet(viewsets.ModelViewSet):
         """Mark a confirmed donation as physically received (status FULFILLED)"""
         donation = self.get_object()
         if donation.status == 'CONFIRMED':
-            need_item = donation.need_item
-            need_item.quantity_received += donation.quantity
-            need_item.save()
-            
             donation.status = 'FULFILLED'
             donation.received_by = request.user
             donation.save()
+            
+            # Refresh need_item to get updated quantity_received value from the signal
+            donation.need_item.refresh_from_db()
+            
+            # Notify the donor that their donation was marked received
+            if donation.donor:
+                try:
+                    Notification.objects.create(
+                        recipient=donation.donor,
+                        sender=request.user,
+                        notification_type='PLEDGE_RECEIVED',
+                        title='Donation Received!',
+                        message=f"Thank you! Your donation of {donation.quantity} {donation.need_item.unit}(s) of '{donation.need_item.name}' has been successfully received by the team at {donation.need_item.section.organization.name}.",
+                        action_url=f"/?donation={donation.id}"
+                    )
+                except Exception as e:
+                    print(f"[Notifications] Error creating received notification: {e}")
             
             # Send physical receipt email to donor
             self._send_donation_email(donation, 'receive')
@@ -1281,4 +1539,38 @@ def system_stats(request):
         'donors_onboarded': donors_count,
         'delivery_success_rate': delivery_success_rate
     })
+
+
+# 6. Notification ViewSet
+class NotificationViewSet(viewsets.ModelViewSet):
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(recipient=self.request.user)
+
+    @action(detail=True, methods=['post', 'patch'])
+    def mark_as_read(self, request, pk=None):
+        notification = self.get_object()
+        if not notification.is_read:
+            notification.is_read = True
+            notification.read_at = timezone.now()
+            notification.save()
+        return Response({'status': 'notification marked as read'}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'])
+    def mark_all_as_read(self, request):
+        unread_notifications = Notification.objects.filter(recipient=request.user, is_read=False)
+        unread_notifications.update(is_read=True, read_at=timezone.now())
+        return Response({'status': 'all notifications marked as read'}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post', 'delete'])
+    def clear_all(self, request):
+        Notification.objects.filter(recipient=request.user).delete()
+        return Response({'status': 'all notifications cleared'}, status=status.HTTP_200_OK)
+
 

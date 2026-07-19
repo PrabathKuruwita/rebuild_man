@@ -4,12 +4,29 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { getDonors, DonorUser } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { Search, X } from "lucide-react";
 
 export default function DonorsPage() {
   const { user } = useAuth();
   const [donors, setDonors] = useState<DonorUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredDonors = donors.filter((donor) => {
+    const username = (donor.username || "").toLowerCase();
+    const fullName = `${donor.first_name || ""} ${donor.last_name || ""}`.toLowerCase();
+    const email = (donor.email || "").toLowerCase();
+    const joinedDateStr = new Date(donor.date_joined).toLocaleDateString().toLowerCase();
+    const query = searchQuery.toLowerCase();
+
+    return (
+      username.includes(query) ||
+      fullName.includes(query) ||
+      email.includes(query) ||
+      joinedDateStr.includes(query)
+    );
+  });
 
   const loadDonors = useCallback(async (isPolling = false) => {
     try {
@@ -58,115 +75,138 @@ export default function DonorsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
             Registered Donors
           </h1>
-          <p className="text-slate-500 mt-2">
+          <p className="text-sm text-slate-500 mt-1">
             View and monitor donors registered in the platform
           </p>
         </div>
+      </div>
 
-        {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-600 rounded-md p-4">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-600 rounded-md p-4">
+          {error}
+        </div>
+      )}
 
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
-            <table className="min-w-full min-w-[1000px] border-separate border-spacing-0">
-              <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+      {/* Search Input in standard Approvals styling */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 flex flex-col md:flex-row gap-4 items-center justify-between transition-all duration-300 hover:shadow-md">
+        <div className="search-bar-container">
+          <Search className="search-bar-icon" />
+          <input
+            type="text"
+            placeholder="Search by username, full name, email, or joined date..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-bar-input"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="table-wrapper">
+        <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
+          <table className="min-w-full min-w-[1000px] border-separate border-spacing-0">
+            <thead>
+              <tr>
+                <th
+                  scope="col"
+                  className="table-th sticky top-0 z-10"
+                >
+                  Username
+                </th>
+                <th
+                  scope="col"
+                  className="table-th sticky top-0 z-10"
+                >
+                  Full Name
+                </th>
+                <th
+                  scope="col"
+                  className="table-th sticky top-0 z-10"
+                >
+                  Email
+                </th>
+                <th
+                  scope="col"
+                  className="table-th sticky top-0 z-10"
+                >
+                  Phone
+                </th>
+                <th
+                  scope="col"
+                  className="table-th sticky top-0 z-10"
+                >
+                  Joined Date
+                </th>
+                <th
+                  scope="col"
+                  className="table-th sticky top-0 z-10"
+                >
+                  Total Donations
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white">
+              {filteredDonors.length === 0 ? (
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200 sticky top-0 z-10"
+                  <td
+                    colSpan={6}
+                    className="table-td text-center text-gray-500"
                   >
-                    Username
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200 sticky top-0 z-10"
-                  >
-                    Full Name
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200 sticky top-0 z-10"
-                  >
-                    Email
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200 sticky top-0 z-10"
-                  >
-                    Phone
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200 sticky top-0 z-10"
-                  >
-                    Joined Date
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200 sticky top-0 z-10"
-                  >
-                    Total Donations
-                  </th>
+                    No matching donors found.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {donors.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-6 py-4 text-center text-sm text-gray-500"
-                    >
-                      No donors found.
+              ) : (
+                filteredDonors.map((donor) => (
+                  <tr key={donor.id} className="table-tr-hover">
+                    <td className="table-td whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {donor.username}
+                      </div>
+                    </td>
+                    <td className="table-td whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {donor.first_name || donor.last_name
+                          ? `${donor.first_name || ""} ${donor.last_name || ""}`.trim()
+                          : "-"}
+                      </div>
+                    </td>
+                    <td className="table-td whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {donor.email}
+                      </div>
+                    </td>
+                    <td className="table-td whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {donor.phone_number || "-"}
+                      </div>
+                    </td>
+                    <td className="table-td whitespace-nowrap text-gray-500">
+                      {new Date(donor.date_joined).toLocaleDateString()}
+                    </td>
+                    <td className="table-td whitespace-nowrap">
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {donor.donations_count}
+                      </span>
                     </td>
                   </tr>
-                ) : (
-                  donors.map((donor) => (
-                    <tr key={donor.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {donor.username}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {donor.first_name || donor.last_name
-                            ? `${donor.first_name || ""} ${donor.last_name || ""}`.trim()
-                            : "-"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {donor.email}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {donor.phone_number || "-"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(donor.date_joined).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {donor.donations_count}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
