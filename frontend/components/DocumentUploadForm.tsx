@@ -80,7 +80,7 @@ export default function DocumentUploadForm({ onUpload }: DocumentUploadFormProps
         onClick={() => inputRef.current?.click()}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
           isDragging
-            ? 'border-blue-500 bg-blue-50'
+            ? 'border-primary bg-teal-50'
             : file
             ? 'border-green-500 bg-green-50'
             : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
@@ -125,7 +125,7 @@ export default function DocumentUploadForm({ onUpload }: DocumentUploadFormProps
           <button
             onClick={handleSubmit}
             disabled={isUploading}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-teal-700 disabled:bg-teal-300 disabled:cursor-not-allowed transition-colors"
           >
             {isUploading ? (
               <span className="flex items-center justify-center gap-2">

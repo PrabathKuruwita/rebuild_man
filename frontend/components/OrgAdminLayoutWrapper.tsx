@@ -82,8 +82,10 @@ export default function OrgAdminLayoutWrapper({
     );
   }
 
+  const isHomePage = pathname === "/";
+
   return (
-    <main className="min-h-screen pt-16 sm:pt-20">
+    <main className={`min-h-screen ${isHomePage ? "" : "pt-16 sm:pt-20"}`}>
       {children}
     </main>
   );

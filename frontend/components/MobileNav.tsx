@@ -137,6 +137,12 @@ export default function MobileNav() {
                     onClick={() => handleNavClick("/needs")}
                   />
                   <MobileNavLink
+                    href="/impact"
+                    label="Our Impact"
+                    isActive={pathname === "/impact"}
+                    onClick={() => handleNavClick("/impact")}
+                  />
+                  <MobileNavLink
                     href="/profile"
                     label="My Profile"
                     isActive={pathname === "/profile"}
@@ -148,7 +154,8 @@ export default function MobileNav() {
                   <MobileNavLink
                     href="/"
                     label="Home"
-                    onClick={() => setIsOpen(false)}
+                    isActive={pathname === "/"}
+                    onClick={() => handleNavClick("/")}
                   />
                   <MobileNavLink
                     href="/needs"
@@ -157,9 +164,22 @@ export default function MobileNav() {
                     onClick={() => handleNavClick("/needs")}
                   />
                   <MobileNavLink
-                    href="/#impact"
-                    label="Impact"
-                    onClick={() => setIsOpen(false)}
+                    href="/impact"
+                    label="Our Impact"
+                    isActive={pathname === "/impact"}
+                    onClick={() => handleNavClick("/impact")}
+                  />
+                  <MobileNavLink
+                    href="/about"
+                    label="About Us"
+                    isActive={pathname === "/about"}
+                    onClick={() => handleNavClick("/about")}
+                  />
+                  <MobileNavLink
+                    href="/contact"
+                    label="Contact Us"
+                    isActive={pathname === "/contact"}
+                    onClick={() => handleNavClick("/contact")}
                   />
                 </>
               )}
@@ -179,14 +199,14 @@ export default function MobileNav() {
                   <Link
                     href="/login?tab=register"
                     onClick={() => setIsOpen(false)}
-                    className="block w-full px-4 py-3 text-center text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors touch-manipulation"
+                    className="block w-full px-4 py-3 text-center text-sm font-bold text-white bg-success hover:bg-green-600 rounded-lg transition-colors touch-manipulation shadow-sm"
                   >
                     Become a Donor
                   </Link>
                   <Link
                     href="/login?tab=org-admin"
                     onClick={() => setIsOpen(false)}
-                    className="block w-full px-4 py-3 text-center text-sm font-bold text-blue-600 bg-white border-2 border-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
+                    className="block w-full px-4 py-3 text-center text-sm font-bold text-primary bg-white border-2 border-primary hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
                   >
                     Register Organization
                   </Link>
@@ -240,7 +260,7 @@ function MobileNavLink({
       href={href}
       onClick={onClick}
       className={`px-4 py-3 text-sm font-semibold rounded-lg transition-colors touch-manipulation ${isActive
-        ? "text-blue-600 bg-blue-50"
+        ? "text-primary bg-primary/10"
         : "text-slate-600 hover:bg-slate-50"
         }`}
     >

@@ -103,6 +103,8 @@ export default function AdvancedSriLankaMap({
           zoomAnimation: false,
           fadeAnimation: false,
           markerZoomAnimation: false,
+          maxBounds: [[5.5, 79.5], [10.0, 82.0]],
+          maxBoundsViscosity: 1.0,
         }).setView([7.8731, 80.7718], 8);
 
         // Add OpenStreetMap tile layer (faster and more reliable)
@@ -166,8 +168,26 @@ export default function AdvancedSriLankaMap({
 
         // Add markers only for registered organizations
         organizationsWithCoordinates.forEach((entry) => {
+          const customIcon = LeafletLib.divIcon({
+            className: "custom-map-marker bg-transparent border-none",
+            html: `
+              <div class="relative flex items-center justify-center w-8 h-8">
+                <div class="absolute inset-0 bg-primary/30 rounded-full animate-pulse-ring z-0"></div>
+                <div class="relative bg-white rounded-full p-1.5 shadow-md border border-primary/20 flex items-center justify-center z-10">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-rose-500 fill-rose-500/20">
+                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                  </svg>
+                </div>
+              </div>
+            `,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            popupAnchor: [0, -16],
+          });
+
           const marker = LeafletLib.marker([entry.lat, entry.lng], {
             title: entry.organization.name,
+            icon: customIcon,
           }).addTo(map.current);
 
           const popupContent = `
@@ -182,7 +202,9 @@ export default function AdvancedSriLankaMap({
             </div>
           `;
 
-          marker.bindPopup(popupContent, { maxWidth: 250, maxHeight: 200 });
+          marker.bindPopup(popupContent, { maxWidth: 250, maxHeight: 200, closeButton: false, offset: [0, -10] });
+          marker.on("mouseover", () => marker.openPopup());
+          marker.on("mouseout", () => marker.closePopup());
           marker.on("click", () => marker.openPopup());
         });
 

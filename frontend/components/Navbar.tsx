@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
@@ -14,6 +15,7 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const [showProfile, setShowProfile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
@@ -79,6 +81,33 @@ export default function Navbar() {
     }
   };
 
+  useEffect(() => {
+    const handleScroll = () => {
+      let threshold = 20;
+      if (pathname === "/") {
+        const heroSection = document.getElementById("hero-section");
+        const donorHeader = document.getElementById("donor-header");
+        
+        if (heroSection) {
+          // Stay transparent until we scroll past the hero section
+          threshold = heroSection.offsetTop + heroSection.offsetHeight - 80;
+        } else if (donorHeader) {
+          // Change to solid white earlier so it doesn't blend with the white cards that overlap the header
+          threshold = donorHeader.offsetTop + donorHeader.offsetHeight - 200;
+        } else {
+          threshold = window.innerHeight;
+        }
+      }
+      setIsScrolled(window.scrollY > threshold);
+    };
+    
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Initial check on mount
+    handleScroll();
+    
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [pathname]);
+
   const handleNavMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const navEl = navRef.current;
     if (!navEl) return;
@@ -89,39 +118,38 @@ export default function Navbar() {
     navEl.style.setProperty("--my", `${y}px`);
   };
 
+  const isSolid = pathname !== "/" || isScrolled;
+  const textColor = isSolid ? "text-slate-700" : "text-slate-200";
+  const textHoverColor = isSolid ? "hover:text-primary" : "hover:text-white";
+  const logoTextColor = isSolid ? "text-primary" : "text-white";
+  const logoSubtextColor = isSolid ? "text-slate-500" : "text-slate-300";
+  const btnOutlineClass = isSolid 
+    ? "text-slate-700 border border-slate-300 hover:bg-slate-50 hover:text-slate-900 rounded-full"
+    : "text-white border border-white/30 hover:bg-white/10 hover:border-white rounded-full";
+  const btnPrimaryClass = "text-white bg-primary hover:bg-teal-700 rounded-full";
+  const navBg = isSolid ? "bg-white shadow-sm border-slate-200" : "bg-black/10 backdrop-blur-sm border-white/10";
+
   return (
     <nav
       ref={navRef}
       onMouseMove={handleNavMouseMove}
-      className={`bg-white/90 backdrop-blur-md border-b border-gray-100 fixed top-0 left-0 right-0 h-16 sm:h-20 z-[1020] transition-all duration-300 ${isSidebarLayout ? "navbar-sidebar-offset" : "w-full"}`}
+      className={`fixed top-0 left-0 right-0 h-20 sm:h-24 z-[1020] transition-all duration-300 ${isSidebarLayout ? "navbar-sidebar-offset" : "w-full"} ${navBg} border-b`}
     >
-      <div className={isSidebarLayout ? "w-full px-4 sm:px-8" : "max-w-7xl mx-auto px-3 sm:px-6 lg:px-8"}>
-        <div className="flex justify-between items-center h-16 sm:h-20">
+      <div className={isSidebarLayout ? "w-full px-4 sm:px-8" : "w-full px-4 sm:px-8 lg:px-12"}>
+        <div className="flex justify-between items-center h-20 sm:h-24">
           {/* Logo - Responsive sizing */}
           <div className={`shrink-0 flex items-center ${isSidebarLayout ? "lg:hidden" : ""}`}>
             <Link href="/" className="flex items-center gap-2 sm:gap-3">
-              <div className="w-9 sm:w-10 h-9 sm:h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
-                <svg
-                  className="w-5 sm:w-6 h-5 sm:h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
-              </div>
-              {/* Text hidden on mobile, shown on tablet+ */}
-              <div className="hidden sm:flex flex-col">
-                <span className="font-bold text-lg sm:text-xl text-slate-900 leading-tight tracking-tight">
-                  NeedTracker
-                </span>
-                <span className="text-[8px] sm:text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                  Donation Platform
+              <Image 
+                src="/images/Parithyaga_Logo.png" 
+                alt="Parithyaga Logo" 
+                width={50} 
+                height={50}
+                className="w-15 h-15 object-contain"
+              />
+              <div className="flex flex-col">
+                <span className={`font-black text-lg sm:text-2xl leading-tight tracking-wide transition-colors duration-300 ${logoTextColor}`}>
+                  PARITHYAGA
                 </span>
               </div>
             </Link>
@@ -129,49 +157,65 @@ export default function Navbar() {
 
 
           {/* Navigation Links - Hidden on mobile, shown on desktop */}
-          <div className="hidden lg:flex items-center space-x-6 flex-1 ml-12">
-
-
+          <div className="hidden lg:flex items-center justify-center space-x-12 flex-1">
             {(!user || (user.role !== "ADMIN" && user.role !== "ORG_ADMIN")) && (
               <>
                 <Link
                   href="/"
-                  className={`text-sm font-medium transition-colors ${pathname === "/" ? "text-blue-600 font-semibold" : "text-slate-600 hover:text-blue-600"}`}
+                  className={`font-label text-sm font-medium transition-colors tracking-wide ${pathname === "/" ? (isSolid ? "text-primary" : "text-white") : textColor} ${textHoverColor}`}
                 >
                   {user?.role === "DONOR" ? "Dashboard" : "Home"}
                 </Link>
                 <Link
                   href="/needs"
-                  className={`text-sm font-medium transition-colors ${pathname === "/needs" ? "text-blue-600 font-semibold" : "text-slate-600 hover:text-blue-600"}`}
+                  className={`font-label text-sm font-medium transition-colors tracking-wide ${pathname === "/needs" ? (isSolid ? "text-primary" : "text-white") : textColor} ${textHoverColor}`}
                 >
                   Current Needs
+                </Link>
+                <Link
+                  href="/impact"
+                  className={`font-label text-sm font-medium transition-colors tracking-wide ${pathname === "/impact" ? (isSolid ? "text-primary" : "text-white") : textColor} ${textHoverColor}`}
+                >
+                  Our Impact
+                </Link>
+                <Link
+                  href="/about"
+                  className={`font-label text-sm font-medium transition-colors tracking-wide ${pathname === "/about" ? (isSolid ? "text-primary" : "text-white") : textColor} ${textHoverColor}`}
+                >
+                  About Us
+                </Link>
+                <Link
+                  href="/contact"
+                  className={`font-label text-sm font-medium transition-colors tracking-wide ${pathname === "/contact" ? (isSolid ? "text-primary" : "text-white") : textColor} ${textHoverColor}`}
+                >
+                  Contact Us
                 </Link>
               </>
             )}
           </div>
 
           {/* Search + Auth Section */}
-          <div className="flex items-center gap-1 sm:gap-3 lg:gap-4">
+          <div className="flex items-center gap-1 sm:gap-3 lg:gap-4 shrink-0">
             {/* Desktop Auth Buttons - Hidden on mobile */}
             {!user ? (
-              <div className="hidden sm:flex items-center gap-2 md:gap-3">
+              <div className="hidden sm:flex items-center gap-2 md:gap-4">
                 <Link
                   href="/login"
-                  className="text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors whitespace-nowrap"
+                  className={`text-base font-medium transition-colors whitespace-nowrap ${textColor} ${textHoverColor}`}
                 >
                   Sign In
                 </Link>
                 <Link
-                  href="/login?tab=register"
-                  className="text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg shadow-lg shadow-blue-600/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 touch-manipulation whitespace-nowrap"
-                >
-                  Become a Donor
-                </Link>
-                <Link
                   href="/login?tab=org-admin"
-                  className="text-xs sm:text-sm font-bold text-blue-600 bg-white border-2 border-blue-600 hover:bg-blue-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg shadow-lg shadow-blue-600/10 transition-all transform hover:-translate-y-0.5 active:translate-y-0 touch-manipulation whitespace-nowrap"
+                  className={`text-base font-medium px-5 py-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap ${btnOutlineClass}`}
                 >
                   Register Organization
+                </Link>
+                <Link
+                  href="/login?tab=register"
+                  className={`text-base font-medium px-6 py-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap ${btnPrimaryClass}`}
+                >
+                  Become a Donor
                 </Link>
               </div>
             ) : (
@@ -190,13 +234,11 @@ export default function Navbar() {
                 <div className="relative" ref={notificationsRef}>
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors relative touch-manipulation animate-fade-in"
+                    className={`p-2 rounded-lg transition-colors relative touch-manipulation animate-fade-in ${isSolid ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-300 hover:text-white hover:bg-white/10'}`}
                   >
                     <Bell size={20} />
                     {unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 w-5 h-5 bg-rose-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border-2 border-white animate-pulse">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
+                      <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
                     )}
                   </button>
 
@@ -207,7 +249,7 @@ export default function Navbar() {
                         {unreadCount > 0 && (
                           <button
                             onClick={markAllAsRead}
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                            className="text-xs font-semibold text-primary hover:text-teal-700 transition-colors"
                           >
                             Mark all as read
                           </button>
@@ -246,7 +288,7 @@ export default function Navbar() {
                                 </p>
                               </div>
                               {!n.is_read && (
-                                <span className="absolute top-4 right-4 w-2 h-2 bg-blue-600 rounded-full" />
+                                <span className="absolute top-4 right-4 w-2 h-2 bg-primary rounded-full" />
                               )}
                             </div>
                           ))
@@ -257,7 +299,7 @@ export default function Navbar() {
                         <Link
                           href="/notifications"
                           onClick={() => setShowNotifications(false)}
-                          className="block text-center text-xs font-bold text-blue-600 hover:text-blue-700 py-1.5 transition-colors"
+                          className="block text-center text-xs font-bold text-primary hover:text-teal-700 py-1.5 transition-colors"
                         >
                           View all notifications
                         </Link>
@@ -270,21 +312,21 @@ export default function Navbar() {
                 <div className="relative flex items-center gap-2" ref={panelRef}>
                   {user.role && (
                     <div className="hidden md:flex flex-col items-end mr-1">
-                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-teal-50 px-2 py-0.5 rounded border border-teal-100">
                         {user.role === "ADMIN" ? "Admin" : user.role === "ORG_ADMIN" ? "Org Admin" : "Donor"}
                       </span>
                     </div>
                   )}
                   <button
                     onClick={() => setShowProfile(!showProfile)}
-                    className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 font-bold border border-blue-100 hover:bg-blue-100 transition-colors touch-manipulation"
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border transition-all touch-manipulation focus-visible:outline-none ${isSolid ? 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' : 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700'}`}
                   >
                     {user.username.charAt(0).toUpperCase()}
                   </button>
 
                   {showProfile && (
                     <div className="absolute right-0 top-12 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-scale-up">
-                      <div className="bg-linear-to-r from-blue-600 to-indigo-700 px-5 py-4">
+                      <div className="bg-linear-to-r from-primary to-teal-700 px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
                             {user.username.charAt(0).toUpperCase()}
@@ -293,7 +335,7 @@ export default function Navbar() {
                             <p className="text-white font-semibold text-sm">
                               {user.username}
                             </p>
-                            <p className="text-blue-100 text-[10px] uppercase tracking-wider font-bold">
+                            <p className="text-teal-100 text-[10px] uppercase tracking-wider font-bold">
                               {user.role}
                             </p>
                           </div>
@@ -304,7 +346,7 @@ export default function Navbar() {
                         <Link
                           href="/profile"
                           onClick={() => setShowProfile(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors group touch-manipulation"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-primary rounded-lg transition-colors group touch-manipulation"
                         >
                           <UserCircle
                             size={18}

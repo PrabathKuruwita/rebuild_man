@@ -53,6 +53,12 @@ class IsAdminUser(BasePermission):
         return request.user and request.user.is_authenticated and request.user.role in ('ADMIN', 'ORG_ADMIN')
 
 
+class IsSystemAdminUser(BasePermission):
+    """Full access for SYSTEM ADMIN only."""
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and request.user.role == 'ADMIN'
+
+
 class IsOrgAdminOfThisOrg(BasePermission):
     """ORG_ADMIN can only manage their own organization. ADMIN can manage all."""
     def has_permission(self, request, view):
@@ -1601,5 +1607,38 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def clear_all(self, request):
         Notification.objects.filter(recipient=request.user).delete()
         return Response({'status': 'all notifications cleared'}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsSystemAdminUser])
+    def broadcast(self, request):
+        audience = request.data.get('audience', 'ALL')
+        title = request.data.get('title', '')
+        message = request.data.get('message', '')
+
+        if not title or not message:
+            return Response({'error': 'Title and message are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        users = User.objects.filter(is_active=True)
+        if audience == 'ORG_ADMIN':
+            users = users.filter(role='ORG_ADMIN')
+        elif audience == 'DONOR':
+            users = users.filter(role='DONOR')
+        elif audience == 'ALL':
+            users = users.filter(role__in=['ORG_ADMIN', 'DONOR'])
+        else:
+            return Response({'error': 'Invalid audience'}, status=status.HTTP_400_BAD_REQUEST)
+
+        notifications = [
+            Notification(
+                recipient=user,
+                sender=request.user,
+                notification_type='SYSTEM_BROADCAST',
+                title=title,
+                message=message,
+                action_url='#'
+            ) for user in users
+        ]
+        
+        Notification.objects.bulk_create(notifications)
+        return Response({'status': f'Broadcast sent to {len(notifications)} users'}, status=status.HTTP_200_OK)
 
 
