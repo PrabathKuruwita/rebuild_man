@@ -1,3 +1,5 @@
+import React from 'react';
+
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -13,7 +15,7 @@ export default function LoadingSpinner({ size = 'md', className = '' }: LoadingS
   return (
     <div className={`flex items-center justify-center ${className}`}>
       <svg
-        className={`animate-spin text-blue-600 ${sizeClasses[size]}`}
+        className={`animate-spin text-primary ${sizeClasses[size]}`}
         fill="none"
         viewBox="0 0 24 24"
       >
@@ -37,11 +39,9 @@ export default function LoadingSpinner({ size = 'md', className = '' }: LoadingS
 
 export function PageLoading() {
   return (
-    <div className="min-h-[400px] flex items-center justify-center">
-      <div className="text-center">
-        <LoadingSpinner size="lg" />
-        <p className="mt-4 text-gray-500">Loading...</p>
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50/50">
+      <LoadingSpinner size="lg" />
+      <p className="mt-4 text-slate-500 font-medium text-sm animate-pulse">Loading data...</p>
     </div>
   );
 }

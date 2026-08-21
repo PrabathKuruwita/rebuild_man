@@ -1593,7 +1593,7 @@ function DonationsContent() {
               {totalNeedsCount > 0 ? (
                 <div className="flex items-center justify-between flex-1 mt-4">
                   <div className="w-[180px] h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                       <PieChart>
                         <Pie
                           data={chart1Data}
@@ -1648,7 +1648,7 @@ function DonationsContent() {
               {totalRequiredQuantity > 0 ? (
                 <div className="flex items-center justify-between flex-1 mt-4">
                   <div className="w-[180px] h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                       <PieChart>
                         <Pie
                           data={chart2Data}

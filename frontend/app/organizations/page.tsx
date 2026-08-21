@@ -30,7 +30,7 @@ function OrganizationsContent() {
   const targetSectionId = sectionParam ? Number(sectionParam) : null;
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organization, setOrganization] = useState<Organization | null>(null);
-  const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -68,7 +68,7 @@ function OrganizationsContent() {
         // ORG_ADMIN sees only their organization
         if (orgs.length > 0) {
           setOrganization(orgs[0]);
-          setSelectedOrgId(orgs[0].id);
+
         }
       }
     } catch {
@@ -181,11 +181,7 @@ function OrganizationsContent() {
     setEditSectionConfirm(null);
   }
 
-  const handleSwitchOrganization = (orgId: number) => {
-    setSelectedOrgId(orgId);
-    const selected = organizations.find((o) => o.id === orgId);
-    setOrganization(selected || null);
-  };
+
 
   const handleDelete = async () => {
     const targetOrg = user?.role === "ADMIN" ? orgToDelete : organization;
@@ -257,7 +253,7 @@ function OrganizationsContent() {
           <div className="flex items-center gap-3">
             <Link
               href={`/organizations/${organization.id}/edit`}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-teal-700 transition-colors"
             >
               <svg
                 className="w-4 h-4"
@@ -301,34 +297,36 @@ function OrganizationsContent() {
       {user?.role === "ADMIN" && !organization ? (
         <div className="space-y-8">
           {/* Search & Filter Controls */}
-          <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 flex flex-col sm:flex-row gap-4 items-center justify-between transition-all duration-300 hover:shadow-md">
-            <div className="search-bar-container">
-              <Search className="search-bar-icon" />
+          <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-slate-200 flex flex-col sm:flex-row gap-4 items-center transition-all duration-300">
+            <div className="relative flex-1 w-full">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                <Search size={18} />
+              </span>
               <input
                 type="text"
                 placeholder="Search by name or organization..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-bar-input"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 transition-all duration-200 h-11"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded-r-lg"
                 >
                   <X size={16} />
                 </button>
               )}
             </div>
             
-            <div className="relative w-full sm:w-64">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+            <div className="relative w-full sm:w-64 flex-shrink-0">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
                 <Filter size={18} />
               </span>
               <select
                 value={orgTypeFilter}
                 onChange={(e) => setOrgTypeFilter(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none transition-all duration-200"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 appearance-none transition-all duration-200 h-11"
               >
                 <option value="">All Organization Types</option>
                 {orgTypes.map((type) => (
@@ -337,7 +335,7 @@ function OrganizationsContent() {
                   </option>
                 ))}
               </select>
-              <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+              <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
                 <ChevronDown size={18} />
               </span>
             </div>
@@ -348,13 +346,13 @@ function OrganizationsContent() {
               {filteredOrgs.map((org) => (
                 <div
                   key={org.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between hover:shadow-md transition-shadow"
+                  className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between hover:shadow-md transition-shadow"
                 >
                   <div>
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <svg
-                          className="w-6 h-6 text-blue-600"
+                          className="w-6 h-6 text-primary"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -371,35 +369,40 @@ function OrganizationsContent() {
                         <h2 className="font-bold text-gray-900 line-clamp-1">
                           {org.name}
                         </h2>
-                        <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full font-medium">
-                          {org.org_type}
-                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] px-2 py-0.5 bg-teal-50 text-primary border border-teal-100 rounded font-bold uppercase tracking-wider">
+                            {org.org_type}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-700 border border-emerald-500/30 rounded font-bold uppercase tracking-wider">
+                            Active
+                          </span>
+                        </div>
                       </div>
                     </div>
 
                     <div className="space-y-2 mb-6">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Reg:</span>
-                        <span className="text-gray-900 font-medium">
+                        <span className="text-slate-500">Reg:</span>
+                        <span className="text-slate-900 font-medium">
                           {org.registration_number}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">District:</span>
-                        <span className="text-gray-900 font-medium">
+                        <span className="text-slate-500">District:</span>
+                        <span className="text-slate-900 font-medium">
                           {org.district}
                         </span>
                       </div>
                       {org.phone && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Phone:</span>
-                          <span className="text-gray-900">{org.phone}</span>
+                          <span className="text-slate-500">Phone:</span>
+                          <span className="text-slate-900">{org.phone}</span>
                         </div>
                       )}
                       {org.email_contact && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Email:</span>
-                          <span className="text-gray-900 truncate ml-2">
+                          <span className="text-slate-500">Email:</span>
+                          <span className="text-slate-900 truncate ml-2">
                             {org.email_contact}
                           </span>
                         </div>
@@ -410,7 +413,7 @@ function OrganizationsContent() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setOrganization(org)}
-                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                     >
                       View Details
                     </button>
@@ -419,7 +422,7 @@ function OrganizationsContent() {
                         setOrgToDelete(org);
                         setShowDeleteConfirm(true);
                       }}
-                      className="inline-flex items-center justify-center p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                      className="inline-flex items-center justify-center p-2 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                       title="Delete Organization"
                     >
                       <svg

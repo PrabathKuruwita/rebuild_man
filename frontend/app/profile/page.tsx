@@ -28,8 +28,8 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Blue Header Section - Matches Image 2 */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white pt-16 pb-32">
+      {/* Teal Header Section - Matches Theme */}
+      <div className="bg-gradient-to-r from-primary to-teal-800 text-white pt-16 pb-32">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
@@ -39,16 +39,24 @@ export default function ProfilePage() {
               <h1 className="text-4xl font-black tracking-tight">
                 {user.username}
               </h1>
-              <p className="text-blue-100 mt-2 text-sm max-w-xl">
+              <p className="text-teal-100 mt-2 text-sm max-w-xl">
                 Manage your personal information and account security settings.
                 Current login session is active.
               </p>
             </div>
             <Link
-              href="/"
-              className="bg-white text-blue-700 px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:bg-slate-50 transition-all"
+              href={
+                user.role === "ADMIN"
+                  ? "/admin"
+                  : user.role === "ORG_ADMIN"
+                    ? "/org-admin"
+                    : "/"
+              }
+              className="bg-white text-primary px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:bg-slate-50 transition-all"
             >
-              Back to Home
+              {user.role === "ADMIN" || user.role === "ORG_ADMIN"
+                ? "Back to Dashboard"
+                : "Back to Home"}
             </Link>
           </div>
         </div>
@@ -149,8 +157,8 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
         {/* Profile Details Section */}
         <div className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
-              <User className="text-blue-600" size={24} />
+            <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center">
+              <User className="text-primary" size={24} />
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900">
@@ -182,7 +190,7 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
                       first_name: e.target.value,
                     }))
                   }
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
                 />
               </div>
               <div>
@@ -203,7 +211,7 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
                       last_name: e.target.value,
                     }))
                   }
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
                 />
               </div>
             </div>
@@ -229,7 +237,7 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
                   onChange={(e) =>
                     setProfileForm((p) => ({ ...p, email: e.target.value }))
                   }
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
                 />
               </div>
             </div>
@@ -257,7 +265,7 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
                       phone_number: e.target.value,
                     }))
                   }
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
                 />
               </div>
             </div>
@@ -265,7 +273,7 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-blue-600 text-white rounded-xl py-3 text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+              className="w-full bg-primary text-white rounded-xl py-3 text-sm font-bold shadow-lg shadow-teal-600/20 hover:bg-teal-700 transition-all flex items-center justify-center gap-2"
             >
               <Save size={18} />
               {saving ? "Saving changes..." : "Save details"}
@@ -309,7 +317,7 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
                     current_password: e.target.value,
                   }))
                 }
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
               />
             </div>
 
@@ -332,7 +340,7 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
                     new_password: e.target.value,
                   }))
                 }
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
               />
             </div>
 
@@ -355,7 +363,7 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
                     new_password2: e.target.value,
                   }))
                 }
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
               />
             </div>
 

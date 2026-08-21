@@ -248,14 +248,14 @@ export default function LoginContent() {
           <div className="mx-auto max-w-2xl text-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/60 px-3 py-1 text-xs font-medium text-gray-500 backdrop-blur">
               <ShieldCheck className="h-3.5 w-3.5 text-green-500" />
-              Secure access to NeedTracker
+              Secure access to Parithyaga
             </span>
             <h1 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl text-gray-900">
               Sign in or join the donation network
             </h1>
             <p className="mt-3 text-gray-500">
-              Choose how you want to continue — sign in to your account,
-              register as a donor, or list your organization.
+              Choose how you want to continue : Sign in to your account,
+              Register as a donor or Register your organization.
             </p>
           </div>
 
@@ -267,39 +267,39 @@ export default function LoginContent() {
                 const active = activeTab === m.id;
 
                 // Active colors based on tab
-                let activeBorderColor = "border-blue-600";
-                let activeBgColor = "bg-blue-50";
-                let activeIconBg = "bg-blue-600";
-                let activeCheckColor = "text-blue-600";
+                let activeBorderColor = "border-primary";
+                let activeBgColor = "bg-teal-50";
+
+                let activeCheckColor = "text-primary";
 
                 if (m.id === "register") {
-                  activeBorderColor = "border-green-600";
-                  activeBgColor = "bg-green-50";
-                  activeIconBg = "bg-green-600";
-                  activeCheckColor = "text-green-600";
+                  activeBorderColor = "border-sky-500";
+                  activeBgColor = "bg-sky-50";
+
+                  activeCheckColor = "text-sky-500";
                 } else if (m.id === "org-admin") {
-                  activeBorderColor = "border-orange-600";
-                  activeBgColor = "bg-orange-50";
-                  activeIconBg = "bg-orange-600";
-                  activeCheckColor = "text-orange-600";
+                  activeBorderColor = "border-rose-500";
+                  activeBgColor = "bg-rose-50";
+
+                  activeCheckColor = "text-rose-500";
                 }
 
                 return (
                   <button
                     key={m.id}
                     onClick={() => handleTabChange(m.id)}
-                    className={`group flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${active
+                    className={`group flex items-center gap-3 rounded-none border p-4 text-left transition-all ${active
                         ? `${activeBorderColor} ${activeBgColor} shadow-sm`
                         : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
                       }`}
                   >
                     <span
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${active
-                          ? `${activeIconBg} text-white`
-                          : "bg-gray-100 text-gray-600"
+                      className={`flex shrink-0 items-center justify-center transition-colors ${active
+                          ? activeCheckColor
+                          : "text-gray-400 group-hover:text-gray-600"
                         }`}
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-7 w-7" />
                     </span>
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-gray-900">
@@ -324,7 +324,7 @@ export default function LoginContent() {
           <div className="mx-auto mt-8 grid max-w-5xl gap-8 lg:grid-cols-[1fr_320px] lg:items-start">
             {/* Active Card Container */}
             <div className="w-full max-w-xl mx-auto lg:mx-0">
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-fade-in-up">
+              <div className="bg-white rounded-none border border-gray-200 shadow-sm overflow-hidden animate-fade-in-up">
                 <form onSubmit={handleSubmit} className="p-6 sm:p-8">
                   {/* Common Error Display */}
                   {error && (
@@ -359,7 +359,7 @@ export default function LoginContent() {
                   {activeTab === "login" && (
                     <>
                       <div className="mb-6">
-                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-none bg-primary text-white shadow-sm">
                           <LogIn className="h-6 w-6" />
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900">
@@ -396,7 +396,7 @@ export default function LoginContent() {
                             </label>
                             <Link
                               href="/forgot-password"
-                              className="text-xs font-medium text-blue-600 hover:text-blue-500"
+                              className="text-xs font-medium text-primary hover:text-teal-600"
                             >
                               Forgot password?
                             </Link>
@@ -412,7 +412,7 @@ export default function LoginContent() {
                           <input
                             id="remember"
                             type="checkbox"
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                           />
                           <label
                             htmlFor="remember"
@@ -425,7 +425,7 @@ export default function LoginContent() {
                         <button
                           type="submit"
                           disabled={loading}
-                          className="btn btn-primary w-full flex items-center justify-center gap-2 py-2.5 px-4 disabled:opacity-50"
+                          className="btn rounded-full bg-primary hover:bg-teal-700 text-white w-full flex items-center justify-center gap-2 py-2.5 px-4 disabled:opacity-50"
                         >
                           {loading ? "Signing in..." : "Sign In"}{" "}
                           <ArrowRight className="w-4 h-4" />
@@ -436,7 +436,7 @@ export default function LoginContent() {
                           <button
                             type="button"
                             onClick={() => handleTabChange("register")}
-                            className="font-medium text-blue-600 hover:underline"
+                            className="font-medium text-primary hover:underline"
                           >
                             Create an account
                           </button>
@@ -449,7 +449,7 @@ export default function LoginContent() {
                   {activeTab === "register" && (
                     <>
                       <div className="mb-6">
-                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-green-600 shadow-sm">
+                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-none bg-sky-100 text-sky-500 shadow-sm">
                           <HandHeart className="h-6 w-6" />
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900">
@@ -577,23 +577,23 @@ export default function LoginContent() {
                           </div>
                         </div>
 
-                        <div className="flex items-start gap-2 rounded-lg bg-gray-50 p-3 border border-gray-100">
+                        <div className="flex items-start gap-2 rounded-none bg-gray-50 p-3 border border-gray-100">
                           <input
                             id="terms"
                             type="checkbox"
                             required
-                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-600"
+                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-sky-500 focus:ring-sky-500"
                           />
                           <label
                             htmlFor="terms"
                             className="text-xs text-gray-500 leading-relaxed"
                           >
                             I agree to NeedTracker&apos;s{" "}
-                            <Link href="/terms" className="text-blue-600 hover:underline">
+                            <Link href="/terms" className="text-sky-600 hover:underline">
                               Terms of Service
                             </Link>{" "}
                             and{" "}
-                            <Link href="/privacy" className="text-blue-600 hover:underline">
+                            <Link href="/privacy" className="text-sky-600 hover:underline">
                               Privacy Policy
                             </Link>
                             .
@@ -603,7 +603,7 @@ export default function LoginContent() {
                         <button
                           type="submit"
                           disabled={loading}
-                          className="btn btn-primary bg-green-600 hover:bg-green-700 shadow-green-600/15 w-full flex items-center justify-center gap-2 py-2.5 px-4 disabled:opacity-50"
+                          className="btn rounded-full bg-sky-500 hover:bg-sky-600 text-white shadow-sky-500/15 w-full flex items-center justify-center gap-2 py-2.5 px-4 disabled:opacity-50"
                         >
                           {loading ? "Creating..." : "Create Donor Account"}{" "}
                           <ArrowRight className="w-4 h-4" />
@@ -616,14 +616,14 @@ export default function LoginContent() {
                   {activeTab === "org-admin" && (
                     <>
                       <div className="mb-6">
-                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100 text-orange-600 shadow-sm">
+                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-none bg-rose-100 text-rose-500 shadow-sm">
                           <Building2 className="h-6 w-6" />
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900">
                           Register Your Organization
                         </h2>
                         <p className="mt-1 text-sm text-gray-500">
-                          For hospitals & medical organizations. Verification
+                          For Any organization that need Donations. Verification
                           required after submission.
                         </p>
                       </div>
@@ -789,23 +789,23 @@ export default function LoginContent() {
                           </div>
                         </div>
 
-                        <div className="flex items-start gap-2 rounded-lg bg-gray-50 p-3 border border-gray-100">
+                        <div className="flex items-start gap-2 rounded-none bg-gray-50 p-3 border border-gray-100">
                           <input
                             id="org-terms"
                             type="checkbox"
                             required
-                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-600"
+                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-rose-500 focus:ring-rose-500"
                           />
                           <label
                             htmlFor="org-terms"
                             className="text-xs text-gray-500 leading-relaxed"
                           >
-                            I agree to NeedTracker&apos;s{" "}
-                            <Link href="/terms" className="text-blue-600 hover:underline">
+                            I agree to Parithyaga&apos;s{" "}
+                            <Link href="/terms" className="text-rose-600 hover:underline">
                               Terms of Service
                             </Link>{" "}
                             and{" "}
-                            <Link href="/privacy" className="text-blue-600 hover:underline">
+                            <Link href="/privacy" className="text-rose-600 hover:underline">
                               Privacy Policy
                             </Link>
                             .
@@ -815,7 +815,7 @@ export default function LoginContent() {
                         <button
                           type="submit"
                           disabled={loading}
-                          className="btn btn-primary bg-orange-600 hover:bg-orange-700 shadow-orange-600/15 w-full flex items-center justify-center gap-2 py-2.5 px-4 disabled:opacity-50 mt-2"
+                          className="btn rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/15 w-full flex items-center justify-center gap-2 py-2.5 px-4 disabled:opacity-50 mt-2"
                         >
                           {loading
                             ? "Submitting..."
@@ -830,10 +830,10 @@ export default function LoginContent() {
             </div>
 
             {/* Trust Panel sidebar */}
-            <aside className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden sticky top-24 hidden lg:block">
+            <aside className="rounded-none border border-gray-200 bg-white shadow-sm overflow-hidden sticky top-24 hidden lg:block">
               <div className="p-6">
                 <h3 className="text-base font-semibold text-gray-900">
-                  Why NeedTracker?
+                  Why Parithyaga?
                 </h3>
                 <ul className="mt-4 space-y-4 text-sm">
                   <li className="flex gap-3">
@@ -855,7 +855,7 @@ export default function LoginContent() {
                     </span>
                   </li>
                 </ul>
-                <div className="mt-6 rounded-lg bg-gray-50 p-4 border border-gray-100">
+                <div className="mt-6 rounded-none bg-gray-50 p-4 border border-gray-100">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                     Trusted by
                   </p>

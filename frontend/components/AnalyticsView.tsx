@@ -1,6 +1,10 @@
 "use client";
 
-import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, TrendingUp, HandHeart } from "lucide-react";
+import StatsCard from "./StatsCard";
+import ElevatedCard from "./ElevatedCard";
+import AnalyticsLineChart from "./AnalyticsLineChart";
+import AnimatedStat from "./AnimatedStat";
 
 interface AnalyticsMetric {
   label: string;
@@ -21,64 +25,69 @@ export default function AnalyticsView({ fulfillmentRate, donationRate, sectionMe
     <div className="space-y-8">
       {/* High-level Progress Bars */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-slate-900">Overall Received Rate</h3>
-            <span className="text-2xl font-black text-blue-600">{fulfillmentRate}%</span>
-          </div>
-          <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
+        <StatsCard
+          label="Overall Received Rate"
+          value={`${fulfillmentRate}%`}
+          subtext="Percentage of total items required that have been received."
+          icon={<TrendingUp size={20} />}
+          status="neutral"
+        >
+          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-blue-600 rounded-full transition-all duration-1000" 
+              className="h-full bg-status-neutral rounded-full transition-all duration-1000" 
               style={{ width: `${fulfillmentRate}%` }}
             />
           </div>
-          <p className="text-xs text-slate-500 mt-3 font-medium">
-            Percentage of total items required that have been received.
-          </p>
-        </div>
+        </StatsCard>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-slate-900">Donation Engagement Rate</h3>
-            <span className="text-2xl font-black text-emerald-600">{donationRate}%</span>
-          </div>
-          <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
+        <StatsCard
+          label="Donation Engagement Rate"
+          value={`${donationRate}%`}
+          subtext="Percentage of needs that have at least one donation pledge."
+          icon={<HandHeart size={20} />}
+          status="success"
+        >
+          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-emerald-500 rounded-full transition-all duration-1000" 
+              className="h-full bg-status-success rounded-full transition-all duration-1000" 
               style={{ width: `${donationRate}%` }}
             />
           </div>
-          <p className="text-xs text-slate-500 mt-3 font-medium">
-            Percentage of needs that have at least one donation pledge.
-          </p>
-        </div>
+        </StatsCard>
       </div>
+      
+      {/* Main Trend Chart - Visually Dominant */}
+      <ElevatedCard className="p-8" isDominant={true}>
+        <AnalyticsLineChart />
+      </ElevatedCard>
 
       {/* Section-wise Analytics */}
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <h3 className="font-bold text-slate-900 mb-6">Fulfillment by Section</h3>
+      <ElevatedCard className="p-8">
+        <h3 className="font-heading font-bold text-slate-900 mb-6 text-xl">Fulfillment by Section</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {sectionMetrics.map((metric, idx) => (
-            <div key={idx} className="p-5 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors">
+            <div key={idx} className="p-5 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition-all hover:-translate-y-0.5 hover:shadow-sm">
               <div className="flex justify-between items-start mb-3">
-                <span className="text-sm font-bold text-slate-700">{metric.label}</span>
+                <span className="text-sm font-bold text-slate-700 font-body">{metric.label}</span>
                 {metric.status === "success" ? (
-                  <CheckCircle2 className="text-emerald-500" size={18} />
+                  <CheckCircle2 className="text-status-success" size={18} />
                 ) : metric.status === "critical" ? (
-                  <AlertCircle className="text-rose-500" size={18} />
+                  <AlertCircle className="text-status-critical" size={18} />
                 ) : (
-                  <Clock className="text-amber-500" size={18} />
+                  <Clock className="text-status-warning" size={18} />
                 )}
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-slate-900">{metric.value}</span>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">/ {metric.total} items</span>
+                <span className="text-2xl font-black text-slate-900 font-heading">
+                  {typeof metric.value === 'number' ? <AnimatedStat value={metric.value} /> : metric.value}
+                </span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest font-label">/ {metric.total} items</span>
               </div>
               <div className="mt-4 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                 <div 
                   className={`h-full rounded-full transition-all duration-700 ${
-                    metric.status === "success" ? "bg-emerald-500" : 
-                    metric.status === "critical" ? "bg-rose-500" : "bg-amber-500"
+                    metric.status === "success" ? "bg-status-success" : 
+                    metric.status === "critical" ? "bg-status-critical" : "bg-status-warning"
                   }`}
                   style={{ width: `${metric.percentage}%` }}
                 />
@@ -86,7 +95,7 @@ export default function AnalyticsView({ fulfillmentRate, donationRate, sectionMe
             </div>
           ))}
         </div>
-      </div>
+      </ElevatedCard>
     </div>
   );
 }

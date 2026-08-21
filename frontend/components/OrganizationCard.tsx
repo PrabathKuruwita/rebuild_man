@@ -97,17 +97,23 @@ export default function OrganizationCard({
 
   return (
     <Link href={`/organizations/${organization.id}`}>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-200 cursor-pointer group h-full flex flex-col">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group h-full flex flex-col overflow-hidden">
         {/* Coloured gradient header */}
         <div
           className={`bg-gradient-to-br ${type.gradient} px-5 py-5 text-white`}
         >
           <div className="flex items-start justify-between mb-3">
-            <span
-              className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${type.badge}`}
-            >
-              {type.label}
-            </span>
+            <div className="flex flex-col gap-2">
+              <span
+                className={`inline-flex self-start px-2.5 py-1 rounded-full text-xs font-semibold ${type.badge}`}
+              >
+                {type.label}
+              </span>
+              {/* TODO(backend): Organization lacks a status field (e.g. is_active or approval_status). Stubbed to Active for now. */}
+              <span className="inline-flex self-start px-2 py-0.5 bg-emerald-500/20 text-emerald-100 border border-emerald-500/30 rounded text-[10px] font-bold uppercase tracking-wider">
+                Active
+              </span>
+            </div>
             {criticalUnfulfilledNeeds > 0 && (
               <span className="flex items-center gap-1 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
                 <svg
@@ -153,7 +159,7 @@ export default function OrganizationCard({
           {/* Description */}
           <p className="text-sm text-gray-600 line-clamp-2 mb-4 flex-1">
             {organization.description || (
-              <span className="italic text-gray-400">No description yet.</span>
+              <span className="italic text-slate-500">No description yet.</span>
             )}
           </p>
 
@@ -186,27 +192,31 @@ export default function OrganizationCard({
           </div>
 
           {/* Fulfillment bar */}
-          {unfulfilledNeeds > 0 && (
-            <div>
-              <div className="flex justify-between text-xs text-gray-400 mb-1">
-                <span>Needs progress</span>
-                <span className="font-medium text-gray-600">
+          {unfulfilledNeeds > 0 ? (
+            <div className="mt-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <div className="flex justify-between items-center text-xs mb-2">
+                <span className="font-bold text-slate-700">Fulfillment Rate</span>
+                <span className="font-bold text-emerald-600">
                   {avgProgress}%
                 </span>
               </div>
-              <progress
-                value={avgProgress}
-                max={100}
-                className="w-full h-1.5 rounded-full overflow-hidden [appearance:none] [&::-webkit-progress-bar]:bg-gray-100 [&::-webkit-progress-value]:bg-green-400 [&::-moz-progress-bar]:bg-green-400"
-                aria-label="Needs progress"
-              />
+              <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
+                  style={{ width: `${avgProgress}%` }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="mt-2 bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
+              <span className="text-xs font-bold text-slate-400">No active needs</span>
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-slate-500 font-medium">
             Reg: {organization.registration_number}
           </span>
           <span className="text-xs font-medium text-blue-600 group-hover:text-blue-700 flex items-center gap-1">
