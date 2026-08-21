@@ -123,7 +123,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'  # WSGI application path
 
 
-DB_ENGINE = config('DB_ENGINE', default='sqlite')
+DB_ENGINE = config('DB_ENGINE', default='postgres')
 
 if DB_ENGINE == 'sqlite':
     DATABASES = {
