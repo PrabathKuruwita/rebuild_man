@@ -38,8 +38,8 @@ export default function BroadcastModal({ isOpen, onClose }: BroadcastModalProps)
         setMessage('');
         setSuccess('');
       }, 2000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send broadcast.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to send broadcast. Please try again.");
     } finally {
       setLoading(false);
     }

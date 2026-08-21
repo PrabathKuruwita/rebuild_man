@@ -53,7 +53,7 @@ export default function Home() {
       setCurrentContentIndex((prev) => (prev + 1) % heroContents.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [heroContents.length]);
 
   const fetchData = async () => {
     try {
@@ -153,6 +153,7 @@ export default function Home() {
       <section id="hero-section" className="relative bg-[#030B1C] overflow-hidden flex flex-col justify-center h-[100vh]">
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1920&q=80"
             alt="Hero Background"
@@ -437,10 +438,11 @@ export default function Home() {
                   <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
                 </svg>
                 <p className="text-lg md:text-xl text-slate-700 italic font-medium leading-relaxed mb-8">
-                  "NeedTracker has completely transformed how we receive supplies. The transparency gives donors confidence, and we get exactly what we need, when we need it most."
+                  &quot;NeedTracker has completely transformed how we receive supplies. The transparency gives donors confidence, and we get exactly what we need, when we need it most.&quot;
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-slate-200 rounded-full overflow-hidden shrink-0 border border-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="https://ui-avatars.com/api/?name=Dr+Samarakoon&background=e2e8f0&color=475569" alt="Avatar" className="w-full h-full object-cover" />
                   </div>
                   <div>
@@ -481,7 +483,7 @@ export default function Home() {
               <div className="bg-white rounded-[2px] p-10 md:p-14 h-full relative z-10 flex flex-col justify-between items-start space-y-10">
                 <Building className="w-12 h-12 text-primary mb-4" />
                 <div>
-                  <h2 className="font-heading text-2xl font-bold text-slate-900 mb-4 tracking-tight">We're an organization</h2>
+                  <h2 className="font-heading text-2xl font-bold text-slate-900 mb-4 tracking-tight">We&apos;re an organization</h2>
                   <p className="font-body text-sm text-slate-500 leading-relaxed mt-2 mb-8 max-w-sm">
                     Join NeedTracker to publish your requirements, manage donations, and reach donors nationwide.
                   </p>

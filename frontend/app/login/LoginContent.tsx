@@ -269,18 +269,18 @@ export default function LoginContent() {
                 // Active colors based on tab
                 let activeBorderColor = "border-primary";
                 let activeBgColor = "bg-teal-50";
-                let activeIconBg = "bg-primary";
+
                 let activeCheckColor = "text-primary";
 
                 if (m.id === "register") {
                   activeBorderColor = "border-sky-500";
                   activeBgColor = "bg-sky-50";
-                  activeIconBg = "bg-sky-500";
+
                   activeCheckColor = "text-sky-500";
                 } else if (m.id === "org-admin") {
                   activeBorderColor = "border-rose-500";
                   activeBgColor = "bg-rose-50";
-                  activeIconBg = "bg-rose-500";
+
                   activeCheckColor = "text-rose-500";
                 }
 

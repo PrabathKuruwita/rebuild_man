@@ -30,7 +30,7 @@ function OrganizationsContent() {
   const targetSectionId = sectionParam ? Number(sectionParam) : null;
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organization, setOrganization] = useState<Organization | null>(null);
-  const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -68,7 +68,7 @@ function OrganizationsContent() {
         // ORG_ADMIN sees only their organization
         if (orgs.length > 0) {
           setOrganization(orgs[0]);
-          setSelectedOrgId(orgs[0].id);
+
         }
       }
     } catch {
@@ -181,11 +181,7 @@ function OrganizationsContent() {
     setEditSectionConfirm(null);
   }
 
-  const handleSwitchOrganization = (orgId: number) => {
-    setSelectedOrgId(orgId);
-    const selected = organizations.find((o) => o.id === orgId);
-    setOrganization(selected || null);
-  };
+
 
   const handleDelete = async () => {
     const targetOrg = user?.role === "ADMIN" ? orgToDelete : organization;

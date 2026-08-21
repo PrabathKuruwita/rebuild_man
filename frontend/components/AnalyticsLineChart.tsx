@@ -8,7 +8,8 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer 
+  ResponsiveContainer,
+  TooltipProps
 } from 'recharts';
 import { Activity } from 'lucide-react';
 
@@ -24,26 +25,35 @@ interface AnalyticsLineChartProps {
   subtitle?: string;
 }
 
+type TooltipEntry = {
+  color?: string;
+  name?: string;
+  value?: number | string;
+};
+
 // Custom Tooltip for Recharts
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 min-w-[150px]">
         <p className="font-label text-slate-500 text-xs font-bold uppercase mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => (
-          <div key={`item-${index}`} className="flex items-center justify-between mb-1">
-            <span className="text-sm font-medium text-slate-700 capitalize flex items-center gap-2">
-              <span 
-                className="w-2.5 h-2.5 rounded-full inline-block" 
-                style={{ backgroundColor: entry.color }}
-              />
-              {entry.name}
-            </span>
-            <span className="font-heading font-bold text-slate-900 ml-4">
-              {entry.value.toLocaleString()}
-            </span>
-          </div>
-        ))}
+        {payload.map((entry, index: number) => {
+          const item = entry as TooltipEntry;
+          return (
+            <div key={`item-${index}`} className="flex items-center justify-between mb-1">
+              <span className="text-sm font-medium text-slate-700 capitalize flex items-center gap-2">
+                <span 
+                  className="w-2.5 h-2.5 rounded-full inline-block" 
+                  style={{ backgroundColor: item.color }}
+                />
+                {item.name}
+              </span>
+              <span className="font-heading font-bold text-slate-900 ml-4">
+                {typeof item.value === 'number' ? item.value.toLocaleString() : item.value}
+              </span>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -69,7 +79,8 @@ export default function AnalyticsLineChart({
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    const id = requestAnimationFrame(() => setIsMounted(true));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   if (!isMounted) {

@@ -122,7 +122,7 @@ export default function Navbar() {
   const textColor = isSolid ? "text-slate-700" : "text-slate-200";
   const textHoverColor = isSolid ? "hover:text-primary" : "hover:text-white";
   const logoTextColor = isSolid ? "text-primary" : "text-white";
-  const logoSubtextColor = isSolid ? "text-slate-500" : "text-slate-300";
+
   const btnOutlineClass = isSolid 
     ? "text-slate-700 border border-slate-300 hover:bg-slate-50 hover:text-slate-900 rounded-full"
     : "text-white border border-white/30 hover:bg-white/10 hover:border-white rounded-full";

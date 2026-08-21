@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getSystemStats, SystemStats, getNeeds, NeedItem, getOrganizations, Organization } from "@/lib/api";
+import { getSystemStats, SystemStats, getNeeds, getOrganizations, Organization } from "@/lib/api";
 import { HeartHandshake, MapPin, Building2, TrendingUp, CheckCircle2, ArrowRight } from "lucide-react";
 import AdvancedSriLankaMap from "@/components/AdvancedSriLankaMap";
 import AnimatedStat from "@/components/AnimatedStat";
