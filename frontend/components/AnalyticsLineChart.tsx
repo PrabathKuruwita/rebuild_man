@@ -8,8 +8,7 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer,
-  TooltipProps
+  ResponsiveContainer
 } from 'recharts';
 import { Activity } from 'lucide-react';
 
@@ -31,8 +30,14 @@ type TooltipEntry = {
   value?: number | string;
 };
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string;
+}
+
 // Custom Tooltip for Recharts
-const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 min-w-[150px]">
