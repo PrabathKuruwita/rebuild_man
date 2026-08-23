@@ -53,7 +53,8 @@ export default function DonorDashboard() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    const t = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(t);
   }, []);
   const [message, setMessage] = useState("");
 

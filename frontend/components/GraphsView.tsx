@@ -100,7 +100,8 @@ export default function GraphsView({
 
   const [isMounted, setIsMounted] = React.useState(false);
   React.useEffect(() => {
-    setIsMounted(true);
+    const t = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(t);
   }, []);
 
   if (!isMounted) return null;

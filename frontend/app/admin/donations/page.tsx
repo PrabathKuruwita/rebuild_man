@@ -63,7 +63,10 @@ function DonationsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => setIsMounted(true), []);
+  useEffect(() => {
+    const t = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
   const [filter, setFilter] = useState<string>("PENDING");
   const [confirming, setConfirming] = useState<number | null>(null);
   const [cancelling, setCancelling] = useState<number | null>(null);
