@@ -103,6 +103,9 @@ export default function AdvancedSriLankaMap({
           zoomAnimation: false,
           fadeAnimation: false,
           markerZoomAnimation: false,
+          dragging: !LeafletLib.Browser.mobile,
+          tap: !LeafletLib.Browser.mobile,
+          scrollWheelZoom: false,
           maxBounds: [[5.5, 79.5], [10.0, 82.0]],
           maxBoundsViscosity: 1.0,
         }).setView([7.8731, 80.7718], 8);
