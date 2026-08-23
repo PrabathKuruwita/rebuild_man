@@ -150,7 +150,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white font-sans">
       {/* Hero Section */}
-      <section id="hero-section" className="relative bg-[#030B1C] overflow-hidden flex flex-col justify-center h-[100vh]">
+      <section id="hero-section" className="relative bg-[#030B1C] overflow-hidden flex flex-col justify-center min-h-screen lg:h-[100vh] pt-28 pb-32 lg:pt-0 lg:pb-0">
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -185,10 +185,10 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full mb-8 lg:mb-0">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             {/* Left Column */}
-            <div className="lg:col-span-7 space-y-8 animate-fade-in-up flex flex-col items-start text-left w-full">
+            <div className="lg:col-span-7 space-y-8 animate-fade-in-up flex flex-col items-start text-left w-full mt-4 lg:mt-0">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 backdrop-blur-md rounded-sm border border-white/10 shadow-lg">
                 <span className="w-2 h-2 bg-success rounded-sm animate-pulse-ring"></span>
                 <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
@@ -210,7 +210,8 @@ export default function Home() {
                 </p>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-4 pt-4 w-full justify-start items-start">
+              
+              <div className="flex flex-col sm:flex-row gap-4 pt-2 pb-4 lg:pb-0 w-full justify-start items-start">
                 <Link href="/needs" className="px-8 py-4 bg-primary hover:bg-teal-700 text-white text-base font-bold rounded-full shadow-lg shadow-teal-900/20 transition-all flex items-center justify-center gap-2">
                   <Heart className="w-5 h-5" />
                   Donate Now
@@ -562,12 +563,12 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 font-label text-xs text-slate-500">
-            <p>© {new Date().getFullYear()} Parithyaga Sri Lanka. All rights reserved.</p>
-            <div className="flex gap-6">
-              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-              <Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link>
+          <div className="pt-8 pb-8 md:pb-0 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 font-label text-sm text-slate-400">
+            <p className="text-center md:text-left">© {new Date().getFullYear()} Parithyaga Sri Lanka. All rights reserved.</p>
+            <div className="flex flex-wrap justify-center gap-6">
+              <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+              <Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link>
             </div>
           </div>
         </div>

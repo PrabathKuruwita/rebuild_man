@@ -33,7 +33,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)  # False by default - prevents
 
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,backend',
+    default='localhost,127.0.0.1,62.171.171.71,rebuild-app.duckdns.org,backend,backend.rikili001,backend.rikili001.svc.cluster.local',
     cast=Csv()
 )
 
@@ -130,8 +130,9 @@ WSGI_APPLICATION = 'config.wsgi.application'  # WSGI application path
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 USE_SQLITE = config('USE_SQLITE', default=False, cast=bool)
+DB_ENGINE = config('DB_ENGINE', default='postgres')
 
-if USE_SQLITE:
+if USE_SQLITE or DB_ENGINE == 'sqlite':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
