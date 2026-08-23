@@ -50,6 +50,11 @@ export default function DonorDashboard() {
   const [needsMap, setNeedsMap] = useState<Map<number, NeedItem>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const [message, setMessage] = useState("");
 
   // Search and Filter States
@@ -462,6 +467,7 @@ export default function DonorDashboard() {
               {pieChartData.length > 0 ? (
                 <div className="flex items-center justify-between flex-1 mt-4">
                   <div className="w-[180px] h-[180px]">
+                    {isMounted && (
                     <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                       <PieChart>
                         <Pie
@@ -480,6 +486,7 @@ export default function DonorDashboard() {
                         <Tooltip />
                       </PieChart>
                     </ResponsiveContainer>
+                    )}
                   </div>
                   {/* Legend */}
                   <div className="flex-1 pl-6 space-y-2.5">
@@ -521,6 +528,7 @@ export default function DonorDashboard() {
 
               {barChartData.length > 0 ? (
                 <div className="flex-1 mt-6 h-[220px]">
+                  {isMounted && (
                   <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                     <BarChart data={barChartData} margin={{ top: 5, right: 10, left: -20, bottom: 25 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
@@ -530,6 +538,7 @@ export default function DonorDashboard() {
                       <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} barSize={28} />
                     </BarChart>
                   </ResponsiveContainer>
+                  )}
                 </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center text-slate-400 text-xs">

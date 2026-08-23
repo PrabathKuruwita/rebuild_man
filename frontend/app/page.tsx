@@ -439,7 +439,7 @@ export default function Home() {
                   <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
                 </svg>
                 <p className="text-lg md:text-xl text-slate-700 italic font-medium leading-relaxed mb-8">
-                  &quot;NeedTracker has completely transformed how we receive supplies. The transparency gives donors confidence, and we get exactly what we need, when we need it most.&quot;
+                  &quot;Parithyaga has completely transformed how we receive supplies. The transparency gives donors confidence, and we get exactly what we need, when we need it most.&quot;
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-slate-200 rounded-full overflow-hidden shrink-0 border border-slate-100">
@@ -486,7 +486,7 @@ export default function Home() {
                 <div>
                   <h2 className="font-heading text-2xl font-bold text-slate-900 mb-4 tracking-tight">We&apos;re an organization</h2>
                   <p className="font-body text-sm text-slate-500 leading-relaxed mt-2 mb-8 max-w-sm">
-                    Join NeedTracker to publish your requirements, manage donations, and reach donors nationwide.
+                    Join Parithyaga to publish your requirements, manage donations, and reach donors nationwide.
                   </p>
                   <Link href="/login?tab=org-admin" className="inline-flex items-center gap-2 px-8 py-4 bg-white border border-slate-200 hover:border-primary hover:bg-primary/5 text-slate-900 rounded-full transition-all shadow-sm font-body text-sm font-semibold">
                     Register Organization <ArrowRight className="w-5 h-5 text-primary" />
