@@ -219,6 +219,150 @@ class DonationSplitTests(APITestCase):
         self.assertEqual(donation.status, 'FULFILLED')
         self.assertEqual(donation.received_by, self.org_admin)
 
+    def test_donor_cancel_donation_sends_email_with_cancelled_by_you(self):
+        """
+        When a donor user cancels their own pledge, the cancellation email
+        body contains 'has been cancelled by you'.
+        """
+        from django.core import mail
+        
+        # Clear outbox
+        mail.outbox = []
+        
+        # Create a donor user
+        donor_user = User.objects.create_user(
+            username="donoruser",
+            email="donor@example.com",
+            password="testpassword123",
+            role="DONOR"
+        )
+        
+        donation = Donation.objects.create(
+            donor=donor_user,
+            need_item=self.need_item,
+            quantity=5,
+            status='CONFIRMED',
+            donor_type='private',
+            donor_name='Donor User',
+            donor_email='donor@example.com'
+        )
+        
+        # Authenticate as the donor
+        self.client.force_authenticate(user=donor_user)
+        
+        # Trigger cancellation
+        url = reverse('donation-cancel', kwargs={'pk': donation.id})
+        response = self.client.post(url, {'reason': 'Change of mind'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Verify email is sent
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertIn("Donation Cancelled", email.subject)
+        
+        # Check that the email body contains "has been cancelled by you."
+        self.assertIn("has been cancelled by you.", email.body)
+
+    def test_send_delivery_reminders_command(self):
+        """
+        The send_delivery_reminders management command correctly selects only
+        confirmed donations due in exactly 3 days and creates PLEDGE_REMINDER notifications.
+        """
+        from django.core.management import call_command
+        from django.utils import timezone
+        from datetime import timedelta
+        from core.models import Notification
+        
+        # Clear existing notifications
+        Notification.objects.all().delete()
+        
+        # Create a donor user
+        donor_user = User.objects.create_user(
+            username="reminderdonor",
+            email="donor_reminder@example.com",
+            password="testpassword123",
+            role="DONOR"
+        )
+        
+        today = timezone.localdate()
+        date_3_days_away = today + timedelta(days=3)
+        date_4_days_away = today + timedelta(days=4)
+        date_2_days_away = today + timedelta(days=2)
+        
+        # 1. Matching donation (CONFIRMED, donor is present, estimated_delivery_date is 3 days away)
+        matching_donation = Donation.objects.create(
+            donor=donor_user,
+            need_item=self.need_item,
+            quantity=10,
+            status='CONFIRMED',
+            estimated_delivery_date=date_3_days_away
+        )
+        
+        # 2. Non-matching donation - wrong status (PENDING, 3 days away)
+        pending_donation = Donation.objects.create(
+            donor=donor_user,
+            need_item=self.need_item,
+            quantity=10,
+            status='PENDING',
+            estimated_delivery_date=date_3_days_away
+        )
+        
+        # 3. Non-matching donation - wrong date (CONFIRMED, 4 days away)
+        far_donation = Donation.objects.create(
+            donor=donor_user,
+            need_item=self.need_item,
+            quantity=10,
+            status='CONFIRMED',
+            estimated_delivery_date=date_4_days_away
+        )
+        
+        # 4. Non-matching donation - wrong date (CONFIRMED, 2 days away)
+        near_donation = Donation.objects.create(
+            donor=donor_user,
+            need_item=self.need_item,
+            quantity=10,
+            status='CONFIRMED',
+            estimated_delivery_date=date_2_days_away
+        )
+        
+        # 5. Non-matching donation - no donor (CONFIRMED, 3 days away, donor is null)
+        anonymous_donation = Donation.objects.create(
+            donor=None,
+            need_item=self.need_item,
+            quantity=10,
+            status='CONFIRMED',
+            estimated_delivery_date=date_3_days_away
+        )
+        
+        # Run command
+        call_command('send_delivery_reminders')
+        
+        # Check notifications created
+        reminders = Notification.objects.filter(notification_type='PLEDGE_REMINDER')
+        self.assertEqual(reminders.count(), 1)
+        
+        reminder = reminders.first()
+        self.assertEqual(reminder.recipient, donor_user)
+        self.assertIn("scheduled for delivery on", reminder.message)
+        self.assertIn("(in 3 days)", reminder.message)
+        self.assertIn("the pledge will be cancelled", reminder.message)
+
+    def test_update_need_quantity_received_is_ignored(self):
+        """
+        Updating a NeedItem through the API (PATCH/PUT) ignores quantity_received (read-only field).
+        """
+        # Ensure initial value
+        self.assertEqual(self.need_item.quantity_received, 30)
+        
+        # Call patch need endpoint
+        url = reverse('needitem-detail', kwargs={'pk': self.need_item.id})
+        response = self.client.patch(url, {'quantity_received': 45}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Verify db is NOT updated (since it's a read-only field in the serializer)
+        self.need_item.refresh_from_db()
+        self.assertEqual(self.need_item.quantity_received, 30)
+
 
 class OrganizationGeocodingTests(APITestCase):
     def setUp(self):

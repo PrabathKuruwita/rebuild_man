@@ -100,9 +100,9 @@ export default function NeedsContent() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">All Needs</h1>
-        <p className="text-sm text-slate-500 mt-1">
+      <div className="page-header-container">
+        <h1 className="page-title">All Needs</h1>
+        <p className="page-subtitle">
           {user?.role === "ORG_ADMIN"
             ? "View and manage all registered needs of the organization"
             : "View all registered needs across organizations"}
@@ -110,7 +110,7 @@ export default function NeedsContent() {
       </div>
 
       {/* Stats Bar */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+      <div className="bg-white rounded-none shadow-sm border border-gray-100 p-4 mb-6">
         <div className="flex flex-wrap gap-6">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-gray-400 rounded-full"></div>

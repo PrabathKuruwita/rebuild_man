@@ -12,6 +12,8 @@ import {
   Donation,
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import StatsCard from "@/components/StatsCard";
+import ElevatedCard from "@/components/ElevatedCard";
 import {
   Building2,
   Layers,
@@ -21,14 +23,17 @@ import {
   ArrowRight,
   Activity,
   Map as MapIcon,
+  Send,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import BroadcastModal from "@/components/BroadcastModal";
 
 export default function AdminDashboard() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
   const [stats, setStats] = useState({
     organizations: 0,
     sections: 0,
@@ -327,11 +332,11 @@ export default function AdminDashboard() {
         <div>
           <div className="page-badge">
             <span className="page-badge-dot"></span>
-            <span className="text-[10px] font-bold uppercase tracking-wider">
-              SYS ADMIN
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">
+              System Admin
             </span>
-            <span className="text-[10px] font-medium text-blue-500/70">
-              — NeedTracker Donation Platform
+            <span className="text-xs sm:text-sm font-medium text-primary/70">
+              : Parithyaga Donation Platform
             </span>
           </div>
           <h1 className="page-title">
@@ -341,38 +346,70 @@ export default function AdminDashboard() {
             Operational overview and system management
           </p>
         </div>
+        
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsBroadcastModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg shadow-sm hover:bg-teal-800 transition-colors"
+          >
+            <Send size={16} />
+            Broadcast Notification
+          </button>
+        </div>
       </div>
+
+      {/* Critical Needs Alert Strip */}
+      {stats.criticalNeeds > 0 && (
+        <div className="mb-8 bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+              <span className="flex h-3 w-3 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-status-critical"></span>
+              </span>
+            </div>
+            <div>
+              <h2 className="text-status-critical font-bold text-lg">
+                {stats.criticalNeeds} Critical Needs Requiring Attention
+              </h2>
+              <p className="text-rose-700/80 text-sm font-medium">
+                Urgent attention required. {stats.unfulfilledCriticalNeeds} unfulfilled items remain.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/needs?priority=CRITICAL"
+            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+          >
+            Review Critical Needs <ArrowRight size={16} />
+          </Link>
+        </div>
+      )}
 
       {/* Quick Overview Stats */}
       <div className="mb-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <StatsCard
             label="Organizations"
             value={stats.organizations}
             subtext="Active organizations"
-            icon={<Building2 className="text-blue-600" size={20} />}
-            iconBg="bg-blue-50"
+            icon={<Building2 size={20} />}
+            status="neutral"
           />
-          <StatCard
+          <StatsCard
             label="Sections"
             value={stats.sections}
             subtext="Sections tracked"
-            icon={<Layers className="text-purple-600" size={20} />}
-            iconBg="bg-purple-50"
+            icon={<Layers size={20} />}
+            status="neutral"
           />
-          <StatCard
+          <StatsCard
             label="Total Needs"
             value={stats.totalNeeds}
             subtext="Items registered"
-            icon={<ClipboardList className="text-emerald-600" size={20} />}
-            iconBg="bg-emerald-50"
-          />
-          <StatCard
-            label="Critical Needs"
-            value={stats.criticalNeeds}
-            subtext="Urgent attention required"
-            icon={<AlertTriangle className="text-rose-600" size={20} />}
-            iconBg="bg-rose-50"
+            icon={<ClipboardList size={20} />}
+            status="success"
           />
         </div>
       </div>
@@ -380,8 +417,8 @@ export default function AdminDashboard() {
       <div className="grid lg:grid-cols-12 gap-8 mb-12">
         {/* Critical Needs Column */}
         <div className="lg:col-span-8">
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm h-full">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <ElevatedCard className="overflow-hidden h-full flex flex-col" isDominant={true}>
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center relative">
                   {stats.unfulfilledCriticalNeeds > 0 && (
@@ -407,7 +444,7 @@ export default function AdminDashboard() {
               </div>
               <Link
                 href="/needs?priority=CRITICAL"
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 group"
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-0.5"
               >
                 View All ({stats.unfulfilledCriticalNeeds}){" "}
                 <ArrowRight
@@ -429,73 +466,73 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-          </div>
+          </ElevatedCard>
         </div>
 
         {/* Side Info Column */}
-        <div className="lg:col-span-4">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 text-white relative overflow-hidden h-full shadow-xl">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full -mr-16 -mt-16"></div>
+        <div className="lg:col-span-4 h-full">
+          <div className="bg-white rounded-2xl p-8 border border-slate-200 relative overflow-hidden h-full shadow-sm hover:shadow-md transition-shadow">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 blur-3xl rounded-full -mr-16 -mt-16"></div>
             <div className="relative z-10">
-              <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold tracking-widest uppercase mb-6">
+              <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-[10px] font-bold tracking-widest uppercase mb-6">
                 System Status
               </span>
-              <h3 className="text-2xl font-bold mb-4">
+              <h3 className="text-2xl font-bold mb-4 text-slate-900">
                 Network Activity Overview
               </h3>
-              <p className="text-slate-300 text-sm leading-relaxed mb-8">
+              <p className="text-slate-500 text-sm leading-relaxed mb-8">
                 Monitoring platform transactions, donor engagement, and
                 organization fulfillment rates across 9 provinces.
               </p>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                    <Users className="text-sky-400" size={18} />
+                  <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center">
+                    <Users className="text-sky-600" size={18} />
                   </div>
                   <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">
                       Active Donors
                     </p>
-                    <p className="text-lg font-bold">{stats.activeDonors}</p>
+                    <p className="text-lg font-bold text-slate-900">{stats.activeDonors}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                    <Activity className="text-amber-400" size={18} />
+                  <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+                    <Activity className="text-amber-600" size={18} />
                   </div>
                   <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">
                       Platform Transactions
                     </p>
-                    <p className="text-lg font-bold">{impactStats.totalDonations}</p>
+                    <p className="text-lg font-bold text-slate-900">{impactStats.totalDonations}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                    <ClipboardList className="text-emerald-400" size={18} />
+                  <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                    <ClipboardList className="text-emerald-600" size={18} />
                   </div>
                   <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">
                       Successful Deliveries
                     </p>
-                    <p className="text-lg font-bold">
+                    <p className="text-lg font-bold text-slate-900">
                       {stats.successfulDeliveriesRate}%
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                    <MapIcon className="text-indigo-400" size={18} />
+                  <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
+                    <MapIcon className="text-indigo-600" size={18} />
                   </div>
                   <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">
                       Provinces Monitored
                     </p>
-                    <p className="text-lg font-bold">
+                    <p className="text-lg font-bold text-slate-900">
                       {stats.provincesCount} {stats.provincesCount === 1 ? "Province" : "Provinces"}
                     </p>
                   </div>
@@ -745,18 +782,18 @@ export default function AdminDashboard() {
             </div>
             {impactStats.totalOverAllocated > 0 && (
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 bg-amber-500 rounded-sm"></span>
+                <span className="w-3 h-3 bg-rose-500 rounded-sm"></span>
                 <span className="text-slate-600">Over Allocated ({impactStats.totalOverAllocated.toLocaleString()})</span>
               </div>
             )}
           </div>
         </div>
-
+ 
         <div className="space-y-4">
           <div className="flex justify-between items-center text-sm">
             <span className="font-semibold text-slate-700">
               Current needs coverage is at{" "}
-              <span className={impactStats.totalReceived > impactStats.totalRequired ? "text-amber-600 font-bold" : "text-emerald-600 font-bold"}>
+              <span className={impactStats.totalReceived > impactStats.totalRequired ? "text-rose-600 font-bold" : "text-emerald-600 font-bold"}>
                 {impactStats.totalRequired > 0 ? Math.round((impactStats.totalReceived / impactStats.totalRequired) * 100) : 0}%
               </span>
             </span>
@@ -764,7 +801,7 @@ export default function AdminDashboard() {
               Requested: {impactStats.totalRequired.toLocaleString()} units
             </span>
           </div>
-
+ 
           <div className="h-4 w-full rounded-full bg-slate-100 overflow-hidden flex">
             {/* Base Received Segment (emerald-500) */}
             {impactStats.baseReceived > 0 && (
@@ -784,10 +821,9 @@ export default function AdminDashboard() {
                 }}
               />
             )}
-            {/* Over Allocated Segment (amber-500) */}
             {impactStats.totalOverAllocated > 0 && (
               <div
-                className="h-full bg-amber-500 transition-all duration-1000"
+                className="h-full bg-rose-500 transition-all duration-1000"
                 style={{
                   width: `${(impactStats.totalOverAllocated / (impactStats.baseReceived + impactStats.totalRemaining + impactStats.totalOverAllocated)) * 100}%`,
                 }}
@@ -796,52 +832,16 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      <BroadcastModal 
+        isOpen={isBroadcastModalOpen}
+        onClose={() => setIsBroadcastModalOpen(false)}
+      />
     </div>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  subtext,
-  icon,
-  iconBg,
-  isWarning,
-}: {
-  label: string;
-  value: number;
-  subtext: string;
-  icon: React.ReactNode;
-  iconBg: string;
-  isWarning?: boolean;
-}) {
-  return (
-    <div className="card-container group">
-      <div className="flex items-center justify-between mb-4">
-        <div
-          className={`w-12 h-12 ${iconBg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}
-        >
-          {icon}
-        </div>
-        {isWarning && (
-          <span className="flex h-3 w-3 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
-          </span>
-        )}
-      </div>
-      <div>
-        <div className="text-gray-500 text-xs font-bold uppercase tracking-widest">
-          {label}
-        </div>
-        <div className="text-3xl font-black text-slate-900 mt-1">{value}</div>
-        <div className="text-slate-400 text-[11px] font-medium mt-2">
-          {subtext}
-        </div>
-      </div>
-    </div>
-  );
-}
+
 
 function CriticalNeedRow({ need }: { need: NeedItem }) {
   const percent = Math.round(
@@ -858,7 +858,8 @@ function CriticalNeedRow({ need }: { need: NeedItem }) {
             {need.section_detail?.name ? ` • ${need.section_detail.name}` : ""}
           </p>
         </div>
-        <span className="px-2 py-1 bg-rose-100 text-rose-700 rounded text-[10px] font-bold uppercase tracking-wider border border-rose-200">
+        <span className="flex items-center gap-1.5 px-2 py-1 bg-rose-50 text-status-critical rounded text-[10px] font-bold uppercase tracking-wider border border-rose-200">
+          <AlertTriangle size={12} />
           Critical
         </span>
       </div>

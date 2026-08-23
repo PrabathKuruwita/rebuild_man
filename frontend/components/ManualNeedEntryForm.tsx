@@ -138,12 +138,12 @@ export default function ManualNeedEntryForm({
       {/* Slide-in panel from the right */}
       <div className="h-full w-full max-w-lg bg-white shadow-2xl flex flex-col overflow-hidden animate-slide-in-right">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-blue-700">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-primary to-teal-700">
           <div>
             <h2 className="text-lg font-semibold text-white">
               Add Need Manually
             </h2>
-            <p className="text-blue-200 text-sm mt-0.5">
+            <p className="text-teal-200 text-sm mt-0.5">
               Enter a new need directly into the system
             </p>
           </div>
@@ -418,7 +418,7 @@ export default function ManualNeedEntryForm({
             <button
               onClick={() => submitForm()}
               disabled={submitting || loadingOrgs}
-              className="btn btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-primary hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-colors flex items-center justify-center gap-2 flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>

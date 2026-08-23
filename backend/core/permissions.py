@@ -102,6 +102,11 @@ class IsAdminUser(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user and request.user.is_authenticated and request.user.role in ('ADMIN', 'ORG_ADMIN')
 
+class IsSystemAdminUser(permissions.BasePermission):
+    """Full access for SYSTEM ADMIN only (Not ORG_ADMIN)."""
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and request.user.role == 'ADMIN'
+
 
 class IsDonorOrReadOnly(permissions.BasePermission):
     """

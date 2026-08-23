@@ -48,7 +48,7 @@ export default function NeedCard({
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+      <div className="bg-white rounded-none shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900">{need.name}</h3>
@@ -174,14 +174,14 @@ export default function NeedCard({
               {user ? (
                 <button
                   onClick={() => setIsDonateModalOpen(true)}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
                 >
                   <Heart size={18} />
                   Donate
                 </button>
               ) : (
                 <Link href="/login">
-                  <button className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm flex items-center justify-center gap-2">
+                  <button className="w-full px-4 py-2 bg-gray-600 text-white rounded-full hover:bg-gray-700 transition-colors font-medium text-sm flex items-center justify-center gap-2">
                     <LogIn size={18} />
                     Sign in to Donate
                   </button>
@@ -190,7 +190,7 @@ export default function NeedCard({
             </>
           )}
         {remaining <= 0 && (
-          <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded-lg text-center font-medium text-sm">
+          <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded-full text-center font-medium text-sm">
             ✓ Requirement Fulfilled
           </div>
         )}

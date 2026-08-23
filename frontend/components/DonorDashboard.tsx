@@ -330,9 +330,9 @@ export default function DonorDashboard() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 font-sans">
+    <div className="min-h-screen bg-slate-100 pb-20 font-sans">
       {/* Premium Gradient Header Card */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 text-white pt-16 pb-32">
+      <div id="donor-header" className="bg-gradient-to-r from-teal-700 via-teal-800 to-emerald-900 text-white pt-28 pb-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
@@ -342,13 +342,13 @@ export default function DonorDashboard() {
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
                 Welcome back, {user?.username}!
               </h1>
-              <p className="text-blue-100 mt-2 text-sm max-w-xl leading-relaxed">
+              <p className="text-teal-100 mt-2 text-sm max-w-xl leading-relaxed">
                 {`Thank you for your generosity. You have supported ${totalOrgsSupported} organizations. Let's see your real-time impact metrics below.`}
               </p>
             </div>
             <a
               href="/needs"
-              className="bg-white text-blue-700 hover:bg-slate-100 transition px-6 py-3 rounded-xl text-sm font-bold shadow-lg flex items-center justify-center gap-2 self-start md:self-auto"
+              className="bg-white text-teal-700 hover:bg-slate-100 transition px-6 py-3 rounded-xl text-sm font-bold shadow-lg flex items-center justify-center gap-2 self-start md:self-auto"
             >
               <HeartHandshake size={18} />
               Explore New Needs
@@ -462,7 +462,7 @@ export default function DonorDashboard() {
               {pieChartData.length > 0 ? (
                 <div className="flex items-center justify-between flex-1 mt-4">
                   <div className="w-[180px] h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                       <PieChart>
                         <Pie
                           data={pieChartData}
@@ -521,7 +521,7 @@ export default function DonorDashboard() {
 
               {barChartData.length > 0 ? (
                 <div className="flex-1 mt-6 h-[220px]">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                     <BarChart data={barChartData} margin={{ top: 5, right: 10, left: -20, bottom: 25 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                       <XAxis dataKey="name" stroke="#94A3B8" fontSize={9} tickLine={false} angle={-15} textAnchor="end" height={60} />

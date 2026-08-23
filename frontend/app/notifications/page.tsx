@@ -69,6 +69,12 @@ function NotificationsContent() {
             <CheckCheck size={18} />
           </div>
         );
+      case "PLEDGE_REMINDER":
+        return (
+          <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center border border-amber-100 shrink-0">
+            <Bell size={18} />
+          </div>
+        );
       case "PLEDGE_CANCELLED":
         return (
           <div className="w-10 h-10 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center border border-rose-100 shrink-0">
@@ -177,13 +183,13 @@ function NotificationsContent() {
               onClick={() => setActiveTab("all")}
               className={`py-4 px-2 font-bold text-sm border-b-2 transition-all relative ${
                 activeTab === "all"
-                  ? "border-blue-600 text-blue-600"
+                  ? "border-primary text-primary"
                   : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
               All Notifications
               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                activeTab === "all" ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
+                activeTab === "all" ? "bg-teal-100 text-teal-700" : "bg-slate-200 text-slate-600"
               }`}>
                 {notifications.length}
               </span>
@@ -192,7 +198,7 @@ function NotificationsContent() {
               onClick={() => setActiveTab("unread")}
               className={`py-4 px-2 font-bold text-sm border-b-2 transition-all ml-6 relative ${
                 activeTab === "unread"
-                  ? "border-blue-600 text-blue-600"
+                  ? "border-primary text-primary"
                   : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >

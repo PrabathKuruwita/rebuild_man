@@ -311,6 +311,8 @@ class Notification(models.Model):
         ('PLEDGE_RECEIVED', 'Pledge Marked Received'),
         ('ADMIN_APPROVAL_REQUEST', 'Org Admin Approval Request'),
         ('REGISTRATION_DECISION', 'Registration Request Actioned'),
+        ('PLEDGE_REMINDER', 'Pledge Delivery Reminder'),
+        ('SYSTEM_BROADCAST', 'System Broadcast'),
     )
 
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
