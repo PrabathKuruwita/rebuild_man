@@ -1,5 +1,5 @@
 "use client";
-
+import React from 'react';
 import {
   XAxis,
   YAxis,
@@ -97,6 +97,14 @@ export default function GraphsView({
   const isYearlyEmpty = yearlyData.every(
     (d) => d.donations === 0 && d.confirmed === 0 && d.fulfilled === 0
   );
+
+  const [isMounted, setIsMounted] = React.useState(false);
+  React.useEffect(() => {
+    const t = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!isMounted) return null;
 
   return (
     <div className="space-y-8 mt-12">
