@@ -760,12 +760,117 @@ class AdminApprovalViewSet(viewsets.ViewSet):
                 f"— The NeedTracker Team"
             )
             
+            html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{email_subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #334155; line-height: 1.6;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #f1f5f9; padding: 40px 10px;">
+    <tr>
+      <td align="center">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+          
+          <!-- Header Banner -->
+          <tr>
+            <td align="center" style="background-color: #10b981; padding: 30px 20px; color: #ffffff;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: 800; tracking: -0.025em; letter-spacing: 0.5px;">NeedTracker</h1>
+              <p style="margin: 5px 0 0 0; font-size: 11px; font-weight: 700; tracking: 0.1em; text-transform: uppercase; opacity: 0.85;">Donation Management Platform</p>
+            </td>
+          </tr>
+          
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="margin: 0 0 20px 0; font-size: 16px; font-weight: 700; color: #0f172a;">Dear {user.first_name or user.username},</p>
+              
+              <!-- Highlight Box -->
+              <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <p style="margin: 0; font-size: 15px; color: #065f46; font-weight: 500; line-height: 1.5;">
+                  Great news! Your request to register as an Organization Administrator for <strong>{org_name}</strong> has been approved by the NeedTracker System Administrator.
+                </p>
+              </div>
+
+              <!-- Details Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; letter-spacing: 0.5px;">Approval Details</h3>
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc; border-radius: 8px; padding: 15px; margin-bottom: 25px; border: 1px solid #f1f5f9; font-size: 14px;">
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600; width: 140px;">Username:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user.username}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Email:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user.email}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Organization:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user.requested_organization_name or 'Not specified'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Org Type:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user.requested_organization_type or 'Not specified'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Approval Date:</td>
+                  <td style="padding: 4px 0; color: #334155;">{approval_time.strftime('%B %d, %Y at %I:%M %p')} (Asia/Colombo)</td>
+                </tr>
+              </table>
+
+              <!-- Next Steps Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; letter-spacing: 0.5px;">Next Steps</h3>
+              <ol style="margin: 0 0 25px 0; padding-left: 20px; font-size: 14px; color: #475569; line-height: 1.6;">
+                <li style="margin-bottom: 8px;">Log in to your NeedTracker account using your credentials.</li>
+                <li style="margin-bottom: 8px;">Navigate to the <strong>Organizations section</strong> to manage your organization's needs.</li>
+                <li style="margin-bottom: 8px;">You can now create sections, add needs, and manage your organization's dashboard.</li>
+              </ol>
+
+              <!-- Account Capabilities Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; letter-spacing: 0.5px;">Your Account Features</h3>
+              <ul style="margin: 0 0 25px 0; padding-left: 20px; font-size: 14px; color: #475569; line-height: 1.6; list-style-type: square;">
+                <li style="margin-bottom: 6px;">Organization management and configuration.</li>
+                <li style="margin-bottom: 6px;">Need item creation and priority updates.</li>
+                <li style="margin-bottom: 6px;">Document uploads and AI processing.</li>
+                <li style="margin-bottom: 6px;">Real-time dashboard and fulfillment stats.</li>
+              </ul>
+
+              <!-- Action Button -->
+              <div style="text-align: center; margin: 30px 0 10px 0;">
+                <a href="{login_url}" style="background-color: #10b981; color: #ffffff; padding: 12px 30px; border-radius: 8px; font-size: 14px; font-weight: bold; text-decoration: none; display: inline-block; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);">Log In to NeedTracker</a>
+              </div>
+
+              <p style="margin: 25px 0 0 0; font-size: 14px; color: #64748b;">
+                Welcome to NeedTracker!<br>
+                <strong>The NeedTracker Team</strong>
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color: #f8fafc; padding: 25px; border-top: 1px solid #f1f5f9; color: #94a3b8; font-size: 11px;">
+              <p style="margin: 0 0 5px 0;">This is an automatically generated email from NeedTracker.</p>
+              <p style="margin: 0;">&copy; 2026 NeedTracker. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+            
             send_mail(
                 subject=email_subject,
                 message=email_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
                 fail_silently=False,
+                html_message=html_message
             )
         except Exception as e:
             print(f"Failed to send approval email to {user.email}: {str(e)}")
@@ -832,18 +937,119 @@ class AdminApprovalViewSet(viewsets.ViewSet):
                 f"— The NeedTracker Team"
             )
             
+            html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{email_subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #334155; line-height: 1.6;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #f1f5f9; padding: 40px 10px;">
+    <tr>
+      <td align="center">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+          
+          <!-- Header Banner -->
+          <tr>
+            <td align="center" style="background-color: #ef4444; padding: 30px 20px; color: #ffffff;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: 800; tracking: -0.025em; letter-spacing: 0.5px;">NeedTracker</h1>
+              <p style="margin: 5px 0 0 0; font-size: 11px; font-weight: 700; tracking: 0.1em; text-transform: uppercase; opacity: 0.85;">Donation Management Platform</p>
+            </td>
+          </tr>
+          
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="margin: 0 0 20px 0; font-size: 16px; font-weight: 700; color: #0f172a;">Dear {user_first_name},</p>
+              
+              <!-- Highlight Box -->
+              <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <p style="margin: 0; font-size: 15px; color: #991b1b; font-weight: 500; line-height: 1.5;">
+                  We regret to inform you that your request to register as an Organization Administrator on the NeedTracker platform has been reviewed and rejected by the System Administrator.
+                </p>
+              </div>
+
+              <!-- Rejection Reason Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #991b1b; margin: 0 0 10px 0; letter-spacing: 0.5px;">Rejection Reason</h3>
+              <div style="background-color: #fdf2f8; border: 1px dashed #f472b6; border-radius: 8px; padding: 15px; margin-bottom: 25px; font-size: 14px; color: #831843; font-weight: 600;">
+                {reason}
+              </div>
+
+              <!-- Details Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; letter-spacing: 0.5px;">Rejection Details</h3>
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc; border-radius: 8px; padding: 15px; margin-bottom: 25px; border: 1px solid #f1f5f9; font-size: 14px;">
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600; width: 150px;">Username:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user_username}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Email:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user_email}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Requested Org:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user_org_name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Organization Type:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user_org_type}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Rejection Date:</td>
+                  <td style="padding: 4px 0; color: #334155;">{rejection_time.strftime('%B %d, %Y at %I:%M %p')} (Asia/Colombo)</td>
+                </tr>
+              </table>
+
+              <!-- What Happens Next Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; letter-spacing: 0.5px;">What Happens Next?</h3>
+              <ul style="margin: 0 0 25px 0; padding-left: 20px; font-size: 14px; color: #475569; line-height: 1.6;">
+                <li style="margin-bottom: 8px;">You can re-register on the platform after addressing the rejection reason above.</li>
+                <li style="margin-bottom: 8px;">Your previous registration request data has been cleared from the active lookup list to allow you to reuse the same username/email.</li>
+                <li style="margin-bottom: 8px;">If you believe this was an error or would like to appeal, please contact the support team.</li>
+              </ul>
+
+              <!-- Action Button -->
+              <div style="text-align: center; margin: 30px 0 10px 0;">
+                <a href="{frontend_url}" style="background-color: #64748b; color: #ffffff; padding: 12px 30px; border-radius: 8px; font-size: 14px; font-weight: bold; text-decoration: none; display: inline-block;">Return to NeedTracker</a>
+              </div>
+
+              <p style="margin: 25px 0 0 0; font-size: 14px; color: #64748b;">
+                Thank you for your interest in joining NeedTracker.<br>
+                <strong>The NeedTracker Team</strong>
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color: #f8fafc; padding: 25px; border-top: 1px solid #f1f5f9; color: #94a3b8; font-size: 11px;">
+              <p style="margin: 0 0 5px 0;">This is an automatically generated email from NeedTracker.</p>
+              <p style="margin: 0;">&copy; 2026 NeedTracker. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+            
             send_mail(
                 subject=email_subject,
                 message=email_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user_email],
                 fail_silently=False,
+                html_message=html_message
             )
         except Exception as e:
             print(f"Failed to send rejection email to {user_email}: {str(e)}")
         
         # Mark user as REJECTED instead of deleting so they appear in the rejected list
-        from django.utils import timezone
         import uuid
         
         user.approval_status = 'REJECTED'

@@ -715,7 +715,7 @@ function DonationsContent() {
                 required
               >
                 <option value="" disabled>Select a reason...</option>
-                <option value="Hospital has already received enough supply of this item">Hospital has already received enough supply</option>
+                <option value="Organization has already received enough supply of this item">Organization has already received enough supply</option>
                 <option value="Pledged items do not match required medical specifications/standards">Pledged items do not match medical specifications/standards</option>
                 <option value="Donor is unresponsive or unable to deliver after multiple contact attempts">Donor is unresponsive or unable to deliver</option>
                 <option value="Duplicate or incorrect pledge entry">Duplicate or incorrect pledge entry</option>

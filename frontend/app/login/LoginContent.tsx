@@ -839,19 +839,22 @@ export default function LoginContent() {
                   <li className="flex gap-3">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
                     <span className="text-gray-600">
-                      Verified organizations and transparent needs.
+                      <strong>AI-Powered Need Extraction:</strong>
+                      <p>Automatically extract and list resource needs directly from uploaded official request documents using our integrated AI processor.</p>
                     </span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
                     <span className="text-gray-600">
-                      Real-time tracking of every donation.
+                      <strong>Verified Organization Demands:</strong>
+                      <p>Direct connection to authenticated organization administrators who register real-time, verified urgent requirements.</p>
                     </span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
                     <span className="text-gray-600">
-                      Bank-level encryption for your data.
+                      <strong>Structured Delivery Tracking:</strong>
+                      <p>Clear workflow to pledge contributions, track confirmation status, and receive physical validation receipts upon successful delivery.</p>
                     </span>
                   </li>
                 </ul>

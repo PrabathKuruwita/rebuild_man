@@ -334,6 +334,15 @@ class DonationSplitTests(APITestCase):
             estimated_delivery_date=date_3_days_away
         )
         
+        # 6. Non-matching donation - fulfilled status (FULFILLED, 3 days away)
+        fulfilled_donation = Donation.objects.create(
+            donor=donor_user,
+            need_item=self.need_item,
+            quantity=10,
+            status='FULFILLED',
+            estimated_delivery_date=date_3_days_away
+        )
+        
         # Run command
         call_command('send_delivery_reminders')
         
@@ -557,5 +566,60 @@ class AdminApprovalSerializerTests(APITestCase):
         from core.serializers import AdminApprovalSerializer
         serializer = AdminApprovalSerializer(user)
         self.assertEqual(serializer.data['approval_decided_by_username'], "Org Admin (Pasindu Promodaya)")
+
+
+class AdminApprovalTests(APITestCase):
+    def setUp(self):
+        # Create system admin
+        self.sys_admin = User.objects.create_user(
+            username="sysadmin",
+            email="sysadmin@example.com",
+            password="password",
+            role="ADMIN"
+        )
+        
+        # Create pending org admin
+        self.pending_org_admin = User.objects.create_user(
+            username="pendingorgadmin",
+            email="pending@example.com",
+            password="password",
+            role="ORG_ADMIN",
+            approval_status="PENDING",
+            requested_organization_name="New Hospital"
+        )
+        
+        # Authenticate as sys admin
+        self.client.force_authenticate(user=self.sys_admin)
+
+    def test_reject_sends_email_and_no_db_notification(self):
+        """
+        Rejecting an org admin registration request sends an email with the reason
+        and does not create a database notification.
+        """
+        from core.models import Notification
+        from django.core import mail
+        
+        # Ensure no notifications exist and clear mail outbox
+        Notification.objects.all().delete()
+        mail.outbox = []
+        
+        url_reject = reverse('admin_approval-reject', kwargs={'pk': self.pending_org_admin.id})
+        rejection_reason = "Incomplete documentation provided."
+        
+        response = self.client.post(url_reject, {'reason': rejection_reason}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Verify that no DB notification was created for this user
+        notifications = Notification.objects.filter(recipient=self.pending_org_admin)
+        self.assertEqual(notifications.count(), 0)
+        
+        # Verify email was sent
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.to, ["pending@example.com"])
+        self.assertIn("Registration Request Has Been Rejected", email.subject)
+        self.assertIn(rejection_reason, email.body)
+
+
 
 

@@ -33,7 +33,7 @@ const renderCustomLegend = (props: CustomLegendProps) => {
   const payload = props.payload as readonly LegendItem[] | undefined;
   const sortedPayload = payload
     ? [...payload].sort((a, b) => {
-        const order = ["Donations", "Confirmed", "Fulfilled"];
+        const order = ["Pledges", "Confirmed", "Fulfilled"];
         const indexA = order.indexOf(a.value ?? "");
         const indexB = order.indexOf(b.value ?? "");
         return indexA - indexB;
@@ -64,12 +64,12 @@ const renderCustomLegend = (props: CustomLegendProps) => {
               cx="5"
               cy="5"
               r="5"
-              fill={entry.color ?? "#3b82f6"}
+              fill={entry.color ?? "#f59e0b"}
             />
           </svg>
           <span
             style={{
-              color: entry.color ?? "#3b82f6",
+              color: entry.color ?? "#f59e0b",
               fontSize: "14px",
             }}
           >
@@ -99,7 +99,7 @@ export default function GraphsView({
             <h3 className="font-bold text-slate-900">
               Monthly Donation Trends
             </h3>
-            <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase rounded">
+            <span className="px-2 py-1 bg-amber-50 text-amber-600 text-[10px] font-bold uppercase rounded">
               Last 6 Months
             </span>
           </div>
@@ -108,14 +108,14 @@ export default function GraphsView({
               <AreaChart data={monthlyData}>
                 <defs>
                   <linearGradient
-                    id="colorDonations"
+                    id="colorPledges"
                     x1="0"
                     y1="0"
                     x2="0"
                     y2="1"
                   >
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient
                     id="colorConfirmed"
@@ -163,7 +163,7 @@ export default function GraphsView({
                     boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                   }}
                   itemSorter={(item: { name?: string | number }) => {
-                    const order = ["Donations", "Confirmed", "Fulfilled"];
+                    const order = ["Pledges", "Confirmed", "Fulfilled"];
                     return order.indexOf(String(item.name ?? ""));
                   }}
                 />
@@ -175,11 +175,11 @@ export default function GraphsView({
                 <Area
                   type="monotone"
                   dataKey="donations"
-                  name="Donations"
-                  stroke="#3b82f6"
+                  name="Pledges"
+                  stroke="#f59e0b"
                   strokeWidth={3}
                   fillOpacity={1}
-                  fill="url(#colorDonations)"
+                  fill="url(#colorPledges)"
                   animationBegin={0}
                   animationDuration={1200}
                   animationEasing="ease-out"
@@ -252,7 +252,7 @@ export default function GraphsView({
                     boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                   }}
                   itemSorter={(item: { name?: string | number }) => {
-                    const order = ["Donations", "Confirmed", "Fulfilled"];
+                    const order = ["Pledges", "Confirmed", "Fulfilled"];
                     return order.indexOf(String(item.name ?? ""));
                   }}
                 />
@@ -263,8 +263,8 @@ export default function GraphsView({
                 />
                 <Bar
                   dataKey="donations"
-                  name="Donations"
-                  fill="#3b82f6"
+                  name="Pledges"
+                  fill="#f59e0b"
                   radius={[4, 4, 0, 0]}
                   barSize={20}
                   animationBegin={0}

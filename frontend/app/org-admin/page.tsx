@@ -42,8 +42,6 @@ interface ChartDataPoint {
   fulfilled: number;
 }
 
-
-
 export default function OrgAdminDashboard() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -348,9 +346,7 @@ export default function OrgAdminDashboard() {
                 — {organization.name}
               </span>
             </div>
-            <h1 className="page-title">
-              Organization Dashboard
-            </h1>
+            <h1 className="page-title">Organization Dashboard</h1>
             <p className="page-subtitle">
               Manage your organization&apos;s needs and monitor impact
             </p>
@@ -390,7 +386,7 @@ export default function OrgAdminDashboard() {
             color="red"
           />
           <StatsCard
-            title="TOTAL DONATIONS"
+            title="SUCCESSFUL DONATIONS"
             value={stats.donations}
             subtitle="Total contributions"
             icon={<HeartHandshake size={20} />}
@@ -399,7 +395,11 @@ export default function OrgAdminDashboard() {
         </div>
 
         {/* Lobby Map */}
-        <OrgLobbyMap organization={organization} needs={orgNeeds} donations={orgDonations} />
+        <OrgLobbyMap
+          organization={organization}
+          needs={orgNeeds}
+          donations={orgDonations}
+        />
 
         {/* Analytics & Graphs */}
         <div id="analytics-section" className="mb-12">
@@ -431,8 +431,6 @@ export default function OrgAdminDashboard() {
             yearlyData={analytics.yearlyData}
           />
         </div>
-
-
 
         <div className="grid lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8">
@@ -506,5 +504,3 @@ export default function OrgAdminDashboard() {
     </div>
   );
 }
-
-
