@@ -167,7 +167,7 @@ next-env.d.ts
 .nuxt
 
 # Gatsby
-public
+# public
 
 # ============================================================================
 # Environment Variables & Configs

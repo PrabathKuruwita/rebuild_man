@@ -68,7 +68,7 @@ export default function DocumentsPage() {
         </div>
         <button
           onClick={() => setShowManualForm(true)}
-          className="btn btn-primary flex-shrink-0"
+          className="bg-primary hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-colors flex items-center justify-center gap-2 flex-shrink-0"
         >
           <svg
             className="w-4 h-4"
@@ -101,11 +101,11 @@ export default function DocumentsPage() {
           <DocumentUploadForm onUpload={handleUpload} />
 
           {/* How it works */}
-          <div className="mt-6 bg-blue-50 rounded-xl p-6">
-            <h4 className="font-semibold text-blue-900 mb-3">How it works</h4>
-            <ol className="space-y-3 text-sm text-blue-800">
+          <div className="mt-6 bg-teal-50 rounded-xl p-6">
+            <h4 className="font-semibold text-teal-900 mb-3">How it works</h4>
+            <ol className="space-y-3 text-sm text-teal-800">
               <li className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center text-blue-700 font-medium">
+                <span className="flex-shrink-0 w-6 h-6 bg-teal-200 rounded-full flex items-center justify-center text-teal-700 font-medium">
                   1
                 </span>
                 <span>
@@ -114,7 +114,7 @@ export default function DocumentsPage() {
                 </span>
               </li>
               <li className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center text-blue-700 font-medium">
+                <span className="flex-shrink-0 w-6 h-6 bg-teal-200 rounded-full flex items-center justify-center text-teal-700 font-medium">
                   2
                 </span>
                 <span>
@@ -123,7 +123,7 @@ export default function DocumentsPage() {
                 </span>
               </li>
               <li className="flex gap-3">
-                <span className="flex-shrink-0 w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center text-blue-700 font-medium">
+                <span className="flex-shrink-0 w-6 h-6 bg-teal-200 rounded-full flex items-center justify-center text-teal-700 font-medium">
                   3
                 </span>
                 <span>

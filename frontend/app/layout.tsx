@@ -1,25 +1,27 @@
 import type { Metadata } from "next";
-// import { Geist, Geist_Mono } from "next/font/google";
+import { Sora, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import OrgAdminLayoutWrapper from "@/components/OrgAdminLayoutWrapper";
 import { AuthProvider } from "@/lib/AuthContext";
 import { NotificationProvider } from "@/lib/NotificationContext";
 
-/*
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const sora = Sora({
+  subsets: ['latin'],
+  weight: ['600', '700', '800'],
+  variable: '--font-sora',
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-plus-jakarta',
+  display: 'swap',
 });
-*/
 
 export const metadata: Metadata = {
-  title: "NeedTracker - Organization Needs Management",
+  title: "Parithyaga Donations",
   description: "Track and manage organizational needs with priority-based allocation",
 };
 
@@ -29,10 +31,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light">
+    <html lang="en" className={`light ${sora.variable} ${plusJakartaSans.variable}`}>
       <body
         suppressHydrationWarning
-        // className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900`}
         className={`antialiased bg-gray-50 text-gray-900`}
       >
         <AuthProvider>

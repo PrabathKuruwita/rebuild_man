@@ -110,7 +110,7 @@ export default function NeedsContent() {
       </div>
 
       {/* Stats Bar */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+      <div className="bg-white rounded-none shadow-sm border border-gray-100 p-4 mb-6">
         <div className="flex flex-wrap gap-6">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-gray-400 rounded-full"></div>

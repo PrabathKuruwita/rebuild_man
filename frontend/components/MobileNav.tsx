@@ -52,12 +52,17 @@ export default function MobileNav() {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div
-          className="absolute right-0 top-14 w-screen md:hidden bg-white border-b border-gray-100 shadow-xl z-40 max-w-sm mx-auto animate-in fade-in slide-in-from-top-2 duration-200"
-          style={{ maxWidth: "calc(100vw - 1rem)" }}
-        >
-          <div className="max-h-[80vh] overflow-y-auto">
-            {/* Navigation Links */}
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[1000] md:hidden animate-in fade-in"
+            onClick={() => setIsOpen(false)}
+          />
+          <div
+            className="fixed left-1/2 -translate-x-1/2 top-24 w-[calc(100vw-2rem)] max-w-md md:hidden bg-white rounded-none shadow-2xl z-[1010] animate-in fade-in slide-in-from-top-4 duration-200 overflow-hidden"
+          >
+            <div className="max-h-[80vh] overflow-y-auto">
+              {/* Navigation Links */}
             <nav className="flex flex-col py-2 px-2">
               {isAdmin ? (
                 <>
@@ -137,10 +142,22 @@ export default function MobileNav() {
                     onClick={() => handleNavClick("/needs")}
                   />
                   <MobileNavLink
-                    href="/profile"
-                    label="My Profile"
-                    isActive={pathname === "/profile"}
-                    onClick={() => handleNavClick("/profile")}
+                    href="/impact"
+                    label="Our Impact"
+                    isActive={pathname === "/impact"}
+                    onClick={() => handleNavClick("/impact")}
+                  />
+                  <MobileNavLink
+                    href="/about"
+                    label="About Us"
+                    isActive={pathname === "/about"}
+                    onClick={() => handleNavClick("/about")}
+                  />
+                  <MobileNavLink
+                    href="/contact"
+                    label="Contact Us"
+                    isActive={pathname === "/contact"}
+                    onClick={() => handleNavClick("/contact")}
                   />
                 </>
               ) : (
@@ -148,7 +165,8 @@ export default function MobileNav() {
                   <MobileNavLink
                     href="/"
                     label="Home"
-                    onClick={() => setIsOpen(false)}
+                    isActive={pathname === "/"}
+                    onClick={() => handleNavClick("/")}
                   />
                   <MobileNavLink
                     href="/needs"
@@ -157,9 +175,22 @@ export default function MobileNav() {
                     onClick={() => handleNavClick("/needs")}
                   />
                   <MobileNavLink
-                    href="/#impact"
-                    label="Impact"
-                    onClick={() => setIsOpen(false)}
+                    href="/impact"
+                    label="Our Impact"
+                    isActive={pathname === "/impact"}
+                    onClick={() => handleNavClick("/impact")}
+                  />
+                  <MobileNavLink
+                    href="/about"
+                    label="About Us"
+                    isActive={pathname === "/about"}
+                    onClick={() => handleNavClick("/about")}
+                  />
+                  <MobileNavLink
+                    href="/contact"
+                    label="Contact Us"
+                    isActive={pathname === "/contact"}
+                    onClick={() => handleNavClick("/contact")}
                   />
                 </>
               )}
@@ -172,28 +203,28 @@ export default function MobileNav() {
                   <Link
                     href="/login"
                     onClick={() => setIsOpen(false)}
-                    className="block w-full px-4 py-3 text-center text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors touch-manipulation"
+                    className="block w-full px-4 py-3 text-center text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors touch-manipulation"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/login?tab=register"
                     onClick={() => setIsOpen(false)}
-                    className="block w-full px-4 py-3 text-center text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors touch-manipulation"
+                    className="block w-full px-4 py-3 text-center text-sm font-bold text-white bg-primary hover:bg-teal-700 rounded-full transition-colors touch-manipulation shadow-sm"
                   >
                     Become a Donor
                   </Link>
                   <Link
                     href="/login?tab=org-admin"
                     onClick={() => setIsOpen(false)}
-                    className="block w-full px-4 py-3 text-center text-sm font-bold text-blue-600 bg-white border-2 border-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-manipulation"
+                    className="block w-full px-4 py-3 text-center text-sm font-bold text-primary bg-white border-2 border-primary hover:bg-blue-50 rounded-full transition-colors touch-manipulation"
                   >
                     Register Organization
                   </Link>
                 </>
               ) : (
                 <>
-                  <div className="px-4 py-3 bg-slate-50 rounded-lg">
+                  <div className="px-4 py-3 bg-slate-50 rounded-none">
                     <p className="text-sm font-semibold text-slate-900">
                       {user.username}
                     </p>
@@ -205,12 +236,19 @@ export default function MobileNav() {
                           : "Donor"}
                     </p>
                   </div>
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsOpen(false)}
+                    className="block w-full px-4 py-3 text-center text-sm font-semibold text-primary bg-white border border-primary hover:bg-teal-50 rounded-none transition-colors touch-manipulation"
+                  >
+                    My Profile
+                  </Link>
                   <button
                     onClick={() => {
                       setIsOpen(false);
                       logout();
                     }}
-                    className="w-full px-4 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 touch-manipulation"
+                    className="w-full px-4 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50 rounded-none transition-colors border border-rose-200 touch-manipulation"
                   >
                     Sign out
                   </button>
@@ -219,6 +257,7 @@ export default function MobileNav() {
             </div>
           </div>
         </div>
+      </>
       )}
     </div>
   );
@@ -239,8 +278,8 @@ function MobileNavLink({
     <Link
       href={href}
       onClick={onClick}
-      className={`px-4 py-3 text-sm font-semibold rounded-lg transition-colors touch-manipulation ${isActive
-        ? "text-blue-600 bg-blue-50"
+      className={`px-4 py-3 text-sm font-semibold rounded-none transition-colors touch-manipulation ${isActive
+        ? "text-primary bg-primary/10"
         : "text-slate-600 hover:bg-slate-50"
         }`}
     >

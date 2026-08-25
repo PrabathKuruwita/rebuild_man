@@ -1,5 +1,5 @@
 "use client";
-
+import React from 'react';
 import {
   XAxis,
   YAxis,
@@ -12,6 +12,7 @@ import {
   AreaChart,
   Area,
 } from "recharts";
+import { BarChart3 } from "lucide-react";
 
 interface LegendItem {
   value?: string;
@@ -90,6 +91,21 @@ export default function GraphsView({
   monthlyData,
   yearlyData,
 }: GraphsViewProps) {
+  const isMonthlyEmpty = monthlyData.every(
+    (d) => d.donations === 0 && d.confirmed === 0 && d.fulfilled === 0
+  );
+  const isYearlyEmpty = yearlyData.every(
+    (d) => d.donations === 0 && d.confirmed === 0 && d.fulfilled === 0
+  );
+
+  const [isMounted, setIsMounted] = React.useState(false);
+  React.useEffect(() => {
+    const t = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!isMounted) return null;
+
   return (
     <div className="space-y-8 mt-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -104,7 +120,14 @@ export default function GraphsView({
             </span>
           </div>
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            {isMonthlyEmpty ? (
+              <div className="h-full w-full flex flex-col items-center justify-center text-slate-400">
+                <BarChart3 className="w-12 h-12 text-slate-200 mb-3" />
+                <p className="text-sm font-medium text-slate-500">No donation activity yet</p>
+                <p className="text-xs text-slate-400 text-center mt-1">Data will appear here once donations are recorded.</p>
+              </div>
+            ) : (
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <AreaChart data={monthlyData}>
                 <defs>
                   <linearGradient
@@ -210,6 +233,7 @@ export default function GraphsView({
                 />
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -224,7 +248,14 @@ export default function GraphsView({
             </span>
           </div>
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            {isYearlyEmpty ? (
+              <div className="h-full w-full flex flex-col items-center justify-center text-slate-400">
+                <BarChart3 className="w-12 h-12 text-slate-200 mb-3" />
+                <p className="text-sm font-medium text-slate-500">No donation activity yet</p>
+                <p className="text-xs text-slate-400 text-center mt-1">Data will appear here once donations are recorded.</p>
+              </div>
+            ) : (
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <BarChart data={yearlyData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -293,6 +324,7 @@ export default function GraphsView({
                 />
               </BarChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>

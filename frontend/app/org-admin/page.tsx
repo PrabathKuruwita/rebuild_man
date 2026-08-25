@@ -309,7 +309,7 @@ export default function OrgAdminDashboard() {
     return (
       <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center p-4">
         <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200 max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+          <div className="w-20 h-20 bg-teal-50 text-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
             <Building2 size={36} strokeWidth={2.5} />
           </div>
           <h2 className="text-2xl font-black text-slate-900 mb-3 tracking-tight">
@@ -322,7 +322,7 @@ export default function OrgAdminDashboard() {
           </p>
           <Link
             href="/organizations/new"
-            className="inline-block w-full py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-600/20"
+            className="inline-block w-full py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-teal-700 transition shadow-lg shadow-primary/20"
           >
             Register Your Organization
           </Link>
@@ -339,11 +339,11 @@ export default function OrgAdminDashboard() {
           <div>
             <div className="page-badge">
               <span className="page-badge-dot"></span>
-              <span className="text-[10px] font-bold uppercase tracking-wider">
-                Org Admin
+              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-primary">
+                Organization Admin
               </span>
-              <span className="text-[10px] font-medium text-blue-500/70">
-                — {organization.name}
+              <span className="text-xs sm:text-sm font-medium text-primary">
+                : {organization.name}
               </span>
             </div>
             <h1 className="page-title">Organization Dashboard</h1>
@@ -354,7 +354,7 @@ export default function OrgAdminDashboard() {
           <div className="flex items-center gap-3">
             <Link
               href="/documents"
-              className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-600/20"
+              className="px-4 py-2.5 bg-primary hover:bg-teal-700 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20"
             >
               <FileText size={18} />
               Upload Document
@@ -365,32 +365,32 @@ export default function OrgAdminDashboard() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <StatsCard
-            title="SECTIONS"
+            label="SECTIONS"
             value={stats.sections}
-            subtitle="Internal sections"
+            subtext="Internal sections"
             icon={<Layers size={20} />}
-            color="purple"
+            status="neutral"
           />
           <StatsCard
-            title="TOTAL NEEDS"
+            label="TOTAL NEEDS"
             value={stats.totalNeeds}
-            subtitle="Items registered"
+            subtext="Items registered"
             icon={<ClipboardList size={20} />}
-            color="green"
+            status="success"
           />
           <StatsCard
-            title="CRITICAL NEEDS"
+            label="CRITICAL NEEDS"
             value={stats.criticalNeeds}
-            subtitle="Urgent items"
+            subtext="Urgent items"
             icon={<AlertTriangle size={20} />}
-            color="red"
+            status="critical"
           />
           <StatsCard
-            title="SUCCESSFUL DONATIONS"
+            label="TOTAL DONATIONS"
             value={stats.donations}
-            subtitle="Total contributions"
+            subtext="Total contributions"
             icon={<HeartHandshake size={20} />}
-            color="blue"
+            status="neutral"
           />
         </div>
 
@@ -413,7 +413,7 @@ export default function OrgAdminDashboard() {
               </p>
             </div>
             <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 flex items-center gap-2 shadow-sm">
-              <BarChart3 className="text-blue-600" size={18} />
+              <BarChart3 className="text-primary" size={18} />
               <span className="text-sm font-bold text-slate-700">
                 Full Report
               </span>
@@ -467,7 +467,7 @@ export default function OrgAdminDashboard() {
           </div>
           <div className="lg:col-span-4">
             <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 text-white h-full shadow-xl">
-              <h3 className="text-xl font-bold mb-6 text-blue-400">
+              <h3 className="text-xl font-bold mb-6 text-teal-400">
                 Monthly Snapshot
               </h3>
               <div className="space-y-8">
@@ -491,7 +491,7 @@ export default function OrgAdminDashboard() {
                   </p>
                   <p className="text-3xl font-black">
                     {stats.successfulDonationsThisMonth}{" "}
-                    <span className="text-xs text-blue-400 font-bold ml-2">
+                    <span className="text-xs text-teal-400 font-bold ml-2">
                       Active
                     </span>
                   </p>

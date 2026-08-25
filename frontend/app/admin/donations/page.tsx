@@ -62,6 +62,11 @@ function DonationsContent() {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setIsMounted(true), 0);
+    return () => clearTimeout(t);
+  }, []);
   const [filter, setFilter] = useState<string>("PENDING");
   const [confirming, setConfirming] = useState<number | null>(null);
   const [cancelling, setCancelling] = useState<number | null>(null);
@@ -1467,7 +1472,7 @@ function DonationsContent() {
           )}
         </div>
 
-        <div className="grid grid-cols-4 gap-6 mt-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
           {["PENDING", "CONFIRMED", "FULFILLED", "CANCELLED"].map((status) => {
             let count = 0;
             let totalQuantity = 0;
@@ -1593,7 +1598,8 @@ function DonationsContent() {
               {totalNeedsCount > 0 ? (
                 <div className="flex items-center justify-between flex-1 mt-4">
                   <div className="w-[180px] h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    {isMounted && (
+                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                       <PieChart>
                         <Pie
                           data={chart1Data}
@@ -1611,6 +1617,7 @@ function DonationsContent() {
                         <Tooltip content={<CustomTooltip />} />
                       </PieChart>
                     </ResponsiveContainer>
+                    )}
                   </div>
 
                   {/* Custom Legend */}
@@ -1648,7 +1655,8 @@ function DonationsContent() {
               {totalRequiredQuantity > 0 ? (
                 <div className="flex items-center justify-between flex-1 mt-4">
                   <div className="w-[180px] h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    {isMounted && (
+                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                       <PieChart>
                         <Pie
                           data={chart2Data}
@@ -1666,6 +1674,7 @@ function DonationsContent() {
                         <Tooltip content={<CustomTooltip />} />
                       </PieChart>
                     </ResponsiveContainer>
+                    )}
                   </div>
 
                   {/* Custom Legend */}

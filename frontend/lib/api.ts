@@ -717,7 +717,8 @@ export interface Notification {
     | "PLEDGE_RECEIVED"
     | "ADMIN_APPROVAL_REQUEST"
     | "REGISTRATION_DECISION"
-    | "PLEDGE_REMINDER";
+    | "PLEDGE_REMINDER"
+    | "SYSTEM_BROADCAST";
   title: string;
   message: string;
   action_url: string | null;
@@ -751,5 +752,11 @@ export const deleteNotification = (id: number) =>
 export const clearAllNotifications = () =>
   fetchAPI<{ status: string }>("/notifications/clear_all/", {
     method: "POST",
+  });
+
+export const sendBroadcastNotification = (payload: { audience: string; title: string; message: string }) =>
+  fetchAPI<{ status: string }>("/notifications/broadcast/", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 
