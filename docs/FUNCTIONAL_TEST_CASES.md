@@ -53,7 +53,11 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: A new user record is created in the database with `role='ORG_ADMIN'` and `approval_status='PENDING'`, linked to the requested organization details.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Form logic is implemented in [LoginContent.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/login/LoginContent.tsx#L203-L232) and maps to the API endpoint `/api/auth/register-org-admin/`.
+*   **Comments**:
+    *   **Frontend Route**: `/login` (Org Admin Registration tab).
+    *   **Frontend Logic**: Implemented in [LoginContent.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/login/LoginContent.tsx#L217-L232) via the `registerOrgAdmin` action call.
+    *   **Backend Integration**: Triggers the `/api/auth/register-org-admin/` endpoint, creating a pending account.
+    *   **Visual Indicators**: Check for browser alert popup confirmation and automatic redirection to the sign-in form.
 
 ---
 
@@ -87,7 +91,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: A new user record is created in the database with `role='DONOR'` and `approval_status='APPROVED'`.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Implementation resides in [LoginContent.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/login/LoginContent.tsx#L190-L202) and [AuthContext.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/lib/AuthContext.tsx#L112-L152).
+*   **Comments**:
+    *   **Frontend Route**: `/login` (Donor Registration tab).
+    *   **Frontend Logic**: [LoginContent.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/login/LoginContent.tsx#L194-L202) calls the context `register` method.
+    *   **Authentication State**: Implemented in [AuthContext.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/lib/AuthContext.tsx#L112-L152) which sets JWT credentials in `localStorage` upon success and routes the donor to the Home Page `/`.
 
 ---
 
@@ -110,7 +117,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The user's database status is updated to `approval_status='APPROVED'`, they are linked to the approved organization, a database notification of type `REGISTRATION_DECISION` is created, and an approval confirmation email is triggered.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Approval handler is in [ApprovalsPage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/admin/approvals/page.tsx#L129-L169) and calls backend `/api/admin/approvals/{userId}/approve/`.
+*   **Comments**:
+    *   **Frontend Route**: `/admin/approvals` (System Admin Approval dashboard).
+    *   **Frontend Logic**: Handled in [ApprovalsPage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/admin/approvals/page.tsx#L141-L169).
+    *   **Backend Integration**: Hits endpoint `/api/admin/approvals/{userId}/approve/` in [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py#L684-L883), moving user status to `APPROVED` and creating an approval transactional email.
 
 ---
 
@@ -136,7 +146,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The rejection email containing the reason is triggered to the user, and the pending user registration record is deleted from the database.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Rejection handler is in [ApprovalsPage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/admin/approvals/page.tsx#L171-L230) and calls backend `/api/admin/approvals/{userId}/reject/`.
+*   **Comments**:
+    *   **Frontend Route**: `/admin/approvals` (System Admin Approval dashboard).
+    *   **Frontend Logic**: Handled in [ApprovalsPage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/admin/approvals/page.tsx#L195-L230).
+    *   **Backend Integration**: Triggers endpoint `/api/admin/approvals/{userId}/reject/` in [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py#L885-L930). Sends a rejection reason email and deletes the registration candidate record.
 
 ---
 
@@ -156,7 +169,9 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: Transactional approval email is successfully delivered.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Backend mail composition and sending logic is in [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py#L730-L879).
+*   **Comments**:
+    *   **Backend Logic**: Handled on registration approval in [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py#L730-L879) via the `send_mail` action.
+    *   **Testing Method**: Check standard SMTP log server or inbox for subject: `"Your ORG_ADMIN Registration Request Has Been Approved – NeedTracker"`.
 
 ---
 
@@ -176,7 +191,9 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: Transactional rejection email is successfully delivered.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Backend mail composition and sending logic is in [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py#L912-L930).
+*   **Comments**:
+    *   **Backend Logic**: Triggered on registration rejection in [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py#L912-L930).
+    *   **Testing Method**: Verify inbox delivery for subject: `"Your ORG_ADMIN Registration Request Has Been Rejected – NeedTracker"`, ensuring the exact reason is injected.
 
 ---
 
@@ -201,7 +218,9 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The user has an active, authenticated session with correct permissions.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Redirection routing is implemented in [AuthContext.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/lib/AuthContext.tsx#L74-L110).
+*   **Comments**:
+    *   **Authentication State**: Handled in [AuthContext.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/lib/AuthContext.tsx#L74-L110) which saves access tokens to browser storage.
+    *   **Redirection Paths**: Verifies key routing policies: `ADMIN` $\rightarrow$ `/admin`, `ORG_ADMIN` $\rightarrow$ `/org-admin`, and `DONOR` $\rightarrow$ `/`.
 
 ---
 
@@ -228,7 +247,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The organization details are successfully updated in the database.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Form and action mapping are in [organizations/page.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/organizations/page.tsx#L252-L272) calling api method `updateOrganization`.
+*   **Comments**:
+    *   **Frontend Route**: `/organizations/{id}/edit` (triggered from `/organizations`).
+    *   **Frontend Logic**: Implemented in [page.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/organizations/%5Bid%5D/edit/page.tsx) and calls `updateOrganization` helper in `lib/api.ts`.
+    *   **Backend Integration**: Triggers `/api/organizations/{id}/` (PATCH).
 
 ---
 
@@ -250,7 +272,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The organization and all its cascade-related sections and needs are deleted from the database.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Code is in [organizations/page.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/organizations/page.tsx#L186-L204,L273-L293).
+*   **Comments**:
+    *   **Frontend Route**: `/organizations` dashboard profile action.
+    *   **Frontend Logic**: Implemented in [organizations/page.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/organizations/page.tsx#L186-L204) via `handleDelete` function.
+    *   **Backend Integration**: Calls API endpoint `/api/organizations/{id}/` (DELETE).
 
 ---
 
@@ -280,7 +305,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: A new user with `role='ORG_ADMIN'` and status `APPROVED` linked to the same organization is created in the database, and an invitation email is sent to `mary.perera@lankageneral.lk`.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Implementation resides in [ManageAdminsPage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/org-admin/manage-admins/page.tsx#L65-L89) and backend `views.py` `invite_admin` action. Note that removal is currently not exposed in the frontend UI.
+*   **Comments**:
+    *   **Frontend Route**: `/org-admin/manage-admins` panel.
+    *   **Frontend Logic**: Implemented in [ManageAdminsPage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/org-admin/manage-admins/page.tsx#L65-L89).
+    *   **Backend Integration**: Triggers `/api/organizations/{orgId}/invite_admin/` (POST) in backend [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py#L320-L394), creating a pre-approved account. Note that deletion/removal of secondary admins is not supported in the current frontend UI.
 
 ---
 
@@ -307,7 +335,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The admin's user record in the database is updated with the new details and password.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Code is in [ProfilePage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/profile/page.tsx#L98-L138).
+*   **Comments**:
+    *   **Frontend Route**: `/profile` management page.
+    *   **Frontend Logic**: Implemented in [ProfilePage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/profile/page.tsx#L98-L138) (`handleProfileSave` and `handlePasswordSave`).
+    *   **Backend Integration**: Sends updates via `/api/auth/me/` (PATCH) endpoint.
 
 ---
 
@@ -334,7 +365,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The donor's user record in the database is updated with the new details.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Code resides in [ProfilePage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/profile/page.tsx#L98-L138). (Note: Deletion is not in the frontend UI, but can be done via Django admin backend).
+*   **Comments**:
+    *   **Frontend Route**: `/profile` management page.
+    *   **Frontend Logic**: Implemented in [ProfilePage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/profile/page.tsx#L98-L138).
+    *   **Backend Integration**: Triggers update request `/api/auth/me/` (PATCH). Note that user profile deletion is not exposed in the frontend UI and must be processed through backend administration.
 
 ---
 
@@ -359,7 +393,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The section is added, updated, or removed in the database, along with cascade-deleted needs.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Section actions map to code in [organizations/page.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/organizations/page.tsx#L163-L182,L684-L754,L849-L860).
+*   **Comments**:
+    *   **Frontend Route**: `/organizations` dashboard.
+    *   **Frontend Components**: [AddSectionModal.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/components/AddSectionModal.tsx) and [EditSectionModal.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/components/EditSectionModal.tsx).
+    *   **Backend Integration**: Triggers `/api/sections/` CRUD actions, dynamically refreshing the hierarchy views.
 
 ---
 
@@ -384,7 +421,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The need item is added, updated, or deleted in the database.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Implementation in [organizations/page.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/organizations/page.tsx#L148-L162,L707-L754,L862-L900).
+*   **Comments**:
+    *   **Frontend Route**: `/organizations` section accordion items.
+    *   **Frontend Components**: [ManualNeedEntryForm.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/components/ManualNeedEntryForm.tsx) and [EditNeedModal.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/components/EditNeedModal.tsx).
+    *   **Backend Integration**: Triggers `/api/needs/` CRUD endpoints, refreshing the parent organization state upon modal close.
 
 ---
 
@@ -431,7 +471,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: real-time NeedItem details are successfully retrieved from `/api/needs/`.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Code resides in [NeedsContent.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/needs/NeedsContent.tsx) and component `NeedCard.tsx`.
+*   **Comments**:
+    *   **Frontend Route**: `/needs` (Public Board).
+    *   **Frontend Components**: Implemented in [NeedsContent.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/needs/NeedsContent.tsx) (local sorting and queries filtering) rendering [NeedCard.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/components/NeedCard.tsx) cards.
+    *   **Backend Integration**: Fetches list data from `/api/needs/`.
 
 ---
 
@@ -457,7 +500,9 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: A new Donation pledge is recorded in the database with status `PENDING`, awaiting hospital admin verification.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Implementation in [DonateModal.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/components/DonateModal.tsx#L70-L158).
+*   **Comments**:
+    *   **Frontend Modal**: [DonateModal.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/components/DonateModal.tsx#L70-L158) triggered from `/needs` need card.
+    *   **Backend Integration**: Submits pledge payload to `/api/donations/` (POST), creating a pledge instance linked to the donor ID and targeting need item.
 
 ---
 
@@ -486,7 +531,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The Donation status is updated in the database, which automatically updates the NeedItem confirmed quantities.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Logic is implemented in [donations/page.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/admin/donations/page.tsx#L181-L292) calling api endpoints `/api/donations/{id}/confirm/`, `/api/donations/{id}/cancel/`, and `/api/donations/{id}/receive/`.
+*   **Comments**:
+    *   **Frontend Route**: `/admin/donations` portal.
+    *   **Frontend Logic**: Implemented in [donations/page.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/admin/donations/page.tsx#L181-L292).
+    *   **Backend Integration**: Calls specific actions `/api/donations/{id}/confirm/` (POST), `/api/donations/{id}/cancel/` (POST), and `/api/donations/{id}/receive/` (POST) to advance donation status.
 
 ---
 
@@ -509,7 +557,9 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: Notifications are successfully delivered and read statuses can be managed.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Backend notifications creation and transactional mailing reside in [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py#L1213-L1283,L1383-L1418,L1420-L1453,L1586-L1601,L1644-L1660,L1677-L1692).
+*   **Comments**:
+    *   **Backend Notifications**: Handled in backend [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py#L1586-L1596,L1648-L1655,L1680-L1687) creating database records of type `Notification`.
+    *   **Transactional Emails**: Triggered automatically upon action confirmation inside backend view handlers.
 
 ---
 
@@ -533,7 +583,9 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The need card display matches the database records.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Progress calculations and classes reside in [NeedCard.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/components/NeedCard.tsx#L37-L43,L123-L196) and CSS mappings.
+*   **Comments**:
+    *   **Frontend Components**: Math calculations and visual indicators reside in [NeedCard.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/components/NeedCard.tsx#L37-L43,L123-L196).
+    *   **Style Triggers**: Progression uses Tailwind and custom CSS transitions defined in `components/NeedCard.css` matching current parameters.
 
 ---
 
@@ -556,7 +608,10 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The organization record is deleted from the database.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Logic is handled in [organizations/page.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/organizations/page.tsx#L186-L204,L297-L445).
+*   **Comments**:
+    *   **Frontend Route**: `/organizations` feed (System Admin view).
+    *   **Frontend Logic**: [organizations/page.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/organizations/page.tsx#L297-L445) displays search/filter components for `ADMIN` role.
+    *   **Backend Integration**: Calls `/api/organizations/{id}/` (DELETE) upon confirmation.
 
 ---
 
@@ -579,6 +634,9 @@ This document contains detailed functional test cases for positive scenarios in 
 *   **Post-Condition**: The page renders database records from `/api/donors/`.
 *   **Actual Result**: As expected
 *   **Status**: Pass
-*   **Comments**: Implementation is in [DonorsPage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/admin/donors/page.tsx).
+*   **Comments**:
+    *   **Frontend Route**: `/admin/donors` portal.
+    *   **Frontend Logic**: Handled in [DonorsPage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/admin/donors/page.tsx#L94-L207) with automated polling interval updates.
+    *   **Backend Integration**: Fetches registered donors collection via `/api/donors/` (GET).
 
 ---
