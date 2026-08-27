@@ -406,9 +406,9 @@ This document contains detailed functional test cases for positive scenarios in 
     *   File: `hospital_need_list.pdf` (containing items list).
 *   **Expected Result**: The file uploads and is processed. A preview of the extracted items is rendered. Upon approval, the needs are created in the organization sections, and the document status updates to `APPROVED`.
 *   **Post-Condition**: Needs extracted from the document are populated as active NeedItems in the database.
-*   **Actual Result**: As expected
-*   **Status**: Pass
-*   **Comments**: Implementation resides in [DocumentsPage](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/documents/page.tsx) and maps to backend views `DocumentUpload` parser.
+*   **Actual Result**: The uploaded file is not processed. After the button displays "Processing...", the file upload resets and the screen returns to the default "No documents uploaded yet" state. No document list is updated or shown.
+*   **Status**: Fail
+*   **Comments**: The frontend upload handler `handleUpload` in [documents/page.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/documents/page.tsx#L38-L46) is currently a mock simulation and does not integrate with the backend API `uploadDocument` function. Thus, documents are not sent to the database.
 
 ---
 
