@@ -40,21 +40,26 @@ interface CustomTooltipProps {
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 min-w-[150px]">
-        <p className="font-label text-slate-500 text-xs font-bold uppercase mb-2">{label}</p>
+      <div className="bg-white p-4 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 min-w-[170px]">
+        <div className="flex items-center justify-between mb-2 border-b border-slate-100 pb-1.5">
+          <p className="font-label text-slate-500 text-xs font-bold uppercase">{label}</p>
+          <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200/50 uppercase">
+            Units
+          </span>
+        </div>
         {payload.map((entry, index: number) => {
           const item = entry as TooltipEntry;
           return (
-            <div key={`item-${index}`} className="flex items-center justify-between mb-1">
+            <div key={`item-${index}`} className="flex items-center justify-between mb-1.5 last:mb-0 gap-3">
               <span className="text-sm font-medium text-slate-700 capitalize flex items-center gap-2">
                 <span 
-                  className="w-2.5 h-2.5 rounded-full inline-block" 
+                  className="w-2.5 h-2.5 rounded-full inline-block shrink-0" 
                   style={{ backgroundColor: item.color }}
                 />
                 {item.name}
               </span>
-              <span className="font-heading font-bold text-slate-900 ml-4">
-                {typeof item.value === 'number' ? item.value.toLocaleString() : item.value}
+              <span className="font-heading font-bold text-slate-900 ml-4 whitespace-nowrap">
+                {typeof item.value === 'number' ? `${item.value.toLocaleString()} units` : item.value}
               </span>
             </div>
           );
@@ -65,7 +70,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   return null;
 };
 
-// Fallback mock data if none provided
+// Fallback mock data if none provided (e.g. public showcase)
 const MOCK_DATA: ChartData[] = [
   { month: 'Jan', donations: 120, fulfilled: 80 },
   { month: 'Feb', donations: 250, fulfilled: 150 },
@@ -76,7 +81,7 @@ const MOCK_DATA: ChartData[] = [
 ];
 
 export default function AnalyticsLineChart({ 
-  data = MOCK_DATA,
+  data,
   title = "Donation Volume Trends",
   subtitle = "Monthly breakdown of pledged vs fulfilled donations"
 }: AnalyticsLineChartProps) {
@@ -96,35 +101,62 @@ export default function AnalyticsLineChart({
     );
   }
 
-  if (!data || data.length === 0) {
+  const chartData = data ?? MOCK_DATA;
+  const hasActivity = data !== undefined
+    ? data.length > 0 && data.some((d) => (d.donations || 0) > 0 || (d.fulfilled || 0) > 0)
+    : chartData.length > 0 && chartData.some((d) => (d.donations || 0) > 0 || (d.fulfilled || 0) > 0);
+
+  if (!hasActivity) {
     return (
-      <div className="w-full h-80 flex flex-col items-center justify-center bg-slate-50 rounded-xl border border-slate-100 border-dashed">
-        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
-          <Activity className="text-slate-400 w-8 h-8" />
+      <div className="w-full flex flex-col h-full">
+        <div className="mb-6">
+          <h3 className="font-heading font-bold text-slate-900 text-lg sm:text-xl whitespace-nowrap">{title}</h3>
+          <div className="mt-2.5 flex items-end justify-between gap-4">
+            <div className="flex flex-col items-start gap-1.5">
+              <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-md border border-indigo-200/60 uppercase tracking-wide">
+                Metric: Units
+              </span>
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
+                Last 6 Months
+              </span>
+            </div>
+          </div>
         </div>
-        <h4 className="font-heading font-bold text-slate-900 mb-1">No Data Available</h4>
-        <p className="font-body text-sm text-slate-500">Wait for donations to start charting trends.</p>
+        <div className="w-full h-80 flex flex-col items-center justify-center bg-slate-50 rounded-xl border border-slate-100 border-dashed">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+            <Activity className="text-slate-400 w-8 h-8" />
+          </div>
+          <h4 className="font-heading font-bold text-slate-900 mb-1">No Donation Activity Yet</h4>
+          <p className="font-body text-sm text-slate-500">Wait for donations to start charting trends.</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="w-full flex flex-col h-full">
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h3 className="font-heading font-bold text-slate-900 text-xl">{title}</h3>
-          <p className="font-body text-sm text-slate-500 mt-1">{subtitle}</p>
-        </div>
-        
-        {/* Custom Legend */}
-        <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-primary inline-block shadow-sm"></span>
-            <span className="font-label text-xs font-bold text-slate-600 uppercase tracking-wider">Pledged</span>
+      <div className="mb-6">
+        <h3 className="font-heading font-bold text-slate-900 text-lg sm:text-xl whitespace-nowrap">{title}</h3>
+        <div className="mt-2.5 flex items-end justify-between gap-4">
+          <div className="flex flex-col items-start gap-1.5">
+            <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-md border border-indigo-200/60 uppercase tracking-wide">
+              Metric: Units
+            </span>
+            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
+              Last 6 Months
+            </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-[#f59e0b] inline-block shadow-sm"></span>
-            <span className="font-label text-xs font-bold text-slate-600 uppercase tracking-wider">Fulfilled</span>
+          
+          {/* Custom Legend */}
+          <div className="flex items-center gap-3.5 bg-slate-50 px-3.5 py-2 rounded-lg border border-slate-100 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-[#10b981] inline-block shadow-xs"></span>
+              <span className="font-label text-xs font-bold text-slate-600 uppercase tracking-wider">Pledged Units</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-[#a855f7] inline-block shadow-xs"></span>
+              <span className="font-label text-xs font-bold text-slate-600 uppercase tracking-wider">Fulfilled Units</span>
+            </div>
           </div>
         </div>
       </div>
@@ -132,17 +164,17 @@ export default function AnalyticsLineChart({
       <div className="flex-grow w-full h-[350px] animate-fade-in-up">
         <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
           <AreaChart
-            data={data}
+            data={chartData}
             margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
           >
             <defs>
               <linearGradient id="colorDonations" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
               </linearGradient>
               <linearGradient id="colorFulfilled" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2}/>
-                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#a855f7" stopOpacity={0.25}/>
+                <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -165,11 +197,11 @@ export default function AnalyticsLineChart({
               type="monotone" 
               dataKey="fulfilled" 
               name="Fulfilled"
-              stroke="#f59e0b" 
+              stroke="#a855f7" 
               strokeWidth={3}
               fillOpacity={1} 
               fill="url(#colorFulfilled)" 
-              activeDot={{ r: 6, strokeWidth: 0, fill: '#f59e0b' }}
+              activeDot={{ r: 6, strokeWidth: 0, fill: '#a855f7' }}
               animationDuration={1500}
               animationEasing="ease-out"
             />
@@ -177,11 +209,11 @@ export default function AnalyticsLineChart({
               type="monotone" 
               dataKey="donations" 
               name="Pledged"
-              stroke="var(--color-primary)" 
+              stroke="#10b981" 
               strokeWidth={3}
               fillOpacity={1} 
               fill="url(#colorDonations)" 
-              activeDot={{ r: 8, stroke: '#fff', strokeWidth: 3, fill: 'var(--color-primary)' }}
+              activeDot={{ r: 8, stroke: '#fff', strokeWidth: 3, fill: '#10b981' }}
               animationDuration={1500}
               animationEasing="ease-out"
             />

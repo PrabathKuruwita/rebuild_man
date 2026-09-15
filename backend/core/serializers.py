@@ -118,6 +118,10 @@ class OrgAdminRegisterSerializer(serializers.ModelSerializer):
         email = attrs.get('email', '')
         if email:
             existing_user = User.objects.filter(email=email).first()
+            if not existing_user:
+                # Also check if there is a legacy rejected user whose email matches rejected_*_<email>
+                existing_user = User.objects.filter(email__endswith=f"_{email}", approval_status='REJECTED').first()
+
             if existing_user:
                 # If the existing user was previously rejected, allow them to re-register by updating their record
                 if existing_user.role == 'ORG_ADMIN' and existing_user.approval_status == 'REJECTED':
@@ -165,6 +169,15 @@ class OrgAdminRegisterSerializer(serializers.ModelSerializer):
             existing_user.requested_organization_type = validated_data.get('requested_organization_type', '')
             existing_user.requested_organization = validated_data.get('requested_organization')
             existing_user.approval_status = 'PENDING'
+            existing_user.rejection_reason = ''
+            existing_user.approval_decided_at = None
+            existing_user.approval_decided_by = None
+            clean_email = validated_data.get('email', '')
+            if clean_email:
+                existing_user.email = clean_email
+            new_username = validated_data.get('username')
+            if new_username:
+                existing_user.username = new_username
             existing_user.set_password(validated_data['password'])
             existing_user.save()
             return existing_user
@@ -204,6 +217,15 @@ class AdminApprovalSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone_number',
                            'approval_requested_at', 'approval_decided_by']
+    
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        import re
+        if ret.get('email'):
+            ret['email'] = re.sub(r'^rejected_[0-9a-fA-F]{8}_', '', ret['email'])
+        if ret.get('username'):
+            ret['username'] = re.sub(r'_rejected_[0-9a-fA-F]{8}$', '', ret['username'])
+        return ret
     
     def get_organization_name(self, obj):
         current_name = None

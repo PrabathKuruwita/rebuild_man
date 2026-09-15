@@ -12,8 +12,11 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.utils import timezone
 from django.utils.timezone import localtime
+import logging
 from django.core.mail import send_mail
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 from .serializers import (
     OrganizationSerializer, 
     SectionSerializer, 
@@ -875,7 +878,7 @@ class AdminApprovalViewSet(viewsets.ViewSet):
                 html_message=html_message
             )
         except Exception as e:
-            print(f"Failed to send approval email to {user.email}: {str(e)}")
+            logger.error(f"Failed to send approval email to {user.email}: {e}", exc_info=True)
         
         return Response({
             'message': f'Org admin {user.username} approved and assigned to {org_name}',
@@ -901,14 +904,16 @@ class AdminApprovalViewSet(viewsets.ViewSet):
         
         reason = request.data.get('reason', 'No reason provided')
         
-        # Store user info for email before deletion
-        user_email = user.email
-        user_username = user.username
-        user_first_name = user.first_name or user.username
+        import re
+        # Store clean user info for email and record retention
+        user_email = re.sub(r'^rejected_[0-9a-fA-F]{8}_', '', user.email or '')
+        user_username = re.sub(r'_rejected_[0-9a-fA-F]{8}$', '', user.username or '')
+        user_first_name = user.first_name or user_username
         user_org_name = user.requested_organization_name or 'Not specified'
         user_org_type = user.requested_organization_type or 'Not specified'
         
-        # Send rejection email BEFORE deleting the account
+        # Send rejection email BEFORE updating status
+        email_sent = False
         try:
             frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
             
@@ -1048,28 +1053,23 @@ class AdminApprovalViewSet(viewsets.ViewSet):
                 fail_silently=False,
                 html_message=html_message
             )
+            email_sent = True
         except Exception as e:
-            print(f"Failed to send rejection email to {user_email}: {str(e)}")
+            email_sent = False
+            logger.error(f"Failed to send rejection email to {user_email}: {e}", exc_info=True)
         
-        # Mark user as REJECTED instead of deleting so they appear in the rejected list
-        import uuid
-        
+        # Mark user as REJECTED without modifying their username or email
         user.approval_status = 'REJECTED'
         user.rejection_reason = reason
         user.approval_decided_at = timezone.now()
         user.approval_decided_by = request.user
-        
-        # Append a unique suffix to email and username to allow re-registration
-        uid = str(uuid.uuid4())[:8]
-        user.username = f"{user.username}_rejected_{uid}"
-        user.email = f"rejected_{uid}_{user.email}"
+        user.username = user_username
+        user.email = user_email
         user.save()
         
-        # The email message says the account has been removed. We should update the text slightly.
-        # But it's fine, to the user it's effectively removed (they can't login, they must re-register).
-        
         return Response({
-            'message': f'Org admin registration request rejected.',
+            'message': 'Org admin registration request rejected.',
+            'email_sent': email_sent,
             'user': AdminApprovalSerializer(user).data
         }, status=status.HTTP_200_OK)
     

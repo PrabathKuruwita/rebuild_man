@@ -604,13 +604,18 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 animate-fade-in">
         {/* Donation Trend (Last 6 Months) */}
         <div className="card-container">
-          <div className="mb-5 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 text-base">
-              Donation Trend (Last 6 Months)
-            </h3>
-            <span className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-              Units
-            </span>
+          <div className="mb-5 flex items-end justify-between">
+            <div className="flex flex-col items-start gap-1.5">
+              <h3 className="font-bold text-slate-900 text-base whitespace-nowrap">
+                Donation Trend
+              </h3>
+              <span className="rounded-md bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 border border-indigo-200/60 uppercase tracking-wide">
+                Metric: Units
+              </span>
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase rounded tracking-wider">
+                Last 6 Months
+              </span>
+            </div>
           </div>
           <div className="grid grid-cols-6 items-end gap-3 h-[200px] pt-4">
             {monthlyImpact.map((month) => {
@@ -622,7 +627,7 @@ export default function AdminDashboard() {
               return (
                 <div key={month.label} className="flex flex-col items-center">
                   <div className="mb-2 text-[10px] font-bold text-slate-500">
-                    {month.value}
+                    {month.value.toLocaleString()} units
                   </div>
                   <div
                     className="w-full rounded-t-md bg-gradient-to-t from-blue-500 to-cyan-400 transition-all duration-500"
@@ -639,13 +644,18 @@ export default function AdminDashboard() {
 
         {/* Regional Distribution */}
         <div className="card-container">
-          <div className="mb-5 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 text-base">
-              Regional Distribution
-            </h3>
-            <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-              Top Districts
-            </span>
+          <div className="mb-5 flex items-end justify-between">
+            <div className="flex flex-col items-start gap-1.5">
+              <h3 className="font-bold text-slate-900 text-base whitespace-nowrap">
+                Regional Distribution
+              </h3>
+              <span className="rounded-md bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 border border-indigo-200/60 uppercase tracking-wide">
+                Metric: Units / District
+              </span>
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase rounded tracking-wider">
+                Top Districts
+              </span>
+            </div>
           </div>
 
           {districtImpact.length === 0 ? (

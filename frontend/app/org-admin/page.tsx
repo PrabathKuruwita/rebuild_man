@@ -61,6 +61,7 @@ export default function OrgAdminDashboard() {
     sectionMetrics: [] as SectionMetric[],
     monthlyData: [] as ChartDataPoint[],
     yearlyData: [] as ChartDataPoint[],
+    volumeTrendData: [] as { month: string; donations: number; fulfilled: number }[],
   });
   const [criticalNeeds, setCriticalNeeds] = useState<NeedItem[]>([]);
   const [orgNeeds, setOrgNeeds] = useState<NeedItem[]>([]);
@@ -88,7 +89,10 @@ export default function OrgAdminDashboard() {
           return;
         }
 
-        const myOrg = orgs[0];
+        const userOrgId = (user as unknown as { organization?: number })?.organization;
+        const myOrg = userOrgId
+          ? (orgs.find((o) => o.id === userOrgId) || orgs[0])
+          : orgs[0];
         setOrganization(myOrg);
 
         const allNeeds = await getNeeds();
@@ -246,6 +250,33 @@ export default function OrgAdminDashboard() {
           };
         });
 
+        // Volume trend data (aggregated quantity of items pledged vs fulfilled)
+        const volumeTrendData = last6Months.map((m) => {
+          const monthDonations = orgDonations.filter((d) => {
+            if (!d.created_at) return false;
+            const dDate = new Date(d.created_at);
+            return (
+              dDate.getMonth() === m.month && dDate.getFullYear() === m.year
+            );
+          });
+          const fulfilledMonthDonations = monthDonations.filter(
+            (d) => d.status === "FULFILLED",
+          );
+          const pledgedQty = monthDonations.reduce(
+            (sum, d) => sum + (Number(d.quantity) || 1),
+            0,
+          );
+          const fulfilledQty = fulfilledMonthDonations.reduce(
+            (sum, d) => sum + (Number(d.quantity) || 1),
+            0,
+          );
+          return {
+            month: m.name,
+            donations: pledgedQty,
+            fulfilled: fulfilledQty,
+          };
+        });
+
         const last3Years = [currentYear - 2, currentYear - 1, currentYear];
         const yearlyData = last3Years.map((year) => {
           const yearDonations = orgDonations.filter((d) => {
@@ -281,6 +312,7 @@ export default function OrgAdminDashboard() {
           sectionMetrics,
           monthlyData,
           yearlyData,
+          volumeTrendData,
         });
 
         setCriticalNeeds(unfulfilledCritical.slice(0, 3));
@@ -424,6 +456,7 @@ export default function OrgAdminDashboard() {
             fulfillmentRate={analytics.fulfillmentRate}
             donationRate={analytics.donationRate}
             sectionMetrics={analytics.sectionMetrics}
+            trendData={analytics.volumeTrendData}
           />
 
           <GraphsView

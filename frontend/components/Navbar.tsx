@@ -133,10 +133,10 @@ export default function Navbar() {
     <nav
       ref={navRef}
       onMouseMove={handleNavMouseMove}
-      className={`fixed top-0 left-0 right-0 h-20 sm:h-24 z-[1020] transition-all duration-300 ${isSidebarLayout ? "navbar-sidebar-offset" : "w-full"} ${navBg} border-b`}
+      className={`fixed top-0 left-0 right-0 h-16 sm:h-20 z-[1020] transition-all duration-300 ${isSidebarLayout ? "navbar-sidebar-offset" : "w-full"} ${navBg} border-b`}
     >
       <div className={isSidebarLayout ? "w-full px-4 sm:px-8" : "w-full px-4 sm:px-8 lg:px-12"}>
-        <div className="flex justify-between items-center h-20 sm:h-24">
+        <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo - Responsive sizing */}
           <div className={`shrink-0 flex items-center ${isSidebarLayout ? "lg:hidden" : ""}`}>
             <Link href="/" className="flex items-center gap-2 sm:gap-3">
@@ -272,24 +272,35 @@ export default function Navbar() {
                                 setShowNotifications(false);
                                 router.push(`/notifications?id=${n.id}`);
                               }}
-                              className={`p-4 flex gap-3 cursor-pointer transition-colors hover:bg-slate-50 relative ${!n.is_read ? 'bg-blue-50/20' : ''}`}
+                              className={`p-3.5 flex items-start gap-2.5 cursor-pointer transition-colors hover:bg-slate-50 relative ${
+                                !n.is_read ? 'bg-teal-50/30' : ''
+                              }`}
                             >
+                              <div className="pt-1 shrink-0">
+                                {!n.is_read ? (
+                                  <span className="block w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20" />
+                                ) : (
+                                  <span className="block w-2 h-2 rounded-full bg-transparent" />
+                                )}
+                              </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-start gap-1">
-                                  <p className={`text-xs text-slate-900 truncate ${!n.is_read ? 'font-semibold' : 'font-medium'}`}>
+                                <div className="flex justify-between items-baseline gap-2">
+                                  <p
+                                    className={`text-xs text-slate-900 truncate ${
+                                      !n.is_read ? 'font-semibold' : 'font-medium'
+                                    }`}
+                                    title={n.title}
+                                  >
                                     {n.title}
                                   </p>
-                                  <span className="text-[9px] text-slate-400 shrink-0">
+                                  <span className="text-[10px] text-slate-400 shrink-0 whitespace-nowrap">
                                     {formatTimeAgo(n.created_at)}
                                   </span>
                                 </div>
-                                <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">
+                                <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-relaxed">
                                   {n.message}
                                 </p>
                               </div>
-                              {!n.is_read && (
-                                <span className="absolute top-4 right-4 w-2 h-2 bg-primary rounded-full" />
-                              )}
                             </div>
                           ))
                         )}

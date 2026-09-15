@@ -619,6 +619,62 @@ class AdminApprovalTests(APITestCase):
         self.assertEqual(email.to, ["pending@example.com"])
         self.assertIn("Registration Request Has Been Rejected", email.subject)
         self.assertIn(rejection_reason, email.body)
+        
+        # Verify original username and email are preserved (not mangled with rejected_ prefix/suffix)
+        self.pending_org_admin.refresh_from_db()
+        self.assertEqual(self.pending_org_admin.approval_status, 'REJECTED')
+        self.assertEqual(self.pending_org_admin.username, "pendingorgadmin")
+        self.assertEqual(self.pending_org_admin.email, "pending@example.com")
+        self.assertFalse("rejected_" in self.pending_org_admin.username)
+        self.assertFalse("rejected_" in self.pending_org_admin.email)
+        
+        # Verify rejected_list endpoint returns clean original credentials
+        url_rejected_list = reverse('admin_approval-rejected-list')
+        list_response = self.client.get(url_rejected_list)
+        self.assertEqual(list_response.status_code, status.HTTP_200_OK)
+        rejected_entry = next((item for item in list_response.data if item['id'] == self.pending_org_admin.id), None)
+        self.assertIsNotNone(rejected_entry)
+        self.assertEqual(rejected_entry['username'], "pendingorgadmin")
+        self.assertEqual(rejected_entry['email'], "pending@example.com")
+
+    def test_rejected_org_admin_re_registration(self):
+        """
+        A previously rejected org admin can re-register with the same email,
+        recycling their record back to PENDING status without duplicate user creation.
+        """
+        # First reject the pending admin
+        url_reject = reverse('admin_approval-reject', kwargs={'pk': self.pending_org_admin.id})
+        self.client.post(url_reject, {'reason': 'Invalid docs'}, format='json')
+        
+        self.pending_org_admin.refresh_from_db()
+        self.assertEqual(self.pending_org_admin.approval_status, 'REJECTED')
+        
+        # Unauthenticate to simulate registration page
+        self.client.force_authenticate(user=None)
+        
+        url_register = reverse('auth_register_org_admin')
+        re_register_data = {
+            'username': 'pending_org_admin_new',
+            'email': 'pending@example.com',
+            'password': 'NewStrongPassword123!',
+            'password2': 'NewStrongPassword123!',
+            'first_name': 'Pending',
+            'last_name': 'AdminUpdated',
+            'phone_number': '+94770000000',
+            'organization_name': 'Updated Hospital',
+            'organization_type': 'HOSPITAL',
+        }
+        
+        res = self.client.post(url_register, re_register_data, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        
+        # Verify existing record was updated and recycled back to PENDING
+        self.pending_org_admin.refresh_from_db()
+        self.assertEqual(self.pending_org_admin.approval_status, 'PENDING')
+        self.assertEqual(self.pending_org_admin.rejection_reason, '')
+        self.assertIsNone(self.pending_org_admin.approval_decided_at)
+        self.assertEqual(self.pending_org_admin.first_name, 'Pending')
+        self.assertEqual(self.pending_org_admin.last_name, 'AdminUpdated')
 
 
 

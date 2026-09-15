@@ -14,13 +14,25 @@ interface AnalyticsMetric {
   status?: "critical" | "warning" | "success" | "neutral";
 }
 
+interface TrendDataPoint {
+  month: string;
+  donations: number;
+  fulfilled?: number;
+}
+
 interface AnalyticsViewProps {
   fulfillmentRate: number;
   donationRate: number;
   sectionMetrics: AnalyticsMetric[];
+  trendData?: TrendDataPoint[];
 }
 
-export default function AnalyticsView({ fulfillmentRate, donationRate, sectionMetrics }: AnalyticsViewProps) {
+export default function AnalyticsView({
+  fulfillmentRate,
+  donationRate,
+  sectionMetrics,
+  trendData,
+}: AnalyticsViewProps) {
   return (
     <div className="space-y-8">
       {/* High-level Progress Bars */}
@@ -58,7 +70,7 @@ export default function AnalyticsView({ fulfillmentRate, donationRate, sectionMe
       
       {/* Main Trend Chart - Visually Dominant */}
       <ElevatedCard className="p-8" isDominant={true}>
-        <AnalyticsLineChart />
+        <AnalyticsLineChart data={trendData} />
       </ElevatedCard>
 
       {/* Section-wise Analytics */}

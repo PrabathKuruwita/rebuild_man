@@ -1589,10 +1589,15 @@ function DonationsContent() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Chart 1: Needs Fulfillment Status */}
-            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-6 flex flex-col justify-between h-[300px]">
-              <div>
-                <h3 className="text-base font-bold text-slate-800">Needs Fulfillment Overview ({activeChartSectionName})</h3>
-                <p className="text-xs text-slate-500 mt-1">Comparison of fully met needs vs. pending/partial needs</p>
+            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-6 flex flex-col justify-between h-[320px]">
+              <div className="flex flex-col items-start gap-1.5">
+                <h3 className="text-base font-bold text-slate-800 whitespace-nowrap">Needs Fulfillment Overview</h3>
+                <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
+                  Metric: Needs
+                </span>
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
+                  {activeChartSectionName}
+                </span>
               </div>
 
               {totalNeedsCount > 0 ? (
@@ -1646,10 +1651,15 @@ function DonationsContent() {
             </div>
 
             {/* Chart 2: Quantity Fulfillment Status */}
-            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-6 flex flex-col justify-between h-[300px]">
-              <div>
-                <h3 className="text-base font-bold text-slate-800">Quantity Fulfillment Overview ({activeChartSectionName})</h3>
-                <p className="text-xs text-slate-500 mt-1">Comparison of physically received quantity vs. remaining required quantity</p>
+            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-6 flex flex-col justify-between h-[320px]">
+              <div className="flex flex-col items-start gap-1.5">
+                <h3 className="text-base font-bold text-slate-800 whitespace-nowrap">Quantity Fulfillment Overview</h3>
+                <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
+                  Metric: Units
+                </span>
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
+                  {activeChartSectionName}
+                </span>
               </div>
 
               {totalRequiredQuantity > 0 ? (

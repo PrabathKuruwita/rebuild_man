@@ -179,21 +179,27 @@ This document contains detailed functional test cases for positive scenarios in 
 
 *   **Test Case ID**: `TC_EMAIL_002`
 *   **Test Scenario**: Requester Notification (Rejection)
-*   **Test Case Description**: Verify that the organization requester receives a transactional email notification containing the rejection reason when their registration is rejected.
+*   **Test Case Description**: Verify that the organization requester receives a transactional email notification containing the rejection reason when their registration is rejected, and the original email is released.
 *   **Pre-Conditions**:
-    1. An organization registration request (e.g., `fraud@fakeclinic.com`) has been rejected by the System Administrator (TC_ADMIN_002).
+    1. A pending registration request was submitted using the email address `communityhospitalprojectfct@gmail.com`.
+    2. The System Administrator rejects the request (TC_ADMIN_002).
 *   **Test Steps**:
-    1. Access the mailbox for `fraud@fakeclinic.com`.
-    2. Open the email sent from `NeedTracker` with the subject prefix for rejections.
+    1. Access the mailbox for the original recipient email: `communityhospitalprojectfct@gmail.com`.
+    2. Search the inbox/spam folder for an email sent from `NeedTracker` or `Parithyaga` with the subject prefix for rejections.
+    3. Navigate to `/admin/approvals` -> **Rejected** tab on the System Admin Console and verify the displayed email address for the rejected user.
 *   **Test Data**:
-    *   Recipient Email: `fraud@fakeclinic.com`
-*   **Expected Result**: An email is delivered with the subject `"Your ORG_ADMIN Registration Request Has Been Rejected – NeedTracker"`. The email body clearly displays the rejection reason: `"The provided medical facility registration license number could not be validated."`
-*   **Post-Condition**: Transactional rejection email is successfully delivered.
-*   **Actual Result**: As expected
+    *   Original Recipient Email: `communityhospitalprojectfct@gmail.com`
+    *   Database/Console Display Email: `rejected_{uid}_communityhospitalprojectfct@gmail.com` (where `{uid}` is an 8-character unique hash, e.g. `rejected_0e1b8a00_communityhospitalprojectfct@gmail.com`)
+*   **Expected Result**:
+    *   An email is delivered to the original mailbox (`communityhospitalprojectfct@gmail.com`) with the subject `"Your ORG_ADMIN Registration Request Has Been Rejected – NeedTracker"`.
+    *   The user's original email and username remain unchanged in the Admin approvals database and are displayed cleanly under the Rejected tab.
+*   **Post-Condition**: Rejection email is successfully sent, and original credentials are preserved.
+*   **Actual Result**: Rejection email is queued and delivered to `communityhospitalprojectfct@gmail.com`. The Admin Console displays the original email and username without `rejected_{uid}_` prefixes.
 *   **Status**: Pass
 *   **Comments**:
-    *   **Backend Logic**: Triggered on registration rejection in [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py#L912-L930).
-    *   **Testing Method**: Verify inbox delivery for subject: `"Your ORG_ADMIN Registration Request Has Been Rejected – NeedTracker"`, ensuring the exact reason is injected.
+    *   **Backend Logic**: Handled in `AdminApprovalViewSet.reject` in [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py#L886-L1074).
+    *   **Email Preservation**: Retains the user's original username and email without mutation, while supporting re-registration via record recycling in [serializers.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/serializers.py).
+    *   **SMTP Dispatch**: Fixed container environment variables in [docker-compose.yml](file:///c:/Users/thari/Desktop/rebuild_man_project/docker-compose.yml), configured fallback for `DEFAULT_FROM_EMAIL` and `EMAIL_TIMEOUT` in [settings.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/config/settings.py), and added structured exception logging.
 
 ---
 

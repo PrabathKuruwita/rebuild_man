@@ -456,13 +456,16 @@ export default function DonorDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
             {/* Status Chart */}
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col justify-between h-[340px]">
-              <div>
-                <h3 className="text-sm font-bold text-slate-800">
+              <div className="flex flex-col items-start gap-1.5">
+                <h3 className="text-sm font-bold text-slate-800 whitespace-nowrap">
                   Donation Status Breakdown
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Proportion of pending, confirmed, and fulfilled pledges
-                </p>
+                <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
+                  Metric: Requests
+                </span>
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
+                  All Time
+                </span>
               </div>
 
               {pieChartData.length > 0 ? (
@@ -518,13 +521,16 @@ export default function DonorDashboard() {
 
             {/* Contributions Chart */}
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col justify-between h-[340px]">
-              <div>
-                <h3 className="text-sm font-bold text-slate-800">
+              <div className="flex flex-col items-start gap-1.5">
+                <h3 className="text-sm font-bold text-slate-800 whitespace-nowrap">
                   Support by Organization
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Total item quantities contributed to recipient organizations
-                </p>
+                <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
+                  Metric: Units
+                </span>
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
+                  By Recipient
+                </span>
               </div>
 
               {barChartData.length > 0 ? (
