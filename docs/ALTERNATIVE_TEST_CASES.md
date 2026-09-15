@@ -98,38 +98,74 @@ This document contains functional test cases for **Alternative Flows, Negative S
 
 ---
 
-### ATC_REG_001: Org Admin Registration with Duplicate Username or Email
+### ATC_REG_001: Duplicate Username Registration
 
 *   **Test Case ID**: `ATC_REG_001`
-*   **Test Scenario**: Duplicate Registration Handling
-*   **Test Case Description**: Verify that the system prevents registration when the chosen username or email is already registered in the system.
+*   **Test Scenario**: Duplicate Username Registration
+*   **Test Case Description**: Verify that the system prevents registration when the chosen username is already registered in the system.
 *   **Pre-Conditions**:
-    1. A user already exists with username `janesilva_org` and email `contact@lankageneral.lk`.
-    2. The user is on `/login` -> **Organization Register** tab.
+    1. A user already exists with username `sadev_nhsl` and email `pasinduofficial6@gmail.com`.
+    2. The user is on `http://rebuild-app.duckdns.org/login` (or `/login`) -> **Organization Register** tab.
 *   **Test Steps**:
-    1. Enter Organization Name: `New Test Hospital`.
-    2. Select Type: `Hospital`.
-    3. Enter First/Last Name: `Jane` / `Silva`.
-    4. Enter the existing Username: `janesilva_org`.
-    5. Enter the existing Email: `contact@lankageneral.lk`.
-    6. Fill in Phone: `+94 11 269 3500` and Password: `SecurePass@123`.
-    7. Agree to Terms and click **Submit for Verification**.
+    1. Enter Organization name: `Homagama Hospital`.
+    2. Select Organization type: `Hospital`.
+    3. Enter Admin first/last name: `Amal` / `Perera`.
+    4. Enter the existing Admin username: `sadev_nhsl`.
+    5. Enter the Official email: `pasinduofficial6@gmail.com`.
+    6. Fill in Phone: `+94 11 269 3500`.
+    7. Enter Password: `SecurePass@123` and Confirm: `SecurePass@123`.
+    8. Agree to Terms and click **Submit for Verification**.
 *   **Test Data**:
-    *   Duplicate Username: `janesilva_org`
-    *   Duplicate Email: `contact@lankageneral.lk`
-*   **Expected Result**: The registration is rejected. An error alert displays `"A user with that username already exists"` or `"Email already registered"`. Form does not submit.
+    *   Duplicate Username: `sadev_nhsl`
+    *   Email: `pasinduofficial6@gmail.com`
+*   **Expected Result**: The registration is rejected. An error alert displays `"A user with that username already exists."` and the form does not submit.
+*   **Post-Condition**: No duplicate database record is created.
+*   **Actual Result**: Data was submitted. At system admin side pending requests tab, username display as duplicate username with `_1`.
+*   **Status**: Fail
+*   **Comments**:
+    *   **Frontend Route**: `/login` (Org Admin tab)
+    *   **Frontend Logic**: [LoginContent.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/login/LoginContent.tsx#L203-L238) invokes `registerOrgAdmin()`.
+    *   **Backend Integration**: Hits endpoint `/api/auth/register-org-admin/` handled by `OrgAdminRegisterView` in [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py).
+    *   **Root Cause**: In [serializers.py:L132-L140](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/serializers.py#L132-L140), `OrgAdminRegisterSerializer` executes a loop that mutates duplicate usernames by appending `_{counter}` (e.g. `sadev_nhsl_1`) instead of raising a `serializers.ValidationError({"username": "A user with that username already exists."})`.
+    *   **Defect Link**: Logged as defect **`BUG_003`** in [BUG_REPORTS.md](file:///c:/Users/thari/Desktop/rebuild_man_project/docs/BUG_REPORTS.md#L40-L53).
+
+---
+
+### ATC_REG_002: Duplicate Email Registration Handling
+
+*   **Test Case ID**: `ATC_REG_002`
+*   **Test Scenario**: Duplicate Email Registration Handling
+*   **Test Case Description**: Verify that the system prevents registration when the chosen email is already registered in the system.
+*   **Pre-Conditions**:
+    1. A user already exists with username `prabath_nhsl` and email `probusinessinfinity7@gmail.com`.
+    2. The user is on `http://rebuild-app.duckdns.org/login` (or `/login`) -> **Organization Register** tab.
+*   **Test Steps**:
+    1. Enter Organization name: `Kalutara Hospital`.
+    2. Select Organization type: `Hospital`.
+    3. Enter Admin first/last name: `Prabath` / `Perera`.
+    4. Enter the existing Admin username: `prabath_nhsl`.
+    5. Enter the existing Official email: `probusinessinfinity7@gmail.com`.
+    6. Fill in Phone: `+94 11 269 3500`.
+    7. Enter Password: `SecurePass@123` and Confirm: `SecurePass@123`.
+    8. Agree to Terms and click **Submit for Verification**.
+*   **Test Data**:
+    *   Username: `prabath_nhsl`
+    *   Duplicate Email: `probusinessinfinity7@gmail.com`
+*   **Expected Result**: The registration is rejected. An error alert displays `"email: A user with this email already exists."` and the form does not submit.
 *   **Post-Condition**: No duplicate database record is created.
 *   **Actual Result**: As expected
 *   **Status**: Pass
 *   **Comments**:
     *   **Frontend Route**: `/login` (Org Admin tab)
-    *   **Backend Validation**: Handled by `OrgAdminRegisterSerializer` in [serializers.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/serializers.py#L250-L310), enforcing Django `unique=True` constraints.
+    *   **Frontend Logic**: [LoginContent.tsx](file:///c:/Users/thari/Desktop/rebuild_man_project/frontend/app/login/LoginContent.tsx#L203-L238) submits the form via `registerOrgAdmin()` and renders the returned backend error message in the red alert box (`setError`).
+    *   **Backend Integration**: Hits endpoint `/api/auth/register-org-admin/` handled by `OrgAdminRegisterView` in [views.py](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/views.py).
+    *   **Backend Validation**: Handled by `OrgAdminRegisterSerializer.validate()` in [serializers.py:L117-L130](file:///c:/Users/thari/Desktop/rebuild_man_project/backend/core/serializers.py#L117-L130), which checks `User.objects.filter(email=email).first()` and explicitly raises `serializers.ValidationError({"email": "A user with this email already exists."})`, returning HTTP 400 Bad Request.
 
 ---
 
-### ATC_REG_002: Registration with Password Mismatch
+### ATC_REG_003: Registration with Password Mismatch
 
-*   **Test Case ID**: `ATC_REG_002`
+*   **Test Case ID**: `ATC_REG_003`
 *   **Test Scenario**: Password Confirmation Validation
 *   **Test Case Description**: Verify that client-side validation blocks registration when the password and confirm password fields do not match.
 *   **Pre-Conditions**:
@@ -151,9 +187,9 @@ This document contains functional test cases for **Alternative Flows, Negative S
 
 ---
 
-### ATC_REG_003: Donor Registration with Missing Mandatory Fields or Unchecked Terms
+### ATC_REG_004: Donor Registration with Missing Mandatory Fields or Unchecked Terms
 
-*   **Test Case ID**: `ATC_REG_003`
+*   **Test Case ID**: `ATC_REG_004`
 *   **Test Scenario**: Mandatory Field & Terms Validation
 *   **Test Case Description**: Verify that donor account creation is blocked if mandatory fields are empty or terms checkbox is unchecked.
 *   **Pre-Conditions**:
