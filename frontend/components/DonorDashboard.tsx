@@ -1156,7 +1156,7 @@ export default function DonorDashboard() {
                   setViewingDonation(null);
                   router.replace("/");
                 }}
-                className="text-slate-400 hover:text-slate-700 text-sm font-semibold"
+                className="text-slate-400 hover:text-red-600 text-sm font-semibold transition-colors duration-150 cursor-pointer"
               >
                 Close
               </button>

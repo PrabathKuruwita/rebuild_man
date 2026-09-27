@@ -281,6 +281,11 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         queryset = Organization.objects.all()
         user = self.request.user
         
+        # Allow fetching all organizations when explicitly requested (for public impact, map, etc.)
+        all_param = self.request.query_params.get('all')
+        if all_param and all_param.lower() in ('true', '1'):
+            return queryset
+
         # Handle unauthenticated users
         if not user.is_authenticated:
             return queryset  # Return all for public viewing
@@ -455,8 +460,12 @@ class NeedItemViewSet(viewsets.ModelViewSet):
         )
         user = self.request.user
         
+        # Handle explicit all query param for public impact and needs pages
+        all_param = self.request.query_params.get('all')
+        if all_param and all_param.lower() in ('true', '1'):
+            pass  # Return all
         # Handle unauthenticated users
-        if not user.is_authenticated:
+        elif not user.is_authenticated:
             pass  # Return all for public viewing
         # ADMIN users see all needs
         elif hasattr(user, 'role') and user.role == 'ADMIN':
@@ -1111,8 +1120,8 @@ class DonationViewSet(viewsets.ModelViewSet):
         data = []
         for donation in recent_donations:
             donor_display = "Anonymous Donor"
-            if donation.donor_type == 'government' and donation.government_department:
-                donor_display = donation.government_department
+            if donation.donor_type in ('organization', 'government') and donation.organization_name:
+                donor_display = donation.organization_name
             elif donation.donor_organization:
                 donor_display = donation.donor_organization
             elif donation.donor_name:
@@ -1144,7 +1153,8 @@ class DonationViewSet(viewsets.ModelViewSet):
                 'donor_type': donation.donor_type,
                 'donor_name': donation.donor_name,
                 'donor_organization': donation.donor_organization,
-                'government_department': donation.government_department,
+                'organization_name': donation.organization_name,
+                'government_department': donation.organization_name,
                 'need_item': donation.need_item_id,
                 'quantity': donation.quantity,
                 'created_at': donation.created_at.isoformat()
@@ -1221,9 +1231,9 @@ class DonationViewSet(viewsets.ModelViewSet):
         elif donation.donor_type == 'private':
             donor_email = donation.donor_email
             donor_name = donation.donor_name
-        elif donation.donor_type == 'government':
-            donor_email = donation.government_email
-            donor_name = donation.government_officer_name or donation.government_department
+        elif donation.donor_type in ('organization', 'government'):
+            donor_email = donation.organization_email or donation.government_email
+            donor_name = donation.organization_officer_name or donation.organization_name
         else:
             return
             
@@ -1564,12 +1574,12 @@ class DonationViewSet(viewsets.ModelViewSet):
                     donor_address=donation.donor_address,
                     donor_email=donation.donor_email,
                     donor_phone=donation.donor_phone,
-                    government_department=donation.government_department,
-                    government_program=donation.government_program,
-                    government_officer_name=donation.government_officer_name,
-                    government_officer_designation=donation.government_officer_designation,
-                    government_officer_contact=donation.government_officer_contact,
-                    government_email=donation.government_email,
+                    organization_name=donation.organization_name,
+                    organization_program=donation.organization_program,
+                    organization_officer_name=donation.organization_officer_name,
+                    organization_officer_designation=donation.organization_officer_designation,
+                    organization_officer_contact=donation.organization_officer_contact,
+                    organization_email=donation.organization_email,
                     cancelled_by=request.user,
                     cancellation_reason='Surplus quantity exceeding the required need.',
                     cancelled_at=timezone.now()
@@ -1746,10 +1756,18 @@ def system_stats(request):
     # 2. Count verified hospitals (organizations)
     verified_hospitals = Organization.objects.count()
     
-    # 3. Count donors onboarded
-    donors_count = User.objects.filter(role='DONOR').count()
+    # 3. Count unique active donors (registered donors + unique direct donors in donations)
+    registered_donors = set(User.objects.filter(role='DONOR').values_list('id', flat=True))
+    linked_donors = set(Donation.objects.filter(donor__isnull=False).values_list('donor_id', flat=True))
+    guest_donors = set(Donation.objects.filter(donor__isnull=True).exclude(
+        donor_email='', donor_name='', donor_organization='', organization_email='', organization_name=''
+    ).values_list('donor_email', 'donor_name', 'donor_organization', 'organization_email', 'organization_name'))
     
-    # 4. Calculate delivery success rate
+    donors_count = len(registered_donors | linked_donors) + len(guest_donors)
+    if donors_count == 0 and User.objects.filter(role='DONOR').exists():
+        donors_count = User.objects.filter(role='DONOR').count()
+    
+    # 4. Calculate delivery success rate based on real platform donations
     fulfilled = Donation.objects.filter(status='FULFILLED').count()
     
     # Filter out cancellations that are NOT donor delivery failures (e.g. surplus, met by other means, duplicate)
@@ -1768,13 +1786,52 @@ def system_stats(request):
     if total_relevant > 0:
         delivery_success_rate = round((fulfilled / total_relevant) * 100)
     else:
-        delivery_success_rate = 98  # Default/fallback from design
+        delivery_success_rate = 100 if Donation.objects.exists() else 100
         
+    # 5. Monthly donation volume trends for the last 6 calendar months
+    from django.db.models import Sum
+    now = timezone.now()
+    monthly_trends = []
+    for i in range(5, -1, -1):
+        year = now.year
+        month = now.month - i
+        while month <= 0:
+            month += 12
+            year -= 1
+        
+        month_start = timezone.datetime(year, month, 1, tzinfo=timezone.get_current_timezone())
+        if month == 12:
+            next_month_start = timezone.datetime(year + 1, 1, 1, tzinfo=timezone.get_current_timezone())
+        else:
+            next_month_start = timezone.datetime(year, month + 1, 1, tzinfo=timezone.get_current_timezone())
+            
+        month_label = month_start.strftime('%b')
+        
+        # Pledged units in this month across all organizations
+        pledged_qty = Donation.objects.filter(
+            created_at__gte=month_start,
+            created_at__lt=next_month_start
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+        
+        # Fulfilled units in this month across all organizations
+        fulfilled_qty = Donation.objects.filter(
+            status='FULFILLED',
+            created_at__gte=month_start,
+            created_at__lt=next_month_start
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+        
+        monthly_trends.append({
+            'month': month_label,
+            'donations': pledged_qty,
+            'fulfilled': fulfilled_qty
+        })
+
     return Response({
         'provinces_covered': provinces_count,
         'verified_hospitals': verified_hospitals,
         'donors_onboarded': donors_count,
-        'delivery_success_rate': delivery_success_rate
+        'delivery_success_rate': delivery_success_rate,
+        'monthly_trends': monthly_trends,
     })
 
 

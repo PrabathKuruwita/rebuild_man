@@ -753,7 +753,7 @@ export default function AdminDashboard() {
                       <p className="text-xs font-bold text-slate-900">
                         {entry.donor_type === "private"
                           ? entry.donor_name || "Private Donor"
-                          : entry.government_department || "Government Donor"}
+                          : entry.organization_name || entry.government_department || "Organization Donor"}
                       </p>
                       <p className="text-[10px] text-slate-400 mt-0.5">
                         {new Date(entry.created_at).toLocaleDateString()}

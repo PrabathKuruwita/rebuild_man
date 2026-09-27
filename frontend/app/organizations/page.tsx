@@ -61,19 +61,21 @@ function OrganizationsContent() {
       const orgs = await getOrganizations();
       setOrganizations(orgs);
 
-      // If ADMIN, show all organizations; if ORG_ADMIN, show only their organization
+      // If ADMIN, update currently viewed organization if one is selected; if ORG_ADMIN, show their organization
       if (user?.role === "ADMIN") {
-        // ADMIN sees all organizations - stay in list view by default
+        setOrganization((prev) =>
+          prev ? orgs.find((o) => o.id === prev.id) || null : null
+        );
       } else if (user?.role === "ORG_ADMIN") {
-        // ORG_ADMIN sees only their organization
         if (orgs.length > 0) {
           setOrganization(orgs[0]);
-
         }
       }
+      return orgs;
     } catch {
       setOrganizations([]);
       setOrganization(null);
+      return [];
     }
   };
 
@@ -86,7 +88,7 @@ function OrganizationsContent() {
     };
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authorized]);
+  }, [authorized, user?.role]);
 
   useEffect(() => {
     if (!loading && targetSectionId) {
@@ -150,9 +152,7 @@ function OrganizationsContent() {
     try {
       await deleteNeed(needId);
       setDeleteNeedConfirm(null);
-      setLoading(true);
       await fetchOrganizations();
-      setLoading(false);
     } catch {
       alert("Failed to delete need. Please try again.");
     } finally {
@@ -166,9 +166,7 @@ function OrganizationsContent() {
     try {
       await deleteSection(deleteSectionConfirm.id);
       setDeleteSectionConfirm(null);
-      setLoading(true);
       await fetchOrganizations();
-      setLoading(false);
     } catch {
       alert("Failed to delete section. Please try again.");
       setDeletingSection(false);
@@ -851,10 +849,9 @@ function OrganizationsContent() {
         <AddSectionModal
           organizationId={organization.id}
           onClose={() => setShowAddSection(false)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowAddSection(false);
-            setLoading(true);
-            fetchOrganizations();
+            await fetchOrganizations();
           }}
         />
       )}
@@ -865,10 +862,9 @@ function OrganizationsContent() {
           initialOrgId={organization.id}
           initialSectionId={addNeedForSection.sectionId}
           onClose={() => setAddNeedForSection(null)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setAddNeedForSection(null);
-            setLoading(true);
-            fetchOrganizations();
+            await fetchOrganizations();
           }}
         />
       )}
@@ -878,10 +874,9 @@ function OrganizationsContent() {
         <EditNeedModal
           need={editNeed}
           onClose={() => setEditNeed(null)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setEditNeed(null);
-            setLoading(true);
-            fetchOrganizations();
+            await fetchOrganizations();
           }}
         />
       )}
@@ -927,10 +922,9 @@ function OrganizationsContent() {
         <EditSectionModal
           section={editSection}
           onClose={() => setEditSection(null)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setEditSection(null);
-            setLoading(true);
-            fetchOrganizations();
+            await fetchOrganizations();
           }}
         />
       )}

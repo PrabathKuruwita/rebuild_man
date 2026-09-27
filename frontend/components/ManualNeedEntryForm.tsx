@@ -7,6 +7,7 @@ import {
   Organization,
   unitLabels,
 } from "@/lib/api";
+import SuccessCheckmark from "@/components/SuccessCheckmark";
 
 interface ManualNeedEntryFormProps {
   onClose: () => void;
@@ -89,11 +90,8 @@ export default function ManualNeedEntryForm({
         section: parseInt(form.section_id),
       });
 
-      setSuccess(true);
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 1200);
+      onSuccess();
+      onClose();
     } catch (err: unknown) {
       console.error("Error saving need:", err);
       const errorMessage =
@@ -172,28 +170,16 @@ export default function ManualNeedEntryForm({
         {/* Form body */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {success ? (
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-8 h-8 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+            <div className="flex flex-col items-center justify-center h-full py-8 gap-4 text-center">
+              <SuccessCheckmark size="lg" />
+              <div className="animate-success-content space-y-1">
+                <h3 className="text-xl font-bold text-gray-900">
+                  Need Added!
+                </h3>
+                <p className="text-gray-500 text-sm">
+                  Redirecting you to All Needs…
+                </p>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">
-                Need Added!
-              </h3>
-              <p className="text-gray-500 text-sm">
-                Redirecting you to All Needs…
-              </p>
             </div>
           ) : (
             <form

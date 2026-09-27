@@ -628,6 +628,27 @@ button:active {
   color: #166534;
 }
 
+.btn-purple,
+.btn-indigo {
+  padding: 0.625rem 1.25rem;
+  background-color: #faf5ff; /* purple-50 */
+  border: 1px solid #f3e8ff; /* purple-100 */
+  color: #7e22ce; /* purple-700 */
+  border-radius: 0.75rem; /* rounded-xl */
+}
+
+.btn-purple:hover,
+.btn-indigo:hover {
+  background-color: #f3e8ff; /* purple-100 */
+  color: #6b21a8; /* purple-800 */
+}
+
+.btn-purple:focus,
+.btn-indigo:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.1);
+}
+
 /* Card Container Styling */
 .card-container {
   background-color: #ffffff;
@@ -767,4 +788,95 @@ button:active {
 
 .animate-slow-zoom {
   animation: slow-zoom 20s linear infinite alternate;
+}
+
+/* Success Checkmark & Flow Animations */
+@keyframes success-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.14);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes success-ping-soft {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.8;
+  }
+  70% {
+    transform: scale(1.45);
+    opacity: 0.12;
+  }
+  100% {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+}
+
+@keyframes stroke-draw-circle {
+  0% {
+    stroke-dashoffset: 160;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes stroke-draw-check {
+  0% {
+    stroke-dashoffset: 48;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes success-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-success-pop {
+  animation: success-pop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-success-ping-1 {
+  animation: success-ping-soft 1.3s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+}
+
+.animate-success-ping-2 {
+  animation: success-ping-soft 1.7s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+}
+
+.animate-circle-draw {
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: stroke-draw-circle 0.65s cubic-bezier(0.65, 0, 0.35, 1) 0.1s forwards;
+}
+
+.animate-check-draw {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: stroke-draw-check 0.45s cubic-bezier(0.65, 0, 0.35, 1) 0.5s forwards;
+}
+
+.animate-success-content {
+  animation: success-fade-up 0.5s ease-out 0.45s both;
 }

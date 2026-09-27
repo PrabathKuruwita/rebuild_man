@@ -75,15 +75,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
 
-        # Make username unique automatically based on input
-        base_username = attrs['username']
-        username = base_username
-        counter = 1
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}_{counter}"
-            counter += 1
+        # Check if email already exists
+        email = attrs.get('email', '').strip()
+        if email and User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError({"email": "A user with this email already exists."})
+
+        # Check if username already exists
+        username = attrs.get('username', '').strip()
+        if username and User.objects.filter(username__iexact=username).exists():
+            raise serializers.ValidationError({"username": "A user with that username already exists."})
+
         attrs['username'] = username
-        
+        if email:
+            attrs['email'] = email
         return attrs
 
     def create(self, validated_data):
@@ -115,12 +119,12 @@ class OrgAdminRegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"password": "Password fields didn't match."})
         
         # Check if email is already taken
-        email = attrs.get('email', '')
+        email = attrs.get('email', '').strip()
         if email:
-            existing_user = User.objects.filter(email=email).first()
+            existing_user = User.objects.filter(email__iexact=email).first()
             if not existing_user:
                 # Also check if there is a legacy rejected user whose email matches rejected_*_<email>
-                existing_user = User.objects.filter(email__endswith=f"_{email}", approval_status='REJECTED').first()
+                existing_user = User.objects.filter(email__iendswith=f"_{email}", approval_status='REJECTED').first()
 
             if existing_user:
                 # If the existing user was previously rejected, allow them to re-register by updating their record
@@ -129,16 +133,21 @@ class OrgAdminRegisterSerializer(serializers.ModelSerializer):
                 else:
                     raise serializers.ValidationError({"email": "A user with this email already exists."})
 
-        # Make username unique automatically based on input (only if creating a new user)
-        if not attrs.get('existing_rejected_user'):
-            base_username = attrs['username']
-            username = base_username
-            counter = 1
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}_{counter}"
-                counter += 1
-            attrs['username'] = username
+        # Check if username is already taken
+        username = attrs.get('username', '').strip()
+        if username:
+            existing_rejected_user = attrs.get('existing_rejected_user')
+            if existing_rejected_user:
+                if User.objects.filter(username__iexact=username).exclude(id=existing_rejected_user.id).exists():
+                    raise serializers.ValidationError({"username": "A user with that username already exists."})
+            else:
+                if User.objects.filter(username__iexact=username).exists():
+                    raise serializers.ValidationError({"username": "A user with that username already exists."})
         
+        attrs['username'] = username
+        if email:
+            attrs['email'] = email
+
         # Extract organization info (write-only fields)
         org_name = attrs.pop('organization_name')
         org_type = attrs.pop('organization_type')
@@ -440,12 +449,88 @@ class DonationSerializer(serializers.ModelSerializer):
             'id', 'donor', 'need_item', 'need_item_detail', 'quantity', 'status', 
             'message', 'estimated_delivery_date', 'created_at', 'donor_type',
             'donor_name', 'donor_contact', 'donor_organization', 'donor_address',
-            'donor_email', 'donor_phone', 'government_department', 'government_program',
+            'donor_email', 'donor_phone', 'organization_name', 'organization_program',
+            'organization_officer_name', 'organization_officer_designation',
+            'organization_officer_contact', 'organization_email',
+            'government_department', 'government_program',
             'government_officer_name', 'government_officer_designation',
-            'government_officer_contact', 'government_email', 'donation_letter_file',
+            'government_officer_contact', 'government_email',
+            'donation_letter_file',
             'confirmed_by_name', 'confirmed_by_role', 'cancelled_by_name', 'cancelled_by_role', 'cancellation_reason', 'cancelled_at',
             'received_by_name', 'received_by_role'
         ]
+        read_only_fields = [
+            'government_department', 'government_program',
+            'government_officer_name', 'government_officer_designation',
+            'government_officer_contact', 'government_email'
+        ]
+
+    def to_internal_value(self, data):
+        data = data.copy() if hasattr(data, 'copy') else dict(data)
+        if data.get('donor_type') == 'government':
+            data['donor_type'] = 'organization'
+        if 'government_department' in data and 'organization_name' not in data:
+            data['organization_name'] = data['government_department']
+        if 'government_program' in data and 'organization_program' not in data:
+            data['organization_program'] = data['government_program']
+        if 'government_officer_name' in data and 'organization_officer_name' not in data:
+            data['organization_officer_name'] = data['government_officer_name']
+        if 'government_officer_designation' in data and 'organization_officer_designation' not in data:
+            data['organization_officer_designation'] = data['government_officer_designation']
+        if 'government_officer_contact' in data and 'organization_officer_contact' not in data:
+            data['organization_officer_contact'] = data['government_officer_contact']
+        if 'government_email' in data and 'organization_email' not in data:
+            data['organization_email'] = data['government_email']
+        return super().to_internal_value(data)
+
+    def validate(self, attrs):
+        # When creating a new donation, validate required fields
+        if not self.instance:
+            if not attrs.get('estimated_delivery_date'):
+                raise serializers.ValidationError({"estimated_delivery_date": "Estimated delivery date is required."})
+            
+            donor_type = attrs.get('donor_type', 'private')
+            if donor_type == 'private':
+                if not attrs.get('donor_name'):
+                    raise serializers.ValidationError({"donor_name": "Full name is required."})
+                if not attrs.get('donor_email'):
+                    raise serializers.ValidationError({"donor_email": "Email address is required."})
+                if not attrs.get('donor_phone'):
+                    raise serializers.ValidationError({"donor_phone": "Contact number is required."})
+                if not attrs.get('donor_address'):
+                    raise serializers.ValidationError({"donor_address": "Address is required."})
+                # Clear all organization fields so only private donor details are stored
+                attrs['organization_name'] = ''
+                attrs['organization_program'] = ''
+                attrs['organization_officer_name'] = ''
+                attrs['organization_officer_designation'] = ''
+                attrs['organization_officer_contact'] = ''
+                attrs['organization_email'] = ''
+                attrs['government_department'] = ''
+                attrs['government_program'] = ''
+                attrs['government_officer_name'] = ''
+                attrs['government_officer_designation'] = ''
+                attrs['government_officer_contact'] = ''
+                attrs['government_email'] = ''
+            elif donor_type in ('organization', 'government'):
+                if not attrs.get('organization_name'):
+                    raise serializers.ValidationError({"organization_name": "Organization name is required."})
+                if not attrs.get('organization_officer_name'):
+                    raise serializers.ValidationError({"organization_officer_name": "Officer name is required."})
+                if not attrs.get('organization_officer_designation'):
+                    raise serializers.ValidationError({"organization_officer_designation": "Officer designation is required."})
+                if not attrs.get('organization_officer_contact'):
+                    raise serializers.ValidationError({"organization_officer_contact": "Officer contact number is required."})
+                if not attrs.get('organization_email'):
+                    raise serializers.ValidationError({"organization_email": "Email address is required."})
+                # Clear all private donor fields so only organization details are stored
+                attrs['donor_name'] = ''
+                attrs['donor_email'] = ''
+                attrs['donor_phone'] = ''
+                attrs['donor_address'] = ''
+                attrs['donor_contact'] = ''
+                attrs['donor_organization'] = ''
+        return super().validate(attrs)
 
     def get_confirmed_by_name(self, obj):
         if obj.confirmed_by:

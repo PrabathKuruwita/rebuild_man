@@ -42,7 +42,6 @@ export default function NeedCard({
   const remaining = need.quantity_required - need.quantity_confirmed;
 
   const handleDonationSuccess = () => {
-    setIsDonateModalOpen(false);
     onDonationSuccess?.();
   };
 

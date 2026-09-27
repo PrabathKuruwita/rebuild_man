@@ -348,15 +348,24 @@ function DonationsContent() {
 
     // Apply Donor Type filter
     if (donorTypeFilter !== "ALL") {
-      result = result.filter((d) => d.donor_type === donorTypeFilter);
+      result = result.filter((d) => {
+        const type = d.donor_type as string;
+        return donorTypeFilter === "organization"
+          ? type === "organization" || type === "government"
+          : type === donorTypeFilter;
+      });
     }
 
     // Apply Search Query filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter((d) => {
-        // 1. Need Item
-        const needItemName = (d.need_item_detail?.name || `Need ${d.need_item}`).toLowerCase();
+        // 1. Need Item Name
+        const needItemName = (
+          d.need_item_detail?.name ||
+          needsMap.get(d.need_item)?.name ||
+          ""
+        ).toLowerCase();
 
         // 2. Created Date (need item's created_at)
         const needObj = needsMap.get(d.need_item);
@@ -365,8 +374,8 @@ function DonationsContent() {
           : "";
 
         // 3. Donor Info (Name, Email)
-        const donorName = (d.donor_type === "private" ? d.donor_name : d.government_department || "").toLowerCase();
-        const donorEmail = (d.donor_type === "private" ? d.donor_email : d.government_email || "").toLowerCase();
+        const donorName = (d.donor_type === "private" ? d.donor_name : (d.organization_name || d.government_department || "")).toLowerCase();
+        const donorEmail = (d.donor_type === "private" ? d.donor_email : (d.organization_email || d.government_email || "")).toLowerCase();
 
         // 4. Requested Date (donation created_at)
         const requestedDateStr = d.created_at
@@ -456,7 +465,7 @@ function DonationsContent() {
             </h3>
             <button
               onClick={handleCloseViewDialog}
-              className="text-slate-400 hover:text-slate-700 text-sm font-semibold"
+              className="text-slate-400 hover:text-red-600 text-sm font-semibold transition-colors duration-150 cursor-pointer"
             >
               Close
             </button>
@@ -489,7 +498,7 @@ function DonationsContent() {
               <span className="sm:col-span-2 text-gray-900 text-sm break-words capitalize">
                 {donation.donor_type === "private"
                   ? "Private Donor"
-                  : "Government"}
+                  : "Organization"}
               </span>
             </div>
 
@@ -504,15 +513,6 @@ function DonationsContent() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
                   <span className="text-gray-500 font-medium text-xs sm:text-sm">
-                    Contact Person
-                  </span>
-                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.donor_contact || "N/A"}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
                     Contact Number
                   </span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
@@ -521,20 +521,33 @@ function DonationsContent() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Email</span>
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Email Address</span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.donor_email || "N/A"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
-                    Organization
-                  </span>
-                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.donor_organization || "N/A"}
-                  </span>
-                </div>
+                {donation.donor_organization && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                    <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                      Organization
+                    </span>
+                    <span className="sm:col-span-2 text-gray-900 text-sm break-words">
+                      {donation.donor_organization}
+                    </span>
+                  </div>
+                )}
+
+                {donation.donor_contact && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                    <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                      Contact Person
+                    </span>
+                    <span className="sm:col-span-2 text-gray-900 text-sm break-words">
+                      {donation.donor_contact}
+                    </span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
                   <span className="text-gray-500 font-medium text-xs sm:text-sm">Address</span>
@@ -546,16 +559,16 @@ function DonationsContent() {
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Department</span>
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Organization Name</span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.government_department || "N/A"}
+                    {donation.organization_name || donation.government_department || "N/A"}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Program</span>
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Program Name</span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.government_program || "N/A"}
+                    {donation.organization_program || donation.government_program || "N/A"}
                   </span>
                 </div>
 
@@ -564,30 +577,30 @@ function DonationsContent() {
                     Officer Name
                   </span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.government_officer_name || "N/A"}
+                    {donation.organization_officer_name || donation.government_officer_name || "N/A"}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Designation</span>
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Officer Designation</span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.government_officer_designation || "N/A"}
+                    {donation.organization_officer_designation || donation.government_officer_designation || "N/A"}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
                   <span className="text-gray-500 font-medium text-xs sm:text-sm">
-                    Contact Number
+                    Officer Contact Number
                   </span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.government_officer_contact || "N/A"}
+                    {donation.organization_officer_contact || donation.government_officer_contact || "N/A"}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Email</span>
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Email Address</span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.government_email || "N/A"}
+                    {donation.organization_email || donation.government_email || "N/A"}
                   </span>
                 </div>
               </>
@@ -657,15 +670,6 @@ function DonationsContent() {
                 </span>
               </div>
             )}
-          </div>
-
-          <div className="p-4 sm:p-6 border-t shrink-0 flex justify-end">
-            <button
-              onClick={handleCloseViewDialog}
-              className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition"
-            >
-              Close
-            </button>
           </div>
         </div>
       </div>
@@ -816,7 +820,7 @@ function DonationsContent() {
               <span className="text-gray-900 font-medium">
                 {donation.donor_type === "private"
                   ? donation.donor_name
-                  : donation.government_department}
+                  : (donation.organization_name || donation.government_department)}
               </span>
             </div>
           </div>
@@ -1071,7 +1075,7 @@ function DonationsContent() {
               >
                 <option value="ALL">All Donor Types</option>
                 <option value="private">Private Donor</option>
-                <option value="government">Government</option>
+                <option value="organization">Organization</option>
               </select>
             </div>
 
@@ -1160,7 +1164,7 @@ function DonationsContent() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filter === "FULFILLED"
-                    ? // For FULFILLED donations, group by need item and show all donors
+                    ? // For FULFILLED donations, group by need item using rowSpan so each donor row aligns straight across all columns
                     Object.entries(groupedFulfilledDonations)
                       .sort(
                         ([, a], [, b]) =>
@@ -1173,146 +1177,140 @@ function DonationsContent() {
                           (sum, d) => sum + d.quantity,
                           0,
                         );
-                        return (
-                          <tr
-                            key={needId}
-                            className="table-tr-hover"
-                          >
-                            <td className="table-td">
-                              <div className="flex items-center gap-2">
-                                {getStatusIcon("FULFILLED")}
-                                <span
-                                  className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge("FULFILLED")}`}
-                                >
-                                  FULFILLED
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              <div className="font-medium text-gray-900">
-                                {firstDonation.need_item_detail?.name ||
-                                  `Need ${firstDonation.need_item}`}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {needsMap.get(firstDonation.need_item)?.created_at
-                                ? new Date(needsMap.get(firstDonation.need_item)!.created_at).toLocaleDateString()
-                                : "-"}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {needsMap.get(firstDonation.need_item)
-                                ?.section_detail?.name || "-"}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                              {needsMap.get(firstDonation.need_item)
-                                ?.quantity_required
-                                ? `${needsMap.get(firstDonation.need_item)?.quantity_required} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`
-                                : "-"}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-purple-700 font-medium">
-                              {`${totalQuantity} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-green-700 font-medium">
-                              {needsMap.get(firstDonation.need_item)
-                                ?.quantity_confirmed !== undefined
-                                ? `${needsMap.get(firstDonation.need_item)?.quantity_confirmed} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`
-                                : "-"}
-                            </td>
-                            <td className={`px-6 py-4 text-sm font-medium ${Math.max(0, (needsMap.get(firstDonation.need_item)?.quantity_required || 0) - (needsMap.get(firstDonation.need_item)?.quantity_confirmed || 0)) > 0
-                              ? "text-red-600"
-                              : "text-green-600"
-                              }`}>
-                              {needsMap.get(firstDonation.need_item)
-                                ? `${Math.max(0, (needsMap.get(firstDonation.need_item)?.quantity_required || 0) - (needsMap.get(firstDonation.need_item)?.quantity_confirmed || 0))} ${needsMap.get(firstDonation.need_item)?.unit || "UNIT"}`
-                                : "-"}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              <div className="space-y-2">
-                                {needDonations.map((donation, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="flex items-center py-1"
+                        const rowSpan = needDonations.length;
+                        const needItem = needsMap.get(firstDonation.need_item);
+
+                        return needDonations.map((donation, idx) => {
+                          const isFirst = idx === 0;
+                          const isLast = idx === needDonations.length - 1;
+
+                          return (
+                            <tr
+                              key={`${needId}-${donation.id || idx}`}
+                              className={`table-tr-hover ${isLast ? "border-b-2 border-slate-200" : "border-b border-slate-100"}`}
+                            >
+                              {isFirst && (
+                                <>
+                                  <td
+                                    rowSpan={rowSpan}
+                                    className="table-td align-middle bg-white font-medium"
                                   >
-                                    {donation.quantity}{" "}
-                                    {donation.need_item_detail?.unit ||
-                                      "units"}
-                                  </div>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              <div className="space-y-2">
-                                {needDonations.map((donation, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="flex items-center py-1"
-                                  >
-                                    <span
-                                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${donation.donor_type === "private" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}
-                                    >
-                                      {donation.donor_type === "private"
-                                        ? "Private"
-                                        : "Government"}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              <div className="space-y-2">
-                                {needDonations.map((donation, idx) => (
-                                  <div key={idx} className="py-1">
-                                    <div className="text-gray-900 font-medium text-xs">
-                                      {donation.donor_type === "private"
-                                        ? donation.donor_name
-                                        : donation.government_department}
+                                    <div className="flex items-center gap-2">
+                                      {getStatusIcon("FULFILLED")}
+                                      <span
+                                        className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge("FULFILLED")}`}
+                                      >
+                                        FULFILLED
+                                      </span>
                                     </div>
-                                    {(donation.donor_type === "private"
-                                      ? donation.donor_email
-                                      : donation.government_email) && (
-                                        <div className="text-gray-500 text-[10px]">
-                                          {donation.donor_type === "private"
-                                            ? donation.donor_email
-                                            : donation.government_email}
-                                        </div>
-                                      )}
-                                  </div>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              <div className="space-y-2">
-                                {needDonations.map((donation, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="py-1 flex items-center whitespace-nowrap text-xs"
+                                  </td>
+                                  <td
+                                    rowSpan={rowSpan}
+                                    className="px-6 py-4 text-sm font-medium text-gray-900 align-middle bg-white"
                                   >
-                                    {new Date(
-                                      donation.created_at,
-                                    ).toLocaleDateString()}
-                                  </div>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              <div className="space-y-2">
-                                {needDonations.map((donation, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="flex items-center py-1"
+                                    <div>
+                                      {firstDonation.need_item_detail?.name ||
+                                        `Need ${firstDonation.need_item}`}
+                                    </div>
+                                  </td>
+                                  <td
+                                    rowSpan={rowSpan}
+                                    className="px-6 py-4 text-sm text-gray-600 align-middle bg-white"
                                   >
-                                    <button
-                                      onClick={() => setViewDialog(donation)}
-                                      className="btn btn-primary px-3 py-1 text-xs"
-                                    >
-                                      View
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            </td>
-                          </tr>
-                        );
+                                    {needItem?.created_at
+                                      ? new Date(needItem.created_at).toLocaleDateString()
+                                      : "-"}
+                                  </td>
+                                  <td
+                                    rowSpan={rowSpan}
+                                    className="px-6 py-4 text-sm text-gray-600 align-middle bg-white"
+                                  >
+                                    {needItem?.section_detail?.name || "-"}
+                                  </td>
+                                  <td
+                                    rowSpan={rowSpan}
+                                    className="px-6 py-4 text-sm text-gray-900 font-medium align-middle bg-white"
+                                  >
+                                    {needItem?.quantity_required
+                                      ? `${needItem.quantity_required} ${needItem.unit || "UNIT"}`
+                                      : "-"}
+                                  </td>
+                                  <td
+                                    rowSpan={rowSpan}
+                                    className="px-6 py-4 text-sm text-purple-700 font-medium align-middle bg-white"
+                                  >
+                                    {`${totalQuantity} ${needItem?.unit || "UNIT"}`}
+                                  </td>
+                                  <td
+                                    rowSpan={rowSpan}
+                                    className="px-6 py-4 text-sm text-green-700 font-medium align-middle bg-white"
+                                  >
+                                    {needItem?.quantity_confirmed !== undefined
+                                      ? `${needItem.quantity_confirmed} ${needItem.unit || "UNIT"}`
+                                      : "-"}
+                                  </td>
+                                  <td
+                                    rowSpan={rowSpan}
+                                    className={`px-6 py-4 text-sm font-medium align-middle bg-white ${Math.max(0, (needItem?.quantity_required || 0) - (needItem?.quantity_confirmed || 0)) > 0
+                                      ? "text-red-600"
+                                      : "text-green-600"
+                                      }`}
+                                  >
+                                    {needItem
+                                      ? `${Math.max(0, (needItem.quantity_required || 0) - (needItem.quantity_confirmed || 0))} ${needItem.unit || "UNIT"}`
+                                      : "-"}
+                                  </td>
+                                </>
+                              )}
+                              <td className="px-6 py-4 text-sm text-gray-900 font-medium align-middle">
+                                <div>
+                                  {donation.quantity}{" "}
+                                  {donation.need_item_detail?.unit || "units"}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm align-middle">
+                                <span
+                                  className={`px-3 py-1 rounded-full text-xs font-medium inline-block ${donation.donor_type === "private" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}
+                                >
+                                  {donation.donor_type === "private"
+                                    ? "Private"
+                                    : "Organization"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-sm align-middle">
+                                <div className="text-gray-900 font-medium">
+                                  {donation.donor_type === "private"
+                                    ? donation.donor_name
+                                    : (donation.organization_name || donation.government_department)}
+                                </div>
+                                {(donation.donor_type === "private"
+                                  ? donation.donor_email
+                                  : (donation.organization_email || donation.government_email)) && (
+                                    <div className="text-gray-500 text-xs mt-0.5">
+                                      {donation.donor_type === "private"
+                                        ? donation.donor_email
+                                        : (donation.organization_email || donation.government_email)}
+                                    </div>
+                                  )}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900 font-medium align-middle">
+                                <div>
+                                  {new Date(
+                                    donation.created_at,
+                                  ).toLocaleDateString()}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm align-middle">
+                                <button
+                                  onClick={() => setViewDialog(donation)}
+                                  className="btn btn-primary px-3 py-1 text-xs"
+                                >
+                                  View
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        });
                       })
                     : // For other statuses, show one row per donation
                     searchedDonations.map((donation) => {
@@ -1323,9 +1321,9 @@ function DonationsContent() {
                       return (
                         <tr
                           key={donation.id}
-                          className="table-tr-hover"
+                          className="table-tr-hover border-b border-slate-100"
                         >
-                          <td className="table-td">
+                          <td className="table-td align-middle">
                             <div className="flex items-center gap-2">
                               {getStatusIcon(displayStatus)}
                               <span
@@ -1335,40 +1333,40 @@ function DonationsContent() {
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-sm">
-                            <div className="font-medium text-gray-900">
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900 align-middle">
+                            <div>
                               {donation.need_item_detail?.name ||
                                 `Need ${donation.need_item}`}
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
+                          <td className="px-6 py-4 text-sm text-gray-600 align-middle">
                             {needsMap.get(donation.need_item)?.created_at
                               ? new Date(needsMap.get(donation.need_item)!.created_at).toLocaleDateString()
                               : "-"}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
+                          <td className="px-6 py-4 text-sm text-gray-600 align-middle">
                             {needsMap.get(donation.need_item)?.section_detail
                               ?.name || "-"}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium align-middle">
                             {needsMap.get(donation.need_item)
                               ?.quantity_required
                               ? `${needsMap.get(donation.need_item)?.quantity_required} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
                               : "-"}
                           </td>
-                          <td className="px-6 py-4 text-sm text-purple-700 font-medium">
+                          <td className="px-6 py-4 text-sm text-purple-700 font-medium align-middle">
                             {needsMap.get(donation.need_item)
                               ?.quantity_received !== undefined
                               ? `${needsMap.get(donation.need_item)?.quantity_received} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
                               : "-"}
                           </td>
-                          <td className="px-6 py-4 text-sm text-green-700 font-medium">
+                          <td className="px-6 py-4 text-sm text-green-700 font-medium align-middle">
                             {needsMap.get(donation.need_item)
                               ?.quantity_confirmed !== undefined
                               ? `${needsMap.get(donation.need_item)?.quantity_confirmed} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
                               : "-"}
                           </td>
-                          <td className={`px-6 py-4 text-sm font-medium ${Math.max(0, (needsMap.get(donation.need_item)?.quantity_required || 0) - (needsMap.get(donation.need_item)?.quantity_confirmed || 0)) > 0
+                          <td className={`px-6 py-4 text-sm font-medium align-middle ${Math.max(0, (needsMap.get(donation.need_item)?.quantity_required || 0) - (needsMap.get(donation.need_item)?.quantity_confirmed || 0)) > 0
                             ? "text-red-600"
                             : "text-green-600"
                             }`}>
@@ -1376,39 +1374,45 @@ function DonationsContent() {
                               ? `${Math.max(0, (needsMap.get(donation.need_item)?.quantity_required || 0) - (needsMap.get(donation.need_item)?.quantity_confirmed || 0))} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
                               : "-"}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {donation.quantity}{" "}
-                            {donation.need_item_detail?.unit || "units"}
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium align-middle">
+                            <div>
+                              {donation.quantity}{" "}
+                              {donation.need_item_detail?.unit || "units"}
+                            </div>
                           </td>
-                          <td className="px-6 py-4 text-sm">
+                          <td className="px-6 py-4 text-sm align-middle">
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium ${donation.donor_type === "private" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}
+                              className={`px-3 py-1 rounded-full text-xs font-medium inline-block ${donation.donor_type === "private" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}`}
                             >
-                              {donation.donor_type}
+                              {donation.donor_type === "private"
+                                ? "Private"
+                                : "Organization"}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-sm">
+                          <td className="px-6 py-4 text-sm align-middle">
                             <div className="text-gray-900 font-medium">
                               {donation.donor_type === "private"
                                 ? donation.donor_name
-                                : donation.government_department}
+                                : (donation.organization_name || donation.government_department)}
                             </div>
                             {(donation.donor_type === "private"
                               ? donation.donor_email
-                              : donation.government_email) && (
-                                <div className="text-gray-600 text-xs">
+                              : (donation.organization_email || donation.government_email)) && (
+                                <div className="text-gray-500 text-xs mt-0.5">
                                   {donation.donor_type === "private"
                                     ? donation.donor_email
-                                    : donation.government_email}
+                                    : (donation.organization_email || donation.government_email)}
                                 </div>
                               )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {new Date(
-                              donation.created_at,
-                            ).toLocaleDateString()}
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium align-middle">
+                            <div>
+                              {new Date(
+                                donation.created_at,
+                              ).toLocaleDateString()}
+                            </div>
                           </td>
-                          <td className="px-6 py-4 text-sm">
+                          <td className="px-6 py-4 text-sm align-middle">
                             <div className="flex gap-2">
                               {" "}
                               <button
@@ -1444,7 +1448,7 @@ function DonationsContent() {
                                   <button
                                     onClick={() => handleReceive(donation.id)}
                                     disabled={receiving === donation.id}
-                                    className="btn btn-primary bg-purple-600 hover:bg-purple-700 px-3 py-1 text-xs disabled:opacity-50"
+                                    className="btn btn-purple px-3 py-1 text-xs disabled:opacity-50"
                                   >
                                     {receiving === donation.id
                                       ? "Receiving..."

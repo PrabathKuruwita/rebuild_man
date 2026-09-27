@@ -676,6 +676,140 @@ class AdminApprovalTests(APITestCase):
         self.assertEqual(self.pending_org_admin.first_name, 'Pending')
         self.assertEqual(self.pending_org_admin.last_name, 'AdminUpdated')
 
+    def test_duplicate_username_org_admin_registration_rejected(self):
+        """
+        ATC_REG_001 / BUG_003:
+        Verify that Org Admin registration is rejected when the chosen username already exists,
+        rather than silently auto-incrementing the username with a numeric suffix (e.g., _1).
+        """
+        # Ensure an active user already exists with username 'sadev_nhsl'
+        User.objects.create_user(
+            username='sadev_nhsl',
+            email='existing_admin@example.com',
+            password='ExistingPass@123',
+            role='ORG_ADMIN'
+        )
+
+        self.client.force_authenticate(user=None)
+        url_register = reverse('auth_register_org_admin')
+        registration_data = {
+            'username': 'sadev_nhsl',
+            'email': 'pasinduofficial6@gmail.com',
+            'password': 'SecurePass@123',
+            'password2': 'SecurePass@123',
+            'first_name': 'Amal',
+            'last_name': 'Perera',
+            'phone_number': '+94 11 289 3500',
+            'organization_name': 'Homagama Hospital',
+            'organization_type': 'HOSPITAL',
+        }
+
+        res = self.client.post(url_register, registration_data, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', res.data)
+        self.assertIn('already exists', str(res.data['username']))
+
+        # Ensure no duplicate user or suffix-mutated user (sadev_nhsl_1) was created
+        self.assertFalse(User.objects.filter(username='sadev_nhsl_1').exists())
+        self.assertEqual(User.objects.filter(username='sadev_nhsl').count(), 1)
+
+    def test_duplicate_username_donor_registration_rejected(self):
+        """
+        Verify that standard donor registration is also rejected when username already exists.
+        """
+        User.objects.create_user(
+            username='donor_existing',
+            email='donor_existing@example.com',
+            password='ExistingPass@123',
+            role='DONOR'
+        )
+
+        self.client.force_authenticate(user=None)
+        url_register = reverse('auth_register')
+        registration_data = {
+            'username': 'donor_existing',
+            'email': 'new_donor@example.com',
+            'password': 'SecurePass@123',
+            'password2': 'SecurePass@123',
+            'first_name': 'Donor',
+            'last_name': 'Test',
+            'phone_number': '+94771234567',
+        }
+
+        res = self.client.post(url_register, registration_data, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', res.data)
+        self.assertIn('already exists', str(res.data['username']))
+        self.assertFalse(User.objects.filter(username='donor_existing_1').exists())
+
+    def test_donation_single_donor_type_isolation(self):
+        """
+        Verify that creating a private donation strips out any residual organization details,
+        ensuring a donation request uses only ONE donor type at a time.
+        """
+        org = Organization.objects.create(
+            name="Isolation General Hospital",
+            registration_number="REG9988",
+            address="456 Health Ave",
+            district="colombo",
+            org_type="HOSPITAL"
+        )
+        section = Section.objects.create(
+            organization=org,
+            name="Pediatric Ward"
+        )
+        need_item = NeedItem.objects.create(
+            section=section,
+            name="Hospital Beds",
+            priority="CRITICAL",
+            quantity_required=10,
+            unit="UNIT"
+        )
+
+        donor_user = User.objects.create_user(
+            username='donor_isolation_test',
+            email='isolation@example.com',
+            password='Password123!',
+            role='DONOR'
+        )
+        self.client.force_authenticate(user=donor_user)
+        url_donations = reverse('donation-list')
+
+        # Create private donation with accidental/residual org fields
+        donation_payload = {
+            'need_item': need_item.id,
+            'quantity': 2,
+            'status': 'PENDING',
+            'estimated_delivery_date': '2026-10-15',
+            'donor_type': 'private',
+            'donor_name': 'Pasindu Weragala',
+            'donor_email': 'pasindu@example.com',
+            'donor_phone': '0763372067',
+            'donor_address': '1, Hokandara East, Hokandara',
+            # Residual organization fields
+            'organization_name': 'Shakthi',
+            'organization_program': 'Arogya',
+            'organization_officer_name': 'Kanchana Herath',
+            'organization_officer_designation': 'President',
+            'organization_officer_contact': '0762287654',
+            'organization_email': 'probusiness@example.com',
+        }
+
+        res = self.client.post(url_donations, donation_payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        created_donation = Donation.objects.get(id=res.data['id'])
+        self.assertEqual(created_donation.donor_type, 'private')
+        self.assertEqual(created_donation.donor_name, 'Pasindu Weragala')
+        self.assertEqual(created_donation.donor_email, 'pasindu@example.com')
+        # Org fields must be wiped clean
+        self.assertEqual(created_donation.organization_name, '')
+        self.assertEqual(created_donation.organization_program, '')
+        self.assertEqual(created_donation.organization_officer_name, '')
+        self.assertEqual(created_donation.organization_officer_designation, '')
+        self.assertEqual(created_donation.organization_officer_contact, '')
+        self.assertEqual(created_donation.organization_email, '')
+
 
 
 

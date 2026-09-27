@@ -1,27 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Donation, NeedItem } from "@/lib/api";
 import { Loader2, X } from "lucide-react";
+import SuccessCheckmark from "@/components/SuccessCheckmark";
 
 export interface DonationFormData {
   quantity: number;
   message: string;
   estimatedDeliveryDate: string;
-  donorType: "private" | "government";
+  donorType: "private" | "organization";
   donorName: string;
   donorEmail: string;
   donorPhone: string;
-  donorOrganization: string;
+  donorOrganization?: string;
   donorAddress: string;
-  donorContact: string;
-  governmentDepartment: string;
-  governmentProgram: string;
-  governmentOfficerName: string;
-  governmentOfficerDesignation: string;
-  governmentOfficerContact: string;
-  governmentEmail: string;
+  donorContact?: string;
+  organizationName?: string;
+  organizationProgram?: string;
+  organizationOfficerName?: string;
+  organizationOfficerDesignation?: string;
+  organizationOfficerContact?: string;
+  organizationEmail?: string;
+  governmentDepartment?: string;
+  governmentProgram?: string;
+  governmentOfficerName?: string;
+  governmentOfficerDesignation?: string;
+  governmentOfficerContact?: string;
+  governmentEmail?: string;
 }
 
 interface DonateModalProps {
@@ -40,7 +46,7 @@ export default function DonateModal({
   const [quantity, setQuantity] = useState<number>(1);
   const [message, setMessage] = useState("");
   const [estimatedDeliveryDate, setEstimatedDeliveryDate] = useState("");
-  const [donorType, setDonorType] = useState<"private" | "government">(
+  const [donorType, setDonorType] = useState<"private" | "organization">(
     "private",
   );
 
@@ -48,39 +54,47 @@ export default function DonateModal({
   const [donorName, setDonorName] = useState("");
   const [donorEmail, setDonorEmail] = useState("");
   const [donorPhone, setDonorPhone] = useState("");
-  const [donorOrganization, setDonorOrganization] = useState("");
   const [donorAddress, setDonorAddress] = useState("");
-  const [donorContact, setDonorContact] = useState("");
 
-  // Government donor fields
-  const [governmentDepartment, setGovernmentDepartment] = useState("");
-  const [governmentProgram, setGovernmentProgram] = useState("");
-  const [governmentOfficerName, setGovernmentOfficerName] = useState("");
-  const [governmentOfficerDesignation, setGovernmentOfficerDesignation] =
+  // Organization donor fields
+  const [organizationName, setOrganizationName] = useState("");
+  const [organizationProgram, setOrganizationProgram] = useState("");
+  const [organizationOfficerName, setOrganizationOfficerName] = useState("");
+  const [organizationOfficerDesignation, setOrganizationOfficerDesignation] =
     useState("");
-  const [governmentOfficerContact, setGovernmentOfficerContact] = useState("");
-  const [governmentEmail, setGovernmentEmail] = useState("");
+  const [organizationOfficerContact, setOrganizationOfficerContact] = useState("");
+  const [organizationEmail, setOrganizationEmail] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   if (!isOpen) return null;
 
+  const handleDonorTypeChange = (newType: "private" | "organization") => {
+    setDonorType(newType);
+    if (newType === "private") {
+      setOrganizationName("");
+      setOrganizationProgram("");
+      setOrganizationOfficerName("");
+      setOrganizationOfficerDesignation("");
+      setOrganizationOfficerContact("");
+      setOrganizationEmail("");
+    } else {
+      setDonorName("");
+      setDonorEmail("");
+      setDonorPhone("");
+      setDonorAddress("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
 
     // Check if user is authenticated
     const token = localStorage.getItem("accessToken");
     if (!token) {
-      setError(
-        "Please sign in to make a donation. Redirecting to login page...",
-      );
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 2000);
+      window.location.href = "/login";
       setIsLoading(false);
       return;
     }
@@ -101,65 +115,67 @@ export default function DonateModal({
         donationData.donor_name = donorName;
         donationData.donor_email = donorEmail;
         donationData.donor_phone = donorPhone;
-        donationData.donor_organization = donorOrganization;
         donationData.donor_address = donorAddress;
-        donationData.donor_contact = donorContact;
+        donationData.organization_name = "";
+        donationData.organization_program = "";
+        donationData.organization_officer_name = "";
+        donationData.organization_officer_designation = "";
+        donationData.organization_officer_contact = "";
+        donationData.organization_email = "";
       } else {
-        donationData.government_department = governmentDepartment;
-        donationData.government_program = governmentProgram;
-        donationData.government_officer_name = governmentOfficerName;
-        donationData.government_officer_designation =
-          governmentOfficerDesignation;
-        donationData.government_officer_contact = governmentOfficerContact;
-        donationData.government_email = governmentEmail;
+        donationData.organization_name = organizationName;
+        donationData.organization_program = organizationProgram;
+        donationData.organization_officer_name = organizationOfficerName;
+        donationData.organization_officer_designation =
+          organizationOfficerDesignation;
+        donationData.organization_officer_contact = organizationOfficerContact;
+        donationData.organization_email = organizationEmail;
+        donationData.donor_name = "";
+        donationData.donor_email = "";
+        donationData.donor_phone = "";
+        donationData.donor_address = "";
       }
 
       await createDonation(donationData);
 
-      // Show success message for 3 seconds
       setSuccess(true);
       setIsLoading(false);
-
-      // Close modal after 3 seconds
-      setTimeout(() => {
-        // Reset form
-        setQuantity(1);
-        setMessage("");
-        setEstimatedDeliveryDate("");
-        setDonorType("private");
-        setDonorName("");
-        setDonorEmail("");
-        setDonorPhone("");
-        setDonorOrganization("");
-        setDonorAddress("");
-        setDonorContact("");
-        setGovernmentDepartment("");
-        setGovernmentProgram("");
-        setGovernmentOfficerName("");
-        setGovernmentOfficerDesignation("");
-        setGovernmentOfficerContact("");
-        setGovernmentEmail("");
-        setSuccess(false);
-        onSuccess();
-        onClose();
-      }, 3000);
+      onSuccess();
     } catch (err: unknown) {
       setIsLoading(false);
-      const message =
-        err instanceof Error ? err.message : "Failed to create donation";
-      if (message.includes("401")) {
-        setError("Your session has expired. Please sign in again.");
-      } else if (message.includes("credentials")) {
-        setError("Authentication failed. Please sign in again.");
-      } else {
-        setError(message);
-      }
+      console.error("Donation creation error:", err);
     }
   };
 
+  const handleDismiss = () => {
+    setQuantity(1);
+    setMessage("");
+    setEstimatedDeliveryDate("");
+    setDonorType("private");
+    setDonorName("");
+    setDonorEmail("");
+    setDonorPhone("");
+    setDonorAddress("");
+    setOrganizationName("");
+    setOrganizationProgram("");
+    setOrganizationOfficerName("");
+    setOrganizationOfficerDesignation("");
+    setOrganizationOfficerContact("");
+    setOrganizationEmail("");
+    setSuccess(false);
+    onClose();
+  };
+
   return (
-    <div className="fixed inset-0 z-[2000] bg-transparent flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          handleDismiss();
+        }
+      }}
+      className="fixed inset-0 z-[2000] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200"
+    >
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
           <div>
@@ -177,61 +193,44 @@ export default function DonateModal({
             )}
           </div>
           <button
-            onClick={onClose}
+            onClick={handleDismiss}
             aria-label="Close donation modal"
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors cursor-pointer"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {success ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <div className="text-4xl text-green-600">✓</div>
+            <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+              <div className="mb-5 flex items-center justify-center">
+                <SuccessCheckmark size="xl" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Donation Submitted Successfully!
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Thank you for your generous donation. The organization will
-                review and confirm your donation shortly. This modal will close
-                automatically in a moment.
-              </p>
-              <div className="w-full bg-gray-100 rounded-full h-1">
-                <div className="w-full bg-green-600 h-1 rounded-full animate-pulse"></div>
+              <div className="animate-success-content space-y-2 max-w-md">
+                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
+                  Donation Submitted Successfully!
+                </h3>
+                <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
+                  Thank you for your generous donation. The organization will
+                  review and confirm your donation shortly.
+                </p>
               </div>
             </div>
           ) : (
             <>
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
-                  <p>{error}</p>
-                  {error.includes("sign in") && (
-                    <Link href="/login">
-                      <button
-                        type="button"
-                        className="mt-2 text-blue-600 hover:text-blue-800 font-semibold underline"
-                      >
-                        Go to Sign In →
-                      </button>
-                    </Link>
-                  )}
-                </div>
-              )}
-
               {/* Quantity Section */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quantity to Donate ({needItem.unit})
+                  Quantity to Donate ({needItem.unit}) <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center gap-4">
                   <input
                     type="number"
                     min="1"
                     max={needItem.quantity_required}
+                    required
                     value={quantity}
                     onChange={(e) =>
                       setQuantity(Math.max(1, parseInt(e.target.value) || 1))
@@ -264,10 +263,11 @@ export default function DonateModal({
               {/* Delivery Date */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Estimated Delivery Date
+                  Estimated Delivery Date <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
+                  required
                   value={estimatedDeliveryDate}
                   onChange={(e) => setEstimatedDeliveryDate(e.target.value)}
                   aria-label="Estimated delivery date"
@@ -281,29 +281,25 @@ export default function DonateModal({
                   Donor Type
                 </label>
                 <div className="flex gap-4">
-                  <label className="flex items-center">
+                  <label className="flex items-center cursor-pointer">
                     <input
                       type="radio"
                       value="private"
                       checked={donorType === "private"}
-                      onChange={(e) =>
-                        setDonorType(e.target.value as "private" | "government")
-                      }
+                      onChange={() => handleDonorTypeChange("private")}
                       className="mr-2"
                     />
                     <span>Private Donor</span>
                   </label>
-                  <label className="flex items-center">
+                  <label className="flex items-center cursor-pointer">
                     <input
                       type="radio"
-                      value="government"
-                      checked={donorType === "government"}
-                      onChange={(e) =>
-                        setDonorType(e.target.value as "private" | "government")
-                      }
+                      value="organization"
+                      checked={donorType === "organization"}
+                      onChange={() => handleDonorTypeChange("organization")}
                       className="mr-2"
                     />
-                    <span>Government</span>
+                    <span>Organization</span>
                   </label>
                 </div>
               </div>
@@ -317,101 +313,98 @@ export default function DonateModal({
                   <div className="grid grid-cols-2 gap-4">
                     <input
                       type="text"
-                      placeholder="Full Name"
+                      required
+                      placeholder="Full Name (e.g., John Doe) *"
                       value={donorName}
                       onChange={(e) => setDonorName(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                     <input
                       type="email"
-                      placeholder="Email"
+                      required
+                      placeholder="Email Address *"
                       value={donorEmail}
                       onChange={(e) => setDonorEmail(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="tel"
-                      placeholder="Phone"
-                      value={donorPhone}
-                      onChange={(e) => setDonorPhone(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Contact Person"
-                      value={donorContact}
-                      onChange={(e) => setDonorContact(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                   </div>
-                  <div className="space-y-4">
+                  <div>
                     <input
-                      type="text"
-                      placeholder="Organization"
-                      value={donorOrganization}
-                      onChange={(e) => setDonorOrganization(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      type="tel"
+                      required
+                      placeholder="Contact Number *"
+                      value={donorPhone}
+                      onChange={(e) => setDonorPhone(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
+                  </div>
+                  <div>
                     <textarea
-                      placeholder="Address"
+                      required
+                      placeholder="Address *"
                       value={donorAddress}
                       onChange={(e) => setDonorAddress(e.target.value)}
                       rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4 bg-green-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-900">
-                    Government Information
+                    Organization Information
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <input
                       type="text"
-                      placeholder="Department"
-                      value={governmentDepartment}
-                      onChange={(e) => setGovernmentDepartment(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                      placeholder="Organization Name *"
+                      value={organizationName}
+                      onChange={(e) => setOrganizationName(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                     <input
                       type="text"
-                      placeholder="Program"
-                      value={governmentProgram}
-                      onChange={(e) => setGovernmentProgram(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Program Name"
+                      value={organizationProgram}
+                      onChange={(e) => setOrganizationProgram(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                     <input
                       type="text"
-                      placeholder="Officer Name"
-                      value={governmentOfficerName}
-                      onChange={(e) => setGovernmentOfficerName(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                      placeholder="Officer Name *"
+                      value={organizationOfficerName}
+                      onChange={(e) => setOrganizationOfficerName(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                     <input
                       type="text"
-                      placeholder="Officer Designation"
-                      value={governmentOfficerDesignation}
+                      required
+                      placeholder="Officer Designation *"
+                      value={organizationOfficerDesignation}
                       onChange={(e) =>
-                        setGovernmentOfficerDesignation(e.target.value)
+                        setOrganizationOfficerDesignation(e.target.value)
                       }
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                     <input
                       type="tel"
-                      placeholder="Officer Contact"
-                      value={governmentOfficerContact}
+                      required
+                      placeholder="Officer Contact Number *"
+                      value={organizationOfficerContact}
                       onChange={(e) =>
-                        setGovernmentOfficerContact(e.target.value)
+                        setOrganizationOfficerContact(e.target.value)
                       }
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                     <input
                       type="email"
-                      placeholder="Email"
-                      value={governmentEmail}
-                      onChange={(e) => setGovernmentEmail(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                      placeholder="Email Address *"
+                      value={organizationEmail}
+                      onChange={(e) => setOrganizationEmail(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                   </div>
                 </div>
@@ -421,8 +414,8 @@ export default function DonateModal({
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={onClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                  onClick={handleDismiss}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 font-medium transition-all duration-150 cursor-pointer"
                 >
                   Cancel
                 </button>

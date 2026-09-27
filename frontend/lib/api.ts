@@ -160,19 +160,25 @@ export interface Donation {
   message: string;
   estimated_delivery_date: string | null;
   created_at: string;
-  donor_type: "private" | "government";
+  donor_type: "private" | "organization" | "government";
   donor_name: string;
   donor_contact: string;
   donor_organization: string;
   donor_address: string;
   donor_email: string;
   donor_phone: string;
-  government_department: string;
-  government_program: string;
-  government_officer_name: string;
-  government_officer_designation: string;
-  government_officer_contact: string;
-  government_email: string;
+  organization_name?: string;
+  organization_program?: string;
+  organization_officer_name?: string;
+  organization_officer_designation?: string;
+  organization_officer_contact?: string;
+  organization_email?: string;
+  government_department?: string;
+  government_program?: string;
+  government_officer_name?: string;
+  government_officer_designation?: string;
+  government_officer_contact?: string;
+  government_email?: string;
   donation_letter_file: string | null;
   confirmed_by_name?: string;
   confirmed_by_role?: string;
@@ -429,10 +435,11 @@ export async function updateCurrentUser(data: {
 // --- END AUTH FUNCTIONS ---
 
 // Organizations
-export const getOrganizations = async () => {
+export const getOrganizations = async (all?: boolean) => {
+  const query = all ? "?all=true" : "";
   const response = await fetchAPI<
     ApiListResponse<Organization> | Organization[]
-  >("/organizations/");
+  >(`/organizations/${query}`);
   return unwrapListResponse(response);
 };
 export const getOrganization = (id: number) =>
@@ -490,10 +497,12 @@ export const deleteSection = (id: number) =>
 export const getNeeds = async (
   priority?: string,
   excludeFulfilled?: boolean,
+  all?: boolean,
 ) => {
   const params = new URLSearchParams();
   if (priority) params.append("priority", priority);
   if (excludeFulfilled) params.append("exclude_fulfilled", "true");
+  if (all) params.append("all", "true");
   const query = params.toString() ? `?${params.toString()}` : "";
   const response = await fetchAPI<ApiListResponse<NeedItem> | NeedItem[]>(
     query ? `/needs/${query}` : "/needs/",
@@ -697,6 +706,11 @@ export interface SystemStats {
   verified_hospitals: number;
   donors_onboarded: number;
   delivery_success_rate: number;
+  monthly_trends?: {
+    month: string;
+    donations: number;
+    fulfilled: number;
+  }[];
 }
 
 export const getSystemStats = async (): Promise<SystemStats> => {

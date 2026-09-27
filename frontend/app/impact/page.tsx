@@ -20,28 +20,43 @@ export default function ImpactPage() {
       try {
         const [statsData, orgsData, needsData] = await Promise.all([
           getSystemStats().catch(() => null),
-          getOrganizations().catch(() => []),
-          getNeeds().catch(() => []),
+          getOrganizations(true).catch(() => []),
+          getNeeds(undefined, false, true).catch(() => []),
         ]);
 
         setStats(statsData);
         setOrganizations(orgsData);
 
-        // Find fulfilled or highly progressed needs for success stories
-        const fulfilled = needsData
-          .filter((need) => need.quantity_required > 0 && (need.quantity_received / need.quantity_required) * 100 > 80)
-          .slice(0, 3);
-        
-        const storiesList = fulfilled.map((item, index) => ({
-          title: `Success Story ${index + 1}: ${item.name}`,
-          body: `Thanks to our donors, the requirement for ${item.name} reached ${Math.round((item.quantity_received / item.quantity_required) * 100)}% coverage, significantly improving local healthcare delivery.`,
-          progress: Math.round((item.quantity_received / item.quantity_required) * 100),
-        }));
+        // Find fulfilled or highest progressed needs across all organizations for success stories
+        const storiesSource = needsData
+          .filter((need) => need.quantity_required > 0)
+          .map((item) => {
+            const receivedOrConfirmed = Math.max(item.quantity_received || 0, item.quantity_confirmed || 0);
+            const progress = Math.min(100, Math.round((receivedOrConfirmed / item.quantity_required) * 100));
+            return {
+              item,
+              progress,
+            };
+          })
+          .sort((a, b) => b.progress - a.progress || (b.item.quantity_received || 0) - (a.item.quantity_received || 0));
+
+        const topProgressed = storiesSource.filter((s) => s.progress >= 50).slice(0, 3);
+        const selectedForStories = topProgressed.length > 0 ? topProgressed : storiesSource.slice(0, 3);
+
+        const storiesList = selectedForStories.map(({ item, progress }, index) => {
+          const orgName = item.section_detail?.organization_name;
+          const facilityText = orgName ? ` for ${orgName}` : "";
+          return {
+            title: `Success Story ${index + 1}: ${item.name}`,
+            body: `Thanks to our donors, the requirement for ${item.name}${facilityText} reached ${progress}% coverage, significantly improving local healthcare delivery.`,
+            progress,
+          };
+        });
 
         if (storiesList.length === 0) {
           storiesList.push({
             title: "Building Momentum",
-            body: "The platform is collecting the first wave of support and preparing measurable success stories across the nation.",
+            body: "The platform is coordinating donations across registered healthcare organizations and preparing measurable milestones.",
             progress: 100,
           });
         }
@@ -58,11 +73,11 @@ export default function ImpactPage() {
 
   if (loading) return <PageLoading />;
 
-  // Calculate real stats or use fallbacks for display
-  const provinces = stats ? stats.provinces_covered : 9;
-  const totalOrgs = stats ? stats.verified_hospitals : (organizations.length || 120);
-  const donorsOnboarded = stats ? stats.donors_onboarded.toLocaleString() : "4,500+";
-  const deliverySuccess = stats ? `${stats.delivery_success_rate}%` : "98%";
+  // Calculate real stats based on active platform data
+  const provinces = stats ? stats.provinces_covered : 0;
+  const totalOrgs = stats ? stats.verified_hospitals : organizations.length;
+  const donorsOnboarded = stats ? stats.donors_onboarded.toLocaleString() : "0";
+  const deliverySuccess = stats ? `${stats.delivery_success_rate}%` : "100%";
 
   // Organizations are passed directly to the map
 
@@ -114,7 +129,7 @@ export default function ImpactPage() {
       {/* Analytics Chart Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 mt-8">
         <div className="bg-white rounded-none shadow-xl shadow-slate-200/50 p-6 sm:p-10 border border-slate-100">
-          <AnalyticsLineChart />
+          <AnalyticsLineChart data={stats?.monthly_trends} />
         </div>
       </div>
 
