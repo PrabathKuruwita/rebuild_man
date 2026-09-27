@@ -160,7 +160,7 @@ export interface Donation {
   message: string;
   estimated_delivery_date: string | null;
   created_at: string;
-  donor_type: "private" | "organization" | "government";
+  donor_type: "private" | "organization";
   donor_name: string;
   donor_contact: string;
   donor_organization: string;
