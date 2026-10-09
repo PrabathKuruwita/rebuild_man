@@ -24,6 +24,9 @@ import {
   Activity,
   Map as MapIcon,
   Send,
+  CheckCircle2,
+  BarChart3,
+  Inbox,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -187,9 +190,9 @@ export default function AdminDashboard() {
           .slice(0, 6);
         setDistrictImpact(district);
 
-        // 3. Impact Stories
+        // 3. Impact Stories (only with real donor support)
         const topNeeds = allNeeds
-          .filter((n) => n.quantity_required > 0)
+          .filter((n) => n.quantity_required > 0 && n.quantity_received > 0)
           .map((n) => ({
             name: n.name,
             progress: Math.min(
@@ -207,13 +210,6 @@ export default function AdminDashboard() {
           progress: item.progress,
         }));
 
-        if (storiesList.length === 0) {
-          storiesList.push({
-            title: "Building Momentum",
-            body: "The platform is collecting the first wave of support and preparing measurable success stories.",
-            progress: 0,
-          });
-        }
         setStories(storiesList);
 
         // 4. Recent Successful Donations (Only Fulfilled records)
@@ -371,7 +367,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <h2 className="text-status-critical font-bold text-lg">
-                {stats.criticalNeeds} Critical Needs Requiring Attention
+                Critical Needs Requiring Attention
               </h2>
               <p className="text-rose-700/80 text-sm font-medium">
                 Urgent attention required. {stats.unfulfilledCriticalNeeds} unfulfilled items remain.
@@ -395,21 +391,21 @@ export default function AdminDashboard() {
             value={stats.organizations}
             subtext="Active organizations"
             icon={<Building2 size={20} />}
-            status="neutral"
+            color="blue"
           />
           <StatsCard
             label="Sections"
             value={stats.sections}
             subtext="Sections tracked"
             icon={<Layers size={20} />}
-            status="neutral"
+            color="amber"
           />
           <StatsCard
             label="Total Needs"
             value={stats.totalNeeds}
             subtext="Items registered"
             icon={<ClipboardList size={20} />}
-            status="success"
+            color="emerald"
           />
         </div>
       </div>
@@ -455,8 +451,16 @@ export default function AdminDashboard() {
             </div>
             <div className="p-6">
               {criticalNeeds.length === 0 ? (
-                <div className="py-10 text-center">
-                  <p className="text-slate-400">No critical needs reported</p>
+                <div className="py-12 px-6 flex flex-col items-center justify-center text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-3 shadow-xs">
+                    <Inbox size={24} />
+                  </div>
+                  <h4 className="font-heading font-bold text-slate-900 text-base mb-1">
+                    No Critical Needs Reported
+                  </h4>
+                  <p className="text-sm text-slate-500 max-w-md">
+                    All emergency and critical needs across organizations are currently satisfied.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -617,29 +621,39 @@ export default function AdminDashboard() {
               </span>
             </div>
           </div>
-          <div className="grid grid-cols-6 items-end gap-3 h-[200px] pt-4">
-            {monthlyImpact.map((month) => {
-              const maxVal = Math.max(...monthlyImpact.map((m) => m.value), 1);
-              const height = Math.max(
-                10,
-                Math.round((month.value / maxVal) * 140),
-              );
-              return (
-                <div key={month.label} className="flex flex-col items-center">
-                  <div className="mb-2 text-[10px] font-bold text-slate-500">
-                    {month.value.toLocaleString()} units
+          {monthlyImpact.length === 0 || monthlyImpact.every((m) => m.value === 0) ? (
+            <div className="h-[200px] flex flex-col items-center justify-center text-center p-6 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 mt-4">
+              <BarChart3 className="w-10 h-10 text-slate-300 mb-2" />
+              <p className="font-heading font-bold text-slate-800 text-sm">No Donation Trends Yet</p>
+              <p className="font-body text-xs text-slate-500 mt-1 max-w-xs">
+                Monthly trend bars will display once units are pledged or received.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-6 items-end gap-3 h-[200px] pt-4">
+              {monthlyImpact.map((month) => {
+                const maxVal = Math.max(...monthlyImpact.map((m) => m.value), 1);
+                const height = Math.max(
+                  10,
+                  Math.round((month.value / maxVal) * 140),
+                );
+                return (
+                  <div key={month.label} className="flex flex-col items-center">
+                    <div className="mb-2 text-[10px] font-bold text-slate-500">
+                      {month.value.toLocaleString()} units
+                    </div>
+                    <div
+                      className="w-full rounded-t-md bg-gradient-to-t from-blue-500 to-cyan-400 transition-all duration-500"
+                      style={{ height: `${height}px` }}
+                    />
+                    <div className="mt-2 text-xs font-medium text-slate-600">
+                      {month.label}
+                    </div>
                   </div>
-                  <div
-                    className="w-full rounded-t-md bg-gradient-to-t from-blue-500 to-cyan-400 transition-all duration-500"
-                    style={{ height: `${height}px` }}
-                  />
-                  <div className="mt-2 text-xs font-medium text-slate-600">
-                    {month.label}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Regional Distribution */}
@@ -658,12 +672,16 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {districtImpact.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
-              District-level impact will appear as confirmed donations increase.
-            </p>
+          {districtImpact.length === 0 || districtImpact.every((d) => d.received === 0 && d.requested === 0) ? (
+            <div className="h-[200px] flex flex-col items-center justify-center text-center p-6 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 mt-4">
+              <MapIcon className="w-10 h-10 text-slate-300 mb-2" />
+              <p className="font-heading font-bold text-slate-800 text-sm">No Regional Distribution Data</p>
+              <p className="font-body text-xs text-slate-500 mt-1 max-w-xs">
+                District-level impact will appear as confirmed donations increase across regions.
+              </p>
+            </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 pt-4">
               {districtImpact.map((item) => {
                 const width = item.requested > 0
                   ? Math.min(100, Math.round((item.received / item.requested) * 100))
@@ -701,28 +719,38 @@ export default function AdminDashboard() {
             <p className="text-xs text-slate-500 font-medium mt-1">
               A snapshot of needs that received strong donor support
             </p>
-            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
-              {stories.map((story) => (
-                <div
-                  key={story.title}
-                  className="rounded-xl border border-amber-100 bg-gradient-to-b from-amber-50/70 to-white p-4"
-                >
-                  <h4 className="font-semibold text-slate-900 text-sm">{story.title}</h4>
-                  <p className="mt-2 min-h-16 text-xs leading-relaxed text-slate-600">
-                    {story.body}
-                  </p>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-amber-100">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500"
-                      style={{ width: `${story.progress}%` }}
-                    />
+            {stories.length === 0 ? (
+              <div className="mt-5 p-8 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 flex flex-col items-center justify-center">
+                <CheckCircle2 className="w-10 h-10 text-slate-300 mb-2" />
+                <h4 className="font-bold text-slate-800 text-sm">No Impact Stories Yet</h4>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                  Success stories will automatically populate once donations begin fulfilling hospital needs.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+                {stories.map((story) => (
+                  <div
+                    key={story.title}
+                    className="rounded-xl border border-amber-100 bg-gradient-to-b from-amber-50/70 to-white p-4"
+                  >
+                    <h4 className="font-semibold text-slate-900 text-sm">{story.title}</h4>
+                    <p className="mt-2 min-h-16 text-xs leading-relaxed text-slate-600">
+                      {story.body}
+                    </p>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-amber-100">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500"
+                        style={{ width: `${story.progress}%` }}
+                      />
+                    </div>
+                    <p className="mt-2 text-[10px] font-bold text-amber-700">
+                      {story.progress}% coverage
+                    </p>
                   </div>
-                  <p className="mt-2 text-[10px] font-bold text-amber-700">
-                    {story.progress}% coverage
-                  </p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -799,48 +827,58 @@ export default function AdminDashboard() {
           </div>
         </div>
  
-        <div className="space-y-4">
-          <div className="flex justify-between items-center text-sm">
-            <span className="font-semibold text-slate-700">
-              Current needs coverage is at{" "}
-              <span className={impactStats.totalReceived > impactStats.totalRequired ? "text-rose-600 font-bold" : "text-emerald-600 font-bold"}>
-                {impactStats.totalRequired > 0 ? Math.round((impactStats.totalReceived / impactStats.totalRequired) * 100) : 0}%
+        {impactStats.totalRequired === 0 ? (
+          <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 flex flex-col items-center justify-center mt-4">
+            <ClipboardList className="w-10 h-10 text-slate-300 mb-2" />
+            <h4 className="font-bold text-slate-800 text-sm">No Requirements Registered</h4>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm">
+              Overall platform needs coverage will calculate automatically once organizations post item requirements.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center text-sm">
+              <span className="font-semibold text-slate-700">
+                Current needs coverage is at{" "}
+                <span className={impactStats.totalReceived > impactStats.totalRequired ? "text-rose-600 font-bold" : "text-emerald-600 font-bold"}>
+                  {impactStats.totalRequired > 0 ? Math.round((impactStats.totalReceived / impactStats.totalRequired) * 100) : 0}%
+                </span>
               </span>
-            </span>
-            <span className="text-xs text-slate-500 font-medium">
-              Requested: {impactStats.totalRequired.toLocaleString()} units
-            </span>
+              <span className="text-xs text-slate-500 font-medium">
+                Requested: {impactStats.totalRequired.toLocaleString()} units
+              </span>
+            </div>
+   
+            <div className="h-4 w-full rounded-full bg-slate-100 overflow-hidden flex">
+              {/* Base Received Segment (emerald-500) */}
+              {impactStats.baseReceived > 0 && (
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-1000"
+                  style={{
+                    width: `${(impactStats.baseReceived / (impactStats.baseReceived + impactStats.totalRemaining + impactStats.totalOverAllocated)) * 100}%`,
+                  }}
+                />
+              )}
+              {/* Remaining Segment (slate-200) */}
+              {impactStats.totalRemaining > 0 && (
+                <div
+                  className="h-full bg-slate-200 transition-all duration-1000"
+                  style={{
+                    width: `${(impactStats.totalRemaining / (impactStats.baseReceived + impactStats.totalRemaining + impactStats.totalOverAllocated)) * 100}%`,
+                  }}
+                />
+              )}
+              {impactStats.totalOverAllocated > 0 && (
+                <div
+                  className="h-full bg-rose-500 transition-all duration-1000"
+                  style={{
+                    width: `${(impactStats.totalOverAllocated / (impactStats.baseReceived + impactStats.totalRemaining + impactStats.totalOverAllocated)) * 100}%`,
+                  }}
+                />
+              )}
+            </div>
           </div>
- 
-          <div className="h-4 w-full rounded-full bg-slate-100 overflow-hidden flex">
-            {/* Base Received Segment (emerald-500) */}
-            {impactStats.baseReceived > 0 && (
-              <div
-                className="h-full bg-emerald-500 transition-all duration-1000"
-                style={{
-                  width: `${(impactStats.baseReceived / (impactStats.baseReceived + impactStats.totalRemaining + impactStats.totalOverAllocated)) * 100}%`,
-                }}
-              />
-            )}
-            {/* Remaining Segment (slate-200) */}
-            {impactStats.totalRemaining > 0 && (
-              <div
-                className="h-full bg-slate-200 transition-all duration-1000"
-                style={{
-                  width: `${(impactStats.totalRemaining / (impactStats.baseReceived + impactStats.totalRemaining + impactStats.totalOverAllocated)) * 100}%`,
-                }}
-              />
-            )}
-            {impactStats.totalOverAllocated > 0 && (
-              <div
-                className="h-full bg-rose-500 transition-all duration-1000"
-                style={{
-                  width: `${(impactStats.totalOverAllocated / (impactStats.baseReceived + impactStats.totalRemaining + impactStats.totalOverAllocated)) * 100}%`,
-                }}
-              />
-            )}
-          </div>
-        </div>
+        )}
       </div>
 
       <BroadcastModal 

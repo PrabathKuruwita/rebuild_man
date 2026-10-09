@@ -24,6 +24,12 @@ export default function SriLankaMap({ organizations: _organizations = [] }: SriL
     { id: 9, name: "Uva Province Clinic", x: 70, y: 65, district: "Badulla" },
   ];
 
+  const openInGoogleMaps = (name: string, district: string) => {
+    const query = `${name}, ${district}, Sri Lanka`;
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="w-full h-full bg-linear-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-xl overflow-hidden relative">
       {/* Sri Lanka Map SVG */}
@@ -57,7 +63,11 @@ export default function SriLankaMap({ organizations: _organizations = [] }: SriL
 
         {/* Hospital Markers */}
         {hospitalLocations.map((hospital) => (
-          <g key={hospital.id}>
+          <g
+            key={hospital.id}
+            className="cursor-pointer"
+            onClick={() => setHoveredHospital(hospital.id)}
+          >
             {/* Outer glow effect */}
             <circle
               cx={hospital.x}
@@ -161,13 +171,24 @@ export default function SriLankaMap({ organizations: _organizations = [] }: SriL
 
       {/* Hover Tooltip Info */}
       {hoveredHospital && (
-        <div className="absolute bottom-4 left-4 right-4 bg-white rounded-lg p-3 shadow-xl z-20">
-          <div className="text-sm font-semibold text-gray-900">
-            {hospitalLocations.find((h) => h.id === hoveredHospital)?.name}
+        <div className="absolute bottom-4 left-4 right-4 bg-white rounded-lg p-3 shadow-xl z-20 flex items-center justify-between gap-2">
+          <div>
+            <div className="text-sm font-semibold text-gray-900">
+              {hospitalLocations.find((h) => h.id === hoveredHospital)?.name}
+            </div>
+            <div className="text-xs text-gray-600 mt-0.5">
+              📍 {hospitalLocations.find((h) => h.id === hoveredHospital)?.district}
+            </div>
           </div>
-          <div className="text-xs text-gray-600 mt-1">
-            📍 {hospitalLocations.find((h) => h.id === hoveredHospital)?.district}
-          </div>
+          <button
+            onClick={() => {
+              const h = hospitalLocations.find((loc) => loc.id === hoveredHospital);
+              if (h) openInGoogleMaps(h.name, h.district);
+            }}
+            className="text-xs bg-teal-600 hover:bg-teal-700 text-white font-medium px-2.5 py-1.5 rounded flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer"
+          >
+            Google Maps ↗
+          </button>
         </div>
       )}
     </div>

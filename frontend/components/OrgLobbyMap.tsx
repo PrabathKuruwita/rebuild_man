@@ -419,8 +419,18 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
             {filteredSections.map((sec, idx) => renderSectionCard(sec, idx))}
           </div>
         ) : (
-          <div className="text-center py-12 text-slate-400 text-sm">
-            {sectionsList.length > 0 ? "No sections match your search criteria." : "No sections registered yet for this organization."}
+          <div className="py-12 px-6 flex flex-col items-center justify-center text-center bg-slate-50/70 rounded-2xl border border-dashed border-slate-200 mx-6 mt-8">
+            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+              <Layers size={22} />
+            </div>
+            <h4 className="font-heading font-bold text-slate-800 text-base mb-1">
+              {sectionsList.length > 0 ? "No Matching Sections" : "No Sections Registered"}
+            </h4>
+            <p className="font-body text-xs sm:text-sm text-slate-500 max-w-sm">
+              {sectionsList.length > 0
+                ? "No sections match your current search criteria. Try clearing the search."
+                : "No department sections have been registered yet for this organization."}
+            </p>
           </div>
         )}
       </div>

@@ -23,6 +23,8 @@ import {
   HeartHandshake,
   FileText,
   BarChart3,
+  CheckCircle2,
+  Inbox,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -401,14 +403,14 @@ export default function OrgAdminDashboard() {
             value={stats.sections}
             subtext="Internal sections"
             icon={<Layers size={20} />}
-            status="neutral"
+            color="purple"
           />
           <StatsCard
             label="TOTAL NEEDS"
             value={stats.totalNeeds}
             subtext="Items registered"
             icon={<ClipboardList size={20} />}
-            status="success"
+            color="blue"
           />
           <StatsCard
             label="CRITICAL NEEDS"
@@ -422,7 +424,7 @@ export default function OrgAdminDashboard() {
             value={stats.donations}
             subtext="Total contributions"
             icon={<HeartHandshake size={20} />}
-            status="neutral"
+            color="emerald"
           />
         </div>
 
@@ -471,31 +473,51 @@ export default function OrgAdminDashboard() {
               <h3 className="font-bold text-slate-900 mb-6">
                 Recent Critical Needs
               </h3>
-              <div className="space-y-4">
-                {criticalNeeds.map((need) => (
-                  <div
-                    key={need.id}
-                    className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center"
-                  >
-                    <div>
-                      <p className="font-bold text-slate-900">{need.name}</p>
-                      <p className="text-xs text-slate-500">
-                        {need.section_detail?.name}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-rose-600">
-                        {need.quantity_required - need.quantity_confirmed} left
-                      </p>
-                      <progress
-                        className="w-24 h-1.5 mt-1 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-rose-500 [&::-moz-progress-bar]:bg-rose-500 bg-slate-200 text-rose-500"
-                        value={need.quantity_confirmed}
-                        max={need.quantity_required}
-                      />
-                    </div>
+              {criticalNeeds.length === 0 ? (
+                <div className="py-12 px-6 flex flex-col items-center justify-center text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-3 shadow-xs">
+                    <Inbox size={24} />
                   </div>
-                ))}
-              </div>
+                  <h4 className="font-heading font-bold text-slate-900 text-base mb-1">
+                    No Critical Needs at This Time
+                  </h4>
+                  <p className="text-sm text-slate-500 max-w-md">
+                    All critical needs are currently fulfilled, or no urgent requirements are presently active.
+                  </p>
+                  <Link
+                    href="/organizations#sections-needs"
+                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200/80 rounded-lg transition-colors shadow-xs"
+                  >
+                    + Post New Need
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {criticalNeeds.map((need) => (
+                    <div
+                      key={need.id}
+                      className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center"
+                    >
+                      <div>
+                        <p className="font-bold text-slate-900">{need.name}</p>
+                        <p className="text-xs text-slate-500">
+                          {need.section_detail?.name}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-rose-600">
+                          {need.quantity_required - need.quantity_confirmed} left
+                        </p>
+                        <progress
+                          className="w-24 h-1.5 mt-1 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-rose-500 [&::-moz-progress-bar]:bg-rose-500 bg-slate-200 text-rose-500"
+                          value={need.quantity_confirmed}
+                          max={need.quantity_required}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className="lg:col-span-4">

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { updateCurrentUser } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { User, Mail, Phone, Lock, UserCircle, Save, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Phone, Lock, UserCircle, Save, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -31,15 +31,15 @@ export default function ProfilePage() {
       {/* Teal Header Section - Matches Theme */}
       <div className="bg-gradient-to-r from-primary to-teal-800 text-white pt-16 pb-32">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start sm:items-center justify-between gap-4">
             <div>
-              <div className="inline-block px-3 py-1 bg-white/10 rounded-lg text-[10px] font-bold tracking-widest uppercase mb-4">
+              <div className="inline-block px-3 py-1 bg-white/10 rounded-lg text-[10px] font-bold tracking-widest uppercase mb-3 sm:mb-4">
                 User Profile
               </div>
-              <h1 className="text-4xl font-black tracking-tight">
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
                 {user.username}
               </h1>
-              <p className="text-teal-100 mt-2 text-sm max-w-xl">
+              <p className="text-teal-100 mt-2 text-xs sm:text-sm max-w-xl leading-relaxed">
                 Manage your personal information and account security settings.
                 Current login session is active.
               </p>
@@ -52,11 +52,14 @@ export default function ProfilePage() {
                     ? "/org-admin"
                     : "/"
               }
-              className="bg-white text-primary px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:bg-slate-50 transition-all"
+              className="bg-white text-primary px-3 py-1.5 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold sm:font-bold shadow-md hover:bg-slate-50 transition-all whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 self-start sm:self-auto mt-1 sm:mt-0"
             >
-              {user.role === "ADMIN" || user.role === "ORG_ADMIN"
-                ? "Back to Dashboard"
-                : "Back to Home"}
+              <ArrowLeft size={13} className="shrink-0 sm:w-4 sm:h-4" />
+              <span>
+                {user.role === "ADMIN" || user.role === "ORG_ADMIN"
+                  ? "Back to Dashboard"
+                  : "Back to Home"}
+              </span>
             </Link>
           </div>
         </div>

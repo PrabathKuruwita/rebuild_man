@@ -27,9 +27,9 @@ export default function ImpactPage() {
         setStats(statsData);
         setOrganizations(orgsData);
 
-        // Find fulfilled or highest progressed needs across all organizations for success stories
+        // Find fulfilled or highest progressed needs across all organizations for success stories (only real progress)
         const storiesSource = needsData
-          .filter((need) => need.quantity_required > 0)
+          .filter((need) => need.quantity_required > 0 && ((need.quantity_received || 0) > 0 || (need.quantity_confirmed || 0) > 0))
           .map((item) => {
             const receivedOrConfirmed = Math.max(item.quantity_received || 0, item.quantity_confirmed || 0);
             const progress = Math.min(100, Math.round((receivedOrConfirmed / item.quantity_required) * 100));
@@ -40,7 +40,7 @@ export default function ImpactPage() {
           })
           .sort((a, b) => b.progress - a.progress || (b.item.quantity_received || 0) - (a.item.quantity_received || 0));
 
-        const topProgressed = storiesSource.filter((s) => s.progress >= 50).slice(0, 3);
+        const topProgressed = storiesSource.filter((s) => s.progress >= 20).slice(0, 3);
         const selectedForStories = topProgressed.length > 0 ? topProgressed : storiesSource.slice(0, 3);
 
         const storiesList = selectedForStories.map(({ item, progress }, index) => {
@@ -53,13 +53,6 @@ export default function ImpactPage() {
           };
         });
 
-        if (storiesList.length === 0) {
-          storiesList.push({
-            title: "Building Momentum",
-            body: "The platform is coordinating donations across registered healthcare organizations and preparing measurable milestones.",
-            progress: 100,
-          });
-        }
         setSuccessStories(storiesList);
 
       } catch (error) {
@@ -155,33 +148,41 @@ export default function ImpactPage() {
               </p>
             </div>
 
-            <div className="space-y-6">
-              {successStories.map((story, i) => (
-                <div key={i} className="bg-white rounded-none p-6 shadow-sm border border-slate-200 hover:border-emerald-300 transition-colors group">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <CheckCircle2 size={20} className="text-emerald-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-800 text-lg mb-2">{story.title}</h3>
-                      <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                        {story.body}
-                      </p>
-                      
-                      <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                        <div 
-                          className="bg-emerald-500 h-2.5 rounded-full transition-all duration-1000 ease-out" 
-                          style={{ width: `${story.progress}%` }}
-                        ></div>
+            {successStories.length > 0 ? (
+              <div className="space-y-6">
+                {successStories.map((story, i) => (
+                  <div key={i} className="bg-white rounded-none p-6 shadow-sm border border-slate-200 hover:border-emerald-300 transition-colors group">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <CheckCircle2 size={20} className="text-emerald-600" />
                       </div>
-                      <div className="mt-2 text-xs font-bold text-emerald-700 text-right">
-                        {story.progress}% FULFILLED
+                      <div>
+                        <h3 className="font-bold text-slate-800 text-lg mb-2">{story.title}</h3>
+                        <p className="text-slate-600 text-sm leading-relaxed mb-4">
+                          {story.body}
+                        </p>
+                        
+                        <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                          <div 
+                            className="bg-emerald-500 h-2.5 rounded-full transition-all duration-1000 ease-out" 
+                            style={{ width: `${story.progress}%` }}
+                          ></div>
+                        </div>
+                        <div className="mt-2 text-xs font-bold text-emerald-700 text-right">
+                          {story.progress}% FULFILLED
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 text-center bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center shadow-xs">
+                <CheckCircle2 className="w-10 h-10 text-emerald-400 mb-3" />
+                <h3 className="font-bold text-slate-800 text-base mb-1">No Impact Stories Yet</h3>
+                <p className="text-sm text-slate-500 max-w-md">Real stories and milestone updates will appear here as ongoing needs are fulfilled.</p>
+              </div>
+            )}
           </div>
           
         </div>

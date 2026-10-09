@@ -344,6 +344,138 @@ button:active {
   }
 }
 
+@keyframes heart-marker-spring-popup {
+  0% {
+    opacity: 0;
+    transform: scale(0) translateY(32px);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.4) translateY(-10px);
+  }
+  75% {
+    transform: scale(0.88) translateY(3px);
+  }
+  90% {
+    transform: scale(1.1) translateY(-1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes heart-ping-ripple {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+@keyframes heart-alive-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  20% {
+    transform: scale(1.14);
+  }
+  35% {
+    transform: scale(1.02);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+  70% {
+    transform: scale(1);
+  }
+}
+
+.heart-marker-wrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: heart-marker-spring-popup 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  cursor: pointer;
+}
+
+.heart-marker-ripple {
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(244, 63, 94, 0.55) 0%, rgba(13, 148, 136, 0.25) 55%, transparent 75%);
+  animation: heart-ping-ripple 1.4s ease-out 1 forwards;
+  pointer-events: none;
+}
+
+.heart-marker-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: rgba(13, 148, 136, 0.22);
+  animation: pulse-ring 2.5s infinite;
+}
+
+.heart-marker-badge {
+  position: relative;
+  z-index: 10;
+  width: 34px;
+  height: 34px;
+  background: #ffffff;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(244, 63, 94, 0.2);
+  border: 2px solid rgba(13, 148, 136, 0.4);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.heart-marker-wrapper:hover .heart-marker-badge {
+  transform: scale(1.22) translateY(-3px);
+  box-shadow: 0 8px 24px rgba(244, 63, 94, 0.35), 0 3px 8px rgba(0, 0, 0, 0.15);
+  border-color: #0d9488;
+}
+
+.heart-marker-svg {
+  width: 18px;
+  height: 18px;
+  color: #f43f5e;
+  fill: rgba(244, 63, 94, 0.25);
+  animation: heart-alive-pulse 3s ease-in-out infinite 0.8s;
+  transition: transform 0.2s ease, fill 0.2s ease;
+}
+
+.heart-marker-wrapper:hover .heart-marker-svg {
+  fill: #f43f5e;
+  color: #e11d48;
+}
+
+.heart-order-chip {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  z-index: 20;
+  background: #0d9488;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 .animate-float-bounce {
   animation: float-bounce 3s ease-in-out infinite;
 }
@@ -773,7 +905,11 @@ button:active {
   padding: 1rem 1.5rem; /* py-4 px-6 */
   font-size: 0.875rem; /* text-sm */
   color: #334155; /* slate-700 */
-  border-bottom: 1px solid #f1f5f9; /* slate-100 */
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table-wrapper table tbody tr > td {
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .table-tr-hover:hover {
@@ -879,4 +1015,11 @@ button:active {
 
 .animate-success-content {
   animation: success-fade-up 0.5s ease-out 0.45s both;
+}
+
+/* Touch devices (tablets, mobiles) don't have mouse hover, keep notification actions visible */
+@media (hover: none) {
+  .notification-actions-hover {
+    opacity: 1 !important;
+  }
 }

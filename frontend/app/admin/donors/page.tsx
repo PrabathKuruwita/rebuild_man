@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { getDonors, DonorUser } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { Search, X } from "lucide-react";
+import { Search, X, Users } from "lucide-react";
 
 export default function DonorsPage() {
   const { user } = useAuth();
@@ -160,9 +160,19 @@ export default function DonorsPage() {
                 <tr>
                   <td
                     colSpan={6}
-                    className="table-td text-center text-gray-500"
+                    className="py-12 px-4 text-center"
                   >
-                    No matching donors found.
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-3 shadow-xs">
+                        <Users size={24} />
+                      </div>
+                      <p className="font-heading font-bold text-slate-800 text-sm">No Donors Found</p>
+                      <p className="font-body text-xs text-slate-500 mt-1 max-w-sm">
+                        {searchQuery.trim()
+                          ? `No donors matching "${searchQuery}". Try adjusting your search term.`
+                          : "No registered donors in the system yet."}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (

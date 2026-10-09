@@ -18,7 +18,7 @@ export default function ElevatedCard({
     : "shadow-[0_4px_20px_rgb(0,0,0,0.05)] border-slate-100";
     
   const hoverEffect = isInteractive 
-    ? "transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_12px_40px_rgb(0,0,0,0.12)] cursor-pointer" 
+    ? "group transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-[0_12px_40px_rgb(0,0,0,0.12)] cursor-pointer" 
     : "";
 
   return (

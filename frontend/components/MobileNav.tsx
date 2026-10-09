@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { Menu, X } from "lucide-react";
 
-export default function MobileNav() {
+export default function MobileNav({ isSolid = true }: { isSolid?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout } = useAuth();
   const pathname = usePathname();
@@ -36,11 +36,15 @@ export default function MobileNav() {
   const isAdmin = user?.role === "ADMIN" || user?.role === "ORG_ADMIN";
 
   return (
-    <div className="md:hidden relative" ref={menuRef}>
+    <div className="xl:hidden relative" ref={menuRef}>
       {/* Hamburger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+        className={`p-2 rounded-lg transition-colors ${
+          isSolid
+            ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            : "text-slate-200 hover:text-white hover:bg-white/10"
+        }`}
         aria-label="Toggle menu"
       >
         {isOpen ? (
@@ -55,11 +59,11 @@ export default function MobileNav() {
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[1000] md:hidden animate-in fade-in"
+            className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[1000] xl:hidden animate-in fade-in"
             onClick={() => setIsOpen(false)}
           />
           <div
-            className="fixed left-1/2 -translate-x-1/2 top-24 w-[calc(100vw-2rem)] max-w-md md:hidden bg-white rounded-none shadow-2xl z-[1010] animate-in fade-in slide-in-from-top-4 duration-200 overflow-hidden"
+            className="fixed left-1/2 -translate-x-1/2 top-20 sm:top-24 w-[calc(100vw-2rem)] max-w-md xl:hidden bg-white rounded-2xl shadow-2xl z-[1010] animate-in fade-in slide-in-from-top-4 duration-200 overflow-hidden border border-slate-100"
           >
             <div className="max-h-[80vh] overflow-y-auto">
               {/* Navigation Links */}
@@ -270,7 +274,7 @@ function MobileNavLink({
   onClick,
 }: {
   href: string;
-  label: string;
+  label: React.ReactNode;
   isActive?: boolean;
   onClick?: () => void;
 }) {
@@ -278,7 +282,7 @@ function MobileNavLink({
     <Link
       href={href}
       onClick={onClick}
-      className={`px-4 py-3 text-sm font-semibold rounded-none transition-colors touch-manipulation ${isActive
+      className={`px-4 py-3 text-sm font-semibold rounded-none transition-colors touch-manipulation flex items-center ${isActive
         ? "text-primary bg-primary/10"
         : "text-slate-600 hover:bg-slate-50"
         }`}

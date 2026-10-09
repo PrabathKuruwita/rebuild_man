@@ -1112,13 +1112,40 @@ class DonationViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def public_recent(self, request):
-        """Get the latest confirmed or fulfilled donations for the landing page"""
-        recent_donations = Donation.objects.filter(
+        """Get the latest confirmed or fulfilled donations across diverse organizations for the landing page ticker"""
+        all_donations = Donation.objects.filter(
             status__in=['CONFIRMED', 'FULFILLED']
-        ).select_related('need_item', 'need_item__section__organization').order_by('-created_at')[:10]
+        ).select_related('need_item__section__organization').order_by('-created_at')
         
+        # Group donations by organization to ensure fair representation across different organizations
+        org_donations = {}
+        for donation in all_donations:
+            if not donation.need_item or not donation.need_item.section or not donation.need_item.section.organization:
+                continue
+            org_id = donation.need_item.section.organization_id
+            if org_id not in org_donations:
+                org_donations[org_id] = []
+            if len(org_donations[org_id]) < 8:
+                org_donations[org_id].append(donation)
+                
+        # Interleave donations across organizations round-robin so the ticker showcases diverse organizations
+        interleaved_donations = []
+        max_len = max((len(lst) for lst in org_donations.values()), default=0)
+        for i in range(max_len):
+            for org_id, d_list in org_donations.items():
+                if i < len(d_list):
+                    interleaved_donations.append(d_list[i])
+                    if len(interleaved_donations) >= 20:
+                        break
+            if len(interleaved_donations) >= 20:
+                break
+                
+        # Fallback if no organization-linked donations found
+        if not interleaved_donations:
+            interleaved_donations = list(all_donations[:10])
+
         data = []
-        for donation in recent_donations:
+        for donation in interleaved_donations:
             donor_display = "Anonymous Donor"
             if donation.donor_type in ('organization', 'government') and donation.organization_name:
                 donor_display = donation.organization_name
@@ -1129,14 +1156,22 @@ class DonationViewSet(viewsets.ModelViewSet):
                 parts = donation.donor_name.split()
                 donor_display = (parts[0] if parts else "Private") + " (Private)"
                 
+            org_name = (
+                donation.need_item.section.organization.name
+                if donation.need_item and donation.need_item.section and donation.need_item.section.organization
+                else "Verified Organization"
+            )
+            item_name = donation.need_item.name if donation.need_item else "Essential Supplies"
+            item_unit = donation.need_item.unit if donation.need_item else "units"
+                
             data.append({
                 'id': donation.id,
                 'donor_name': donor_display,
-                'need_item_name': donation.need_item.name,
+                'need_item_name': item_name,
                 'quantity': donation.quantity,
-                'unit': donation.need_item.unit,
-                'organization_name': donation.need_item.section.organization.name,
-                'created_at': donation.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'unit': item_unit,
+                'organization_name': org_name,
+                'created_at': donation.created_at.strftime('%Y-%m-%d %H:%M:%S') if donation.created_at else "",
                 'status': donation.status
             })
         return Response(data)
@@ -1807,23 +1842,23 @@ def system_stats(request):
             
         month_label = month_start.strftime('%b')
         
-        # Pledged units in this month across all organizations
-        pledged_qty = Donation.objects.filter(
+        # Count of pledged donations in this month across all registered donors
+        pledged_count = Donation.objects.filter(
             created_at__gte=month_start,
             created_at__lt=next_month_start
-        ).aggregate(total=Sum('quantity'))['total'] or 0
+        ).count()
         
-        # Fulfilled units in this month across all organizations
-        fulfilled_qty = Donation.objects.filter(
+        # Count of fulfilled donations in this month across all registered donors
+        fulfilled_count = Donation.objects.filter(
             status='FULFILLED',
             created_at__gte=month_start,
             created_at__lt=next_month_start
-        ).aggregate(total=Sum('quantity'))['total'] or 0
+        ).count()
         
         monthly_trends.append({
             'month': month_label,
-            'donations': pledged_qty,
-            'fulfilled': fulfilled_qty
+            'donations': pledged_count,
+            'fulfilled': fulfilled_count
         })
 
     return Response({

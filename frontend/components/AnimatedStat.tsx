@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface AnimatedStatProps {
   value: number;
@@ -18,8 +18,17 @@ export default function AnimatedStat({
   className = ""
 }: AnimatedStatProps) {
   const [currentValue, setCurrentValue] = useState(0);
+  const prevValueRef = useRef(0);
 
   useEffect(() => {
+    if (value === 0) {
+      setCurrentValue(0);
+      prevValueRef.current = 0;
+      return;
+    }
+
+    const startVal = prevValueRef.current;
+    const diff = value - startVal;
     let startTimestamp: number | null = null;
     let animationFrameId: number;
 
@@ -30,12 +39,13 @@ export default function AnimatedStat({
       // easeOutQuart easing function
       const easeProgress = 1 - Math.pow(1 - progress, 4);
       
-      setCurrentValue(Math.floor(easeProgress * value));
+      setCurrentValue(Math.round(startVal + diff * easeProgress));
 
       if (progress < 1) {
         animationFrameId = window.requestAnimationFrame(step);
       } else {
         setCurrentValue(value);
+        prevValueRef.current = value;
       }
     };
 
@@ -46,7 +56,6 @@ export default function AnimatedStat({
     };
   }, [value, duration]);
 
-  // Use a fallback for non-number values or just render the animated number
   return (
     <span className={className}>
       {prefix}{currentValue.toLocaleString()}{suffix}
