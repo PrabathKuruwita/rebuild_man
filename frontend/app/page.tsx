@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Organization, getOrganizations, NeedItem, getNeeds, SystemStats, getSystemStats, getPublicRecentDonations, PublicDonation } from "@/lib/api";
@@ -8,8 +8,18 @@ import { PageLoading } from "@/components/LoadingSpinner";
 import AdvancedSriLankaMap from "@/components/AdvancedSriLankaMap";
 import { useAuth } from "@/lib/AuthContext";
 import DonorDashboard from "@/components/DonorDashboard";
+import AnimatedStat from "@/components/AnimatedStat";
+import AnalyticsLineChart from "@/components/AnalyticsLineChart";
 import { ShieldCheck, Eye, Activity, Heart, Building, CheckCircle2, HandHeart, CheckCircle, Navigation, ArrowRight, Shield } from "lucide-react";
 import { FaFacebook, FaTwitter, FaLinkedin, FaInstagram } from "react-icons/fa";
+
+interface SuccessStory {
+  id?: number;
+  title: string;
+  name: string;
+  orgName: string;
+  progress: number;
+}
 
 export default function Home() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -17,20 +27,90 @@ export default function Home() {
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentDonations, setRecentDonations] = useState<PublicDonation[]>([]);
-  const [stories, setStories] = useState<{ title: string; body: string; progress: number }[]>([]);
+  const [stories, setStories] = useState<SuccessStory[]>([]);
   const { user, loading: authLoading } = useAuth();
+  const [statsVisible, setStatsVisible] = useState(false);
+  const [storiesVisible, setStoriesVisible] = useState(false);
+  const statsSectionRef = useRef<HTMLElement | null>(null);
+  const storiesSectionRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (loading) return;
+    const node = statsSectionRef.current;
+    if (!node) return;
+
+    if (typeof IntersectionObserver !== "undefined") {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              setStatsVisible(true);
+              observer.disconnect();
+              break;
+            }
+          }
+        },
+        { threshold: 0.15 }
+      );
+      observer.observe(node);
+      return () => observer.disconnect();
+    } else {
+      const handleScroll = () => {
+        const rect = node.getBoundingClientRect();
+        if (rect.top <= window.innerHeight * 0.85 && rect.bottom >= 0) {
+          setStatsVisible(true);
+          window.removeEventListener("scroll", handleScroll);
+        }
+      };
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (loading) return;
+    const node = storiesSectionRef.current;
+    if (!node) return;
+
+    if (typeof IntersectionObserver !== "undefined") {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              setStoriesVisible(true);
+              observer.disconnect();
+              break;
+            }
+          }
+        },
+        { threshold: 0.15 }
+      );
+      observer.observe(node);
+      return () => observer.disconnect();
+    } else {
+      const handleScroll = () => {
+        const rect = node.getBoundingClientRect();
+        if (rect.top <= window.innerHeight * 0.85 && rect.bottom >= 0) {
+          setStoriesVisible(true);
+          window.removeEventListener("scroll", handleScroll);
+        }
+      };
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+  }, [loading]);
   
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
   const heroContents = [
     {
       prefix: "The trusted platform to donate directly to ",
-      highlight: "organizations",
+      highlight: "Organizations",
       suffix: " that need it most.",
-      subtext: "Parithyaga connects generous donors with verified hospitals and NGOs across Sri Lanka. Browse real, urgent needs, and contribute in minutes."
+      subtext: "Parithyaga connects generous donors with verified organizations across Sri Lanka. Browse real, urgent needs, and contribute in minutes."
     },
     {
       prefix: "Empowering verified ",
-      highlight: "hospitals and NGOs",
+      highlight: "Organizations",
       suffix: " to reach generous donors.",
       subtext: "We ensure transparency at every step. See exactly where your contributions go and the direct impact they make in communities."
     },
@@ -38,7 +118,7 @@ export default function Home() {
       prefix: "Join a community making ",
       highlight: "real impact",
       suffix: " where it matters most.",
-      subtext: "From critical medical supplies to community rebuilding, your donations provide immediate relief to those who desperately need it."
+      subtext: "From critical needs supplies to community rebuilding, your donations provide immediate relief to those who desperately need it."
     },
     {
       prefix: "Transforming urgent community needs into ",
@@ -55,84 +135,174 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [heroContents.length]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async (isBackground = false) => {
     try {
-      const [orgs, allNeeds, systemStats, donations] = await Promise.all([
-        getOrganizations(),
-        getNeeds(),
+      const [orgsRes, needsRes, statsRes, donationsRes] = await Promise.allSettled([
+        getOrganizations(true),
+        getNeeds(undefined, undefined, true),
         getSystemStats(),
-        getPublicRecentDonations().catch((err) => {
-          console.warn("Failed to fetch public donations", err);
-          return [] as PublicDonation[];
-        })
+        getPublicRecentDonations(),
       ]);
-      setOrganizations(orgs);
-      setStats(systemStats);
-      setRecentDonations(donations || []);
 
-      // Filter and sort for the hero's urgent need
-      const urgentNeeds = allNeeds.filter(
-        (n) => n.priority === "CRITICAL" && n.quantity_confirmed < n.quantity_required
-      );
-      if (urgentNeeds.length > 0) {
-        const sortedNeeds = urgentNeeds.sort(
-          (a, b) =>
-            b.quantity_required -
-            b.quantity_confirmed -
-            (a.quantity_required - a.quantity_confirmed),
-        );
-        setUrgentNeed(sortedNeeds[0]);
+      const orgs = orgsRes.status === "fulfilled" ? orgsRes.value : [];
+      const allNeeds = needsRes.status === "fulfilled" ? needsRes.value : [];
+      const systemStats = statsRes.status === "fulfilled" ? statsRes.value : null;
+      const donations = donationsRes.status === "fulfilled" ? donationsRes.value : [];
+
+      if (orgsRes.status === "fulfilled") {
+        setOrganizations(orgs);
       }
-
-      // Compute success story needs
-      const topNeeds = allNeeds
-        .filter((n) => n.quantity_required > 0)
-        .map((n) => ({
-          name: n.name,
-          progress: Math.min(
-            100,
-            Math.round((n.quantity_received / n.quantity_required) * 100),
-          ),
-          orgName: n.section_detail?.organization_name || "the community",
-        }))
-        .sort((a, b) => b.progress - a.progress)
-        .slice(0, 3);
-
-      const storiesList = topNeeds.map((item, index) => ({
-        title: `Success Story ${index + 1}`,
-        body: `${item.name} for ${item.orgName} reached ${item.progress}% coverage through community and institutional donations.`,
-        progress: item.progress,
-      }));
-
-      if (storiesList.length === 0) {
-        storiesList.push({
-          title: "Building Momentum",
-          body: "The platform is collecting the first wave of support and preparing measurable success stories.",
-          progress: 0,
+      if (statsRes.status === "fulfilled") {
+        setStats(systemStats);
+      }
+      if (donationsRes.status === "fulfilled") {
+        const rawDonations = donations || [];
+        // Group and interleave donations across organizations to showcase diverse donor contributions
+        const orgMap = new Map<string, PublicDonation[]>();
+        rawDonations.forEach((d) => {
+          const org = d.organization_name || "Organization";
+          if (!orgMap.has(org)) {
+            orgMap.set(org, []);
+          }
+          orgMap.get(org)!.push(d);
         });
+
+        if (orgMap.size > 1) {
+          const interleaved: PublicDonation[] = [];
+          const orgGroups = Array.from(orgMap.values());
+          const maxCount = Math.max(...orgGroups.map((g) => g.length));
+          for (let i = 0; i < maxCount; i++) {
+            for (const group of orgGroups) {
+              if (i < group.length) {
+                interleaved.push(group[i]);
+              }
+            }
+          }
+          setRecentDonations(interleaved);
+        } else {
+          setRecentDonations(rawDonations);
+        }
       }
-      setStories(storiesList);
+
+      if (needsRes.status === "fulfilled" && allNeeds.length > 0) {
+        // Filter for active, unfulfilled critical needs across all registered organizations
+        const urgentNeeds = allNeeds.filter(
+          (n) => n.priority === "CRITICAL" && n.quantity_confirmed < n.quantity_required
+        );
+
+        if (urgentNeeds.length > 0) {
+          // Rank by least fulfilled (lowest fulfillment ratio) and newest (most recently created)
+          const sortedNeeds = urgentNeeds.sort((a, b) => {
+            // 1. Least fulfilled ratio first (e.g. 0% fulfilled before 30% fulfilled)
+            const ratioA = a.quantity_required > 0 ? a.quantity_confirmed / a.quantity_required : 0;
+            const ratioB = b.quantity_required > 0 ? b.quantity_confirmed / b.quantity_required : 0;
+
+            // If there is a noticeable difference in fulfillment ratio, prioritize least fulfilled
+            if (Math.abs(ratioA - ratioB) > 0.05) {
+              return ratioA - ratioB;
+            }
+
+            // 2. Newest critical need first (latest created_at timestamp)
+            const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+            if (dateB !== dateA) {
+              return dateB - dateA;
+            }
+
+            // 3. Fallback: highest remaining shortage
+            const remainingA = a.quantity_required - a.quantity_confirmed;
+            const remainingB = b.quantity_required - b.quantity_confirmed;
+            return remainingB - remainingA;
+          });
+          setUrgentNeed(sortedNeeds[0]);
+        } else {
+          // If no unfulfilled critical need, find newest critical need or newest registered need
+          const anyCritical = allNeeds
+            .filter((n) => n.priority === "CRITICAL")
+            .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+
+          if (anyCritical.length > 0) {
+            setUrgentNeed(anyCritical[0]);
+          } else {
+            const sortedAll = [...allNeeds].sort(
+              (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+            );
+            setUrgentNeed(sortedAll[0] || null);
+          }
+        }
+
+        // Compute success story needs based on highest progress (only with real donor support)
+        const storiesSource = allNeeds
+          .filter((n) => n.quantity_required > 0 && ((n.quantity_received || 0) > 0 || (n.quantity_confirmed || 0) > 0))
+          .map((n) => {
+            const receivedOrConfirmed = Math.max(n.quantity_received || 0, n.quantity_confirmed || 0);
+            const progress = Math.min(
+              100,
+              Math.round((receivedOrConfirmed / n.quantity_required) * 100),
+            );
+            return {
+              id: n.id,
+              name: n.name,
+              orgName: n.section_detail?.organization_name || "Healthcare Facility",
+              progress,
+              quantityReceived: n.quantity_received || 0,
+              quantityRequired: n.quantity_required,
+            };
+          })
+          .sort((a, b) => b.progress - a.progress || b.quantityReceived - a.quantityReceived)
+          .slice(0, 3);
+
+        const storiesList: SuccessStory[] = storiesSource.map((item, index) => ({
+          id: item.id,
+          title: `Success Story ${index + 1}`,
+          name: item.name,
+          orgName: item.orgName,
+          progress: item.progress,
+        }));
+
+        setStories(storiesList);
+      }
     } catch (err) {
       console.warn(
         "Backend API not available. Start with: python manage.py runserver",
         err instanceof Error ? err.message : "Failed to load data",
       );
-      // Continue without backend data - allow UI testing
-      setOrganizations([]);
-      setStats(null);
-      setRecentDonations([]);
     } finally {
-      setLoading(false);
+      if (!isBackground) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      await fetchData();
-    }
-    loadData();
-  }, []);
+    let isMounted = true;
+
+    // Initial fetch
+    queueMicrotask(() => {
+      void fetchData(false);
+    });
+
+    // Auto-refresh data every 30 seconds for real-time synchronization
+    const pollInterval = setInterval(() => {
+      if (isMounted) {
+        fetchData(true);
+      }
+    }, 30000);
+
+    // Refresh immediately when window/tab regains visibility
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && isMounted) {
+        fetchData(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [fetchData]);
 
   if (loading || authLoading) return <PageLoading />;
 
@@ -140,23 +310,25 @@ export default function Home() {
     return <DonorDashboard />;
   }
 
-  // Calculate real stats or use fallbacks from screenshot
-  const provinces = stats ? stats.provinces_covered : 9;
-  const totalOrgs = stats ? stats.verified_hospitals : (organizations.length || 120);
-  const donorsOnboarded = stats ? stats.donors_onboarded.toLocaleString() : "4,500+";
-  const deliverySuccess = stats ? `${stats.delivery_success_rate}%` : "98%";
+  // Real-time backend stats with graceful zero defaults
+  const provinces = stats?.provinces_covered ?? (organizations.length > 0 ? new Set(organizations.map((o) => o.district).filter(Boolean)).size : 0);
+  const totalOrgs = stats?.verified_hospitals ?? organizations.length;
+  const donorsOnboarded = stats?.donors_onboarded ?? 0;
+  const deliverySuccessRate = stats?.delivery_success_rate ?? 0;
 
 
   return (
     <div className="min-h-screen bg-white font-sans">
       {/* Hero Section */}
-      <section id="hero-section" className="relative bg-[#030B1C] overflow-hidden flex flex-col justify-center min-h-screen lg:h-[100vh] pt-28 pb-32 lg:pt-0 lg:pb-0">
+      <section id="hero-section" className="relative bg-[#030B1C] overflow-hidden flex flex-col justify-center min-h-[680px] lg:min-h-screen pt-24 sm:pt-28 pb-24 sm:pb-28 lg:pt-20 lg:pb-24">
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1920&q=80"
             alt="Hero Background"
+            loading="eager"
+            fetchPriority="high"
             className="w-full h-full object-cover opacity-60 animate-slow-zoom"
           />
           <div className="absolute inset-0 bg-[#030B1C]/40 mix-blend-multiply"></div>
@@ -164,20 +336,20 @@ export default function Home() {
 
         {/* Marquee (Live Feed) - Positioned at bottom of hero */}
         <div className="absolute bottom-0 left-0 w-full z-20 bg-transparent border-t border-white/10">
-          <div className="w-full py-4 md:py-6 flex items-center relative overflow-hidden bg-black/10 backdrop-blur-sm">
+          <div className="w-full py-2.5 sm:py-3 md:py-3.5 flex items-center relative overflow-hidden bg-black/20 backdrop-blur-sm">
             <div className="flex-1 overflow-hidden relative">
               {recentDonations.length > 0 ? (
                 <div className="whitespace-nowrap inline-flex animate-marquee hover:[animation-play-state:paused] items-center">
                   {[...recentDonations, ...recentDonations].map((donation, i) => (
-                    <span key={i} className="text-white text-[28px] font-sans font-normal tracking-wide mr-16 shrink-0 flex items-center gap-4">
+                    <span key={i} className="text-white text-sm sm:text-base md:text-lg lg:text-xl font-sans font-normal tracking-wide mr-8 sm:mr-14 shrink-0 flex items-center gap-2 sm:gap-3">
                       {donation.donor_name}
-                      <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mt-1">DONATED {donation.quantity} {donation.need_item_name} TO</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-slate-400 mt-0.5">DONATED {donation.quantity} {donation.need_item_name} TO</span>
                       {donation.organization_name}
                     </span>
                   ))}
                 </div>
               ) : (
-                <div className="text-slate-400 text-lg font-medium animate-pulse">
+                <div className="text-slate-400 text-xs sm:text-sm md:text-base font-medium animate-pulse px-4 sm:px-6">
                   Waiting for live updates... Be the first to contribute!
                 </div>
               )}
@@ -186,9 +358,9 @@ export default function Home() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full mb-8 lg:mb-0">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 xl:gap-12 items-center">
             {/* Left Column */}
-            <div className="lg:col-span-7 space-y-8 animate-fade-in-up flex flex-col items-start text-left w-full mt-4 lg:mt-0">
+            <div className="lg:col-span-7 space-y-6 sm:space-y-7 xl:space-y-8 animate-fade-in-up flex flex-col items-start text-left w-full mt-4 lg:mt-0">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 backdrop-blur-md rounded-sm border border-white/10 shadow-lg">
                 <span className="w-2 h-2 bg-success rounded-sm animate-pulse-ring"></span>
                 <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
@@ -196,8 +368,8 @@ export default function Home() {
                 </span>
               </div>
               
-              <div key={currentContentIndex} className="animate-fade-in space-y-8 w-full min-h-[320px] sm:min-h-[280px] md:min-h-[240px] lg:min-h-[280px]">
-                <h1 className="text-left font-heading text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight text-white max-w-3xl uppercase">
+              <div key={currentContentIndex} className="animate-fade-in space-y-4 sm:space-y-6 xl:space-y-8 w-full min-h-[180px] sm:min-h-[200px] md:min-h-[220px] lg:min-h-[200px] xl:min-h-[250px]">
+                <h1 className="text-left font-heading text-2xl sm:text-3xl md:text-4xl lg:text-3xl xl:text-5xl font-bold leading-tight tracking-tight text-white max-w-3xl uppercase">
                   {heroContents[currentContentIndex].prefix}
                   <span className="text-primary">
                     {heroContents[currentContentIndex].highlight}
@@ -205,14 +377,13 @@ export default function Home() {
                   {heroContents[currentContentIndex].suffix}
                 </h1>
                 
-                <p className="text-left font-label text-sm md:text-base text-slate-300 font-medium leading-relaxed max-w-xl">
+                <p className="text-left font-label text-sm sm:text-base text-slate-300 font-medium leading-relaxed max-w-xl">
                   {heroContents[currentContentIndex].subtext}
                 </p>
               </div>
               
-              
-              <div className="flex flex-col sm:flex-row gap-4 pt-2 pb-4 lg:pb-0 w-full justify-start items-start">
-                <Link href="/needs" className="px-8 py-4 bg-primary hover:bg-teal-700 text-white text-base font-bold rounded-full shadow-lg shadow-teal-900/20 transition-all flex items-center justify-center gap-2">
+              <div className="flex flex-col sm:flex-row gap-4 pt-1 pb-3 lg:pb-0 w-full justify-start items-start">
+                <Link href="/needs" className="px-6 sm:px-8 py-3.5 sm:py-4 bg-primary hover:bg-teal-700 text-white text-sm sm:text-base font-bold rounded-full shadow-lg shadow-teal-900/20 transition-all flex items-center justify-center gap-2">
                   <Heart className="w-5 h-5" />
                   Donate Now
                 </Link>
@@ -220,28 +391,37 @@ export default function Home() {
             </div>
 
             {/* Right Column: Most Urgent Need Widget */}
-            <div className="lg:col-span-5 relative animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <div className="bg-white/5 backdrop-blur-1xl border border-white/10 rounded-none p-8 sm:p-10 shadow-2xl relative overflow-hidden group">
+            <div className="lg:col-span-5 relative animate-fade-in-up w-full" style={{ animationDelay: '0.2s' }}>
+              <div className="bg-white/5 backdrop-blur-1xl border border-white/10 rounded-none p-5 sm:p-6 md:p-8 lg:p-6 xl:p-8 shadow-2xl relative overflow-hidden group">
                 <div className="absolute -inset-20 bg-red-700/15 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-800 to-red-600"></div>
-                <div className="flex items-center justify-between mb-8 relative z-10">
+                <div className="flex items-center justify-between mb-4 sm:mb-6 relative z-10">
                   <div className="flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-red-500 animate-pulse" />
+                    <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 animate-pulse" />
                     <span className="font-label text-xs font-bold text-red-500 uppercase tracking-widest">Most Urgent Need</span>
                   </div>
                 </div>
                 {urgentNeed ? (
-                  <div className="space-y-8 relative z-10">
+                  <div className="space-y-5 sm:space-y-6 xl:space-y-8 relative z-10">
                     <div>
-                      <h3 className="font-heading text-3xl font-bold text-white mb-3 leading-tight">{urgentNeed.name}</h3>
-                      <p className="font-body text-slate-300 font-medium flex items-center gap-3 text-sm">
+                      <h3 className="font-heading text-xl sm:text-2xl lg:text-xl xl:text-2xl font-bold text-white mb-1.5 sm:mb-2 leading-tight">{urgentNeed.name}</h3>
+                      <p className="font-body text-slate-300 font-medium flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
                         <Building className="w-4 h-4 text-red-500 shrink-0" />
-                        <span className="truncate">{urgentNeed.section_detail?.organization_name || "Colombo South Teaching Hospital"}</span>
+                        <span className="truncate">
+                          {urgentNeed.section_detail?.organization_name || 
+                           organizations.find((o) => o.id === urgentNeed.section_detail?.organization || o.id === (urgentNeed as unknown as { organization?: number }).organization)?.name || 
+                           "Verified Healthcare Facility"}
+                        </span>
                       </p>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm font-bold font-label tracking-wide">
-                        <span className="text-slate-300">{urgentNeed.quantity_confirmed} pledged</span>
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex justify-between text-xs sm:text-sm font-bold font-label tracking-wide">
+                        <span className="text-slate-300">
+                          <AnimatedStat
+                            value={urgentNeed.quantity_confirmed}
+                            suffix={urgentNeed.unit ? ` ${urgentNeed.unit} pledged` : " pledged"}
+                          />
+                        </span>
                         <span className="text-red-500">Target: {urgentNeed.quantity_required} {urgentNeed.unit}</span>
                       </div>
                       <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden shadow-inner">
@@ -250,8 +430,8 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-                    <Link href={`/needs`} className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-red-700 hover:bg-red-800 text-white text-base font-bold rounded-full transition-all shadow-lg transform hover:-translate-y-1">
-                      Fulfill this need <ArrowRight className="w-5 h-5" />
+                    <Link href={`/needs`} className="w-full flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-red-700 hover:bg-red-800 text-white text-sm sm:text-base font-bold rounded-full transition-all shadow-lg transform hover:-translate-y-1">
+                      Fulfill this need <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                     </Link>
                   </div>
                 ) : (
@@ -317,77 +497,139 @@ export default function Home() {
       </section>
 
       {/* Stats Impact Banner */}
-      <section id="stats-banner" className="bg-slate-950 py-6 border-y border-white/5 relative z-20">
+      <section id="stats-banner" ref={statsSectionRef} className="bg-slate-950 py-6 sm:py-8 border-y border-white/5 relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:divide-x divide-white/10">
-            <div className="text-center px-4 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center mb-3">
-                <Navigation className="w-6 h-6 text-slate-500" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 md:divide-x divide-white/10">
+            <div 
+              style={{ transitionDelay: statsVisible ? "0ms" : "0ms" }}
+              className={`text-center px-2 sm:px-4 hover:scale-105 transition-all duration-700 ease-out ${
+                statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+              }`}
+            >
+              <div className="flex justify-center mb-2 sm:mb-3">
+                <Navigation className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-transform duration-300 hover:-translate-y-1 hover:translate-x-0.5 hover:-rotate-12" />
               </div>
-              <div className="font-body text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">{provinces}</div>
-              <div className="font-label text-xs font-semibold tracking-widest uppercase text-slate-400 mt-1">Provinces Covered</div>
+              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">
+                <AnimatedStat value={statsVisible ? provinces : 0} duration={1200} />
+              </div>
+              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1">Provinces Covered</div>
             </div>
-            <div className="text-center px-4 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center mb-3">
-                <ShieldCheck className="w-6 h-6 text-slate-500" />
+
+            <div 
+              style={{ transitionDelay: statsVisible ? "120ms" : "0ms" }}
+              className={`text-center px-2 sm:px-4 hover:scale-105 transition-all duration-700 ease-out ${
+                statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+              }`}
+            >
+              <div className="flex justify-center mb-2 sm:mb-3">
+                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-transform duration-300 hover:scale-110 hover:text-emerald-400" />
               </div>
-              <div className="font-body text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">{totalOrgs}</div>
-              <div className="font-label text-xs font-semibold tracking-widest uppercase text-slate-400 mt-1">Verified Organizations</div>
+              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">
+                <AnimatedStat value={statsVisible ? totalOrgs : 0} duration={1200} />
+              </div>
+              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1">Verified Organizations</div>
             </div>
-            <div className="text-center px-4 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center mb-3">
-                <Heart className="w-6 h-6 text-slate-500" />
+
+            <div 
+              style={{ transitionDelay: statsVisible ? "240ms" : "0ms" }}
+              className={`text-center px-2 sm:px-4 hover:scale-105 transition-all duration-700 ease-out ${
+                statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+              }`}
+            >
+              <div className="flex justify-center mb-2 sm:mb-3">
+                <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-transform duration-300 hover:scale-125 hover:text-rose-400" />
               </div>
-              <div className="font-body text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">{donorsOnboarded}</div>
-              <div className="font-label text-xs font-semibold tracking-widest uppercase text-slate-400 mt-1">Donors Onboarded</div>
+              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">
+                <AnimatedStat value={statsVisible ? donorsOnboarded : 0} duration={1200} />
+              </div>
+              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1">Donors Onboarded</div>
             </div>
-            <div className="text-center px-4 hover:scale-105 transition-transform duration-300">
-              <div className="flex justify-center mb-3">
-                <CheckCircle2 className="w-6 h-6 text-slate-500" />
+
+            <div 
+              style={{ transitionDelay: statsVisible ? "360ms" : "0ms" }}
+              className={`text-center px-2 sm:px-4 hover:scale-105 transition-all duration-700 ease-out ${
+                statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+              }`}
+            >
+              <div className="flex justify-center mb-2 sm:mb-3">
+                <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-transform duration-300 hover:scale-110 hover:text-teal-400" />
               </div>
-              <div className="font-body text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">{deliverySuccess}</div>
-              <div className="font-label text-xs font-semibold tracking-widest uppercase text-slate-400 mt-1">Delivery Success Rate</div>
+              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">
+                <AnimatedStat value={statsVisible ? deliverySuccessRate : 0} suffix="%" duration={1200} />
+              </div>
+              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1">Delivery Success Rate</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Success Stories */}
-      <section className="py-24 bg-white relative">
+      <section ref={storiesSectionRef} className="py-14 sm:py-20 md:py-24 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-4 mb-16 animate-fade-in-up">
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
+          <div className="text-center space-y-3 sm:space-y-4 mb-10 sm:mb-16 animate-fade-in-up">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
               Recent Successes
             </h2>
-            <p className="text-slate-500 max-w-2xl mx-auto text-lg">See how the community is coming together to fulfill critical requirements.</p>
+            <p className="text-slate-500 max-w-2xl mx-auto text-base sm:text-lg">See how the community is coming together to fulfill critical requirements.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {stories.map((story, i) => (
-              <div key={i} className="bg-white rounded-none p-8 border border-slate-100 shadow-md transition-all duration-300 group animate-fade-in-up" style={{ animationDelay: `${0.1 * (i+1)}s` }}>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-secondary/10 rounded-sm mb-6 font-label text-xs font-bold tracking-widest uppercase text-amber-600">
-                  <ShieldCheck className="w-3 h-3" />
-                  Verified Organization
-                </div>
-                <h3 className="font-heading text-lg font-semibold text-slate-900 leading-snug mb-2 min-h-[56px] line-clamp-2">
-                  {story.body.split(" for ")[0] || story.title}
-                </h3>
-                <p className="text-sm text-slate-500 mb-8 min-h-[40px] line-clamp-2 font-medium">
-                  For {story.body.split(" for ")[1]?.split(" reached")[0] || "the community"}
-                </p>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-label text-xs font-semibold tracking-wider uppercase text-slate-400">Fulfillment Progress</span>
-                    <span className="bg-green-50 px-2 py-0.5 rounded-sm font-body text-sm font-bold text-amber-500 tabular-nums">{story.progress}%</span>
+          {stories.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              {stories.map((story, i) => (
+                <div key={story.id || i} className="bg-white rounded-none p-5 sm:p-6 md:p-8 border border-slate-100 shadow-md transition-all duration-300 group animate-fade-in-up hover:shadow-lg" style={{ animationDelay: `${0.1 * (i+1)}s` }}>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-secondary/10 rounded-sm mb-4 sm:mb-6 font-label text-xs font-bold tracking-widest uppercase text-amber-600">
+                    <ShieldCheck className="w-3 h-3" />
+                    Verified Organization
                   </div>
-                  <div className="h-2 w-full bg-slate-100 rounded-sm overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-warning to-success rounded-sm transition-all duration-1000" style={{ width: `${story.progress}%` }}></div>
+                  <h3 className="font-heading text-base sm:text-lg font-semibold text-slate-900 leading-snug mb-2 min-h-[44px] sm:min-h-[56px] line-clamp-2">
+                    {story.name}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 mb-6 sm:mb-8 min-h-[32px] sm:min-h-[40px] line-clamp-2 font-medium">
+                    For {story.orgName}
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-label text-xs font-semibold tracking-wider uppercase text-slate-400">Fulfillment Progress</span>
+                      <span className="bg-green-50 px-2 py-0.5 rounded-sm font-body text-sm font-bold text-amber-500 tabular-nums">
+                        <AnimatedStat value={storiesVisible ? story.progress : 0} suffix="%" />
+                      </span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-sm overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-warning to-success rounded-sm transition-all duration-1000" style={{ width: `${storiesVisible ? story.progress : 0}%` }}></div>
+                    </div>
+                    <p className="text-[11px] text-slate-400 font-medium pt-2 text-right">Fulfilled by donors</p>
                   </div>
-                  <p className="text-[11px] text-slate-400 font-medium pt-2 text-right">Fulfilled by donors</p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          ) : (
+            <div className="py-16 px-6 text-center flex flex-col items-center justify-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              <ShieldCheck className="w-10 h-10 text-slate-300 mb-3" />
+              <h3 className="font-heading font-bold text-slate-800 text-base mb-1">No Success Stories Published</h3>
+              <p className="font-body text-xs sm:text-sm text-slate-500 max-w-sm">Impact milestones and successful fulfillment records will appear here as ongoing hospital needs are met.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Donation Trends / Impact Analytics */}
+      <section id="impact" className="py-12 sm:py-16 md:py-20 bg-slate-50 border-t border-slate-100 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-3 mb-8 sm:mb-12 animate-fade-in-up">
+            <div className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-primary/10 rounded-full font-label text-xs sm:text-sm font-bold tracking-[0.2em] uppercase text-cyan-600">
+              Live Impact Analytics
+            </div>
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
+              Donation Volume Trends
+            </h2>
+            <p className="font-body text-slate-500 max-w-2xl mx-auto text-sm sm:text-base px-2">
+              Real-time monthly metrics tracking count of pledge donations vs verified fulfilled donations across all registered donors.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-none shadow-xl shadow-slate-200/50 p-4 sm:p-6 md:p-8 lg:p-10 border border-slate-100 overflow-hidden">
+            <AnalyticsLineChart data={stats?.monthly_trends} />
           </div>
         </div>
       </section>
@@ -508,7 +750,7 @@ export default function Home() {
             <p className="font-body text-base text-blue-600 leading-relaxed mt-2 max-w-2xl mx-auto">Explore verified organizations and current active needs across Sri Lanka.</p>
           </div>
         </div>
-        <div className="relative h-[650px] w-full animate-scale-up z-10 border-y border-slate-200">
+        <div className="relative h-[480px] sm:h-[560px] md:h-[650px] w-full animate-scale-up z-10 border-y border-slate-200">
           <AdvancedSriLankaMap organizations={organizations} />
         </div>
       </section>
@@ -556,7 +798,15 @@ export default function Home() {
               <h4 className="text-white font-bold mb-6 text-lg">Stay Updated</h4>
               <p className="text-sm leading-relaxed">Subscribe to our newsletter for the latest updates on critical needs and success stories.</p>
               <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
-                <input type="email" placeholder="Enter your email address" className="bg-slate-800/50 border border-slate-700 rounded-none px-4 py-3 text-sm w-full focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-white transition-all" />
+                <input
+                  id="newsletter-email"
+                  name="email"
+                  autoComplete="email"
+                  type="email"
+                  placeholder="Enter your email address"
+                  aria-label="Email address for newsletter"
+                  className="bg-slate-800/50 border border-slate-700 rounded-none px-4 py-3 text-sm w-full focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-white transition-all"
+                />
                 <button type="submit" className="bg-primary hover:bg-teal-700 text-white px-6 py-3 rounded-full text-sm font-bold transition-all shadow-lg shadow-primary/20">Subscribe</button>
               </form>
               <p className="text-xs text-slate-500 font-medium">We respect your privacy. No spam.</p>

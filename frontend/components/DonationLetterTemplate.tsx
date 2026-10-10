@@ -30,7 +30,7 @@ export const DonationLetterTemplate = React.forwardRef<
     day: "numeric",
   });
 
-  const isGovernment = donation.donorType === "government";
+  const isOrganization = donation.donorType === "organization";
 
   return (
     <div
@@ -117,30 +117,30 @@ export const DonationLetterTemplate = React.forwardRef<
       {/* Donor Details */}
       <div className="mb-8">
         <h3 className="font-bold text-gray-900 mb-2">
-          {isGovernment ? "GOVERNMENT SPONSOR DETAILS:" : "DONOR DETAILS:"}
+          {isOrganization ? "ORGANIZATION SPONSOR DETAILS:" : "DONOR DETAILS:"}
         </h3>
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          {isGovernment ? (
+          {isOrganization ? (
             <>
               <p className="mb-2">
-                <span className="font-semibold">Department:</span>{" "}
-                {donation.governmentDepartment}
+                <span className="font-semibold">Organization Name:</span>{" "}
+                {donation.organizationName || donation.governmentDepartment}
               </p>
               <p className="mb-2">
                 <span className="font-semibold">Program/Scheme:</span>{" "}
-                {donation.governmentProgram}
+                {donation.organizationProgram || donation.governmentProgram}
               </p>
               <p className="mb-2">
                 <span className="font-semibold">Officer&apos;s Name:</span>{" "}
-                {donation.governmentOfficerName}
+                {donation.organizationOfficerName || donation.governmentOfficerName}
               </p>
               <p className="mb-2">
                 <span className="font-semibold">Designation:</span>{" "}
-                {donation.governmentOfficerDesignation}
+                {donation.organizationOfficerDesignation || donation.governmentOfficerDesignation}
               </p>
               <p className="mb-2">
                 <span className="font-semibold">Contact Number:</span>{" "}
-                {donation.governmentOfficerContact}
+                {donation.organizationOfficerContact || donation.governmentOfficerContact}
               </p>
             </>
           ) : (

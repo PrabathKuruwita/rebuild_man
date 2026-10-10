@@ -323,10 +323,14 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
           {/* Search Input */}
           <div className="relative w-60">
             <input
+              id="map-section-search"
+              name="section_search"
+              autoComplete="off"
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search section..."
+              aria-label="Search section"
               className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 font-medium transition-all"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -419,8 +423,18 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
             {filteredSections.map((sec, idx) => renderSectionCard(sec, idx))}
           </div>
         ) : (
-          <div className="text-center py-12 text-slate-400 text-sm">
-            {sectionsList.length > 0 ? "No sections match your search criteria." : "No sections registered yet for this organization."}
+          <div className="py-12 px-6 flex flex-col items-center justify-center text-center bg-slate-50/70 rounded-2xl border border-dashed border-slate-200 mx-6 mt-8">
+            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+              <Layers size={22} />
+            </div>
+            <h4 className="font-heading font-bold text-slate-800 text-base mb-1">
+              {sectionsList.length > 0 ? "No Matching Sections" : "No Sections Registered"}
+            </h4>
+            <p className="font-body text-xs sm:text-sm text-slate-500 max-w-sm">
+              {sectionsList.length > 0
+                ? "No sections match your current search criteria. Try clearing the search."
+                : "No department sections have been registered yet for this organization."}
+            </p>
           </div>
         )}
       </div>

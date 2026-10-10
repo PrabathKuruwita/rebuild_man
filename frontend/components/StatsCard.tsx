@@ -8,6 +8,22 @@ export interface StatsCardProps {
   subtext?: string;
   icon: React.ReactNode;
   status?: "critical" | "warning" | "success" | "neutral";
+  color?:
+    | "indigo"
+    | "purple"
+    | "blue"
+    | "teal"
+    | "emerald"
+    | "amber"
+    | "rose"
+    | "orange"
+    | "slate"
+    | "neutral"
+    | "success"
+    | "critical"
+    | "warning";
+  iconBg?: string;
+  iconColor?: string;
   isDominant?: boolean;
   children?: React.ReactNode;
 }
@@ -18,30 +34,72 @@ export default function StatsCard({
   subtext,
   icon,
   status = "neutral",
+  color,
+  iconBg,
+  iconColor,
   isDominant = false,
   children,
 }: StatsCardProps) {
-  // Map status to visual classes
-  const statusConfig = {
+  // Map color or status to visual classes
+  const colorMap: Record<string, { bg: string; text: string }> = {
     critical: {
       bg: "bg-rose-50",
-      text: "text-status-critical",
+      text: "text-rose-600",
+    },
+    rose: {
+      bg: "bg-rose-50",
+      text: "text-rose-600",
     },
     warning: {
       bg: "bg-amber-50",
-      text: "text-status-warning",
+      text: "text-amber-600",
+    },
+    amber: {
+      bg: "bg-amber-50",
+      text: "text-amber-600",
+    },
+    orange: {
+      bg: "bg-orange-50",
+      text: "text-orange-600",
     },
     success: {
       bg: "bg-emerald-50",
-      text: "text-status-success",
+      text: "text-emerald-600",
+    },
+    emerald: {
+      bg: "bg-emerald-50",
+      text: "text-emerald-600",
+    },
+    purple: {
+      bg: "bg-purple-50",
+      text: "text-purple-600",
+    },
+    indigo: {
+      bg: "bg-indigo-50",
+      text: "text-indigo-600",
+    },
+    blue: {
+      bg: "bg-blue-50",
+      text: "text-blue-600",
+    },
+    teal: {
+      bg: "bg-teal-50",
+      text: "text-teal-600",
+    },
+    slate: {
+      bg: "bg-slate-50",
+      text: "text-slate-500",
     },
     neutral: {
       bg: "bg-slate-50",
-      text: "text-status-neutral",
+      text: "text-slate-500",
     },
   };
 
-  const config = statusConfig[status];
+  const selectedKey = color || status || "neutral";
+  const preset = colorMap[selectedKey] || colorMap.neutral;
+  const bgClass = iconBg || preset.bg;
+  const textClass = iconColor || preset.text;
   
   // Try to parse the value for animation
   let numValue: number | null = null;
@@ -67,7 +125,7 @@ export default function StatsCard({
     >
       <div className="flex items-center justify-between mb-3">
         <div
-          className={`w-10 h-10 ${config.bg} ${config.text} rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}
+          className={`w-10 h-10 ${bgClass} ${textClass} rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}
         >
           {icon}
         </div>

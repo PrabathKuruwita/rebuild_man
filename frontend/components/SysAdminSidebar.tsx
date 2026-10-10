@@ -65,10 +65,10 @@ export default function SysAdminSidebar({
   ];
 
   return (
-    <aside className={`hidden lg:flex flex-col fixed top-0 left-0 bottom-0 bg-white border-r border-slate-100 z-[1030] shadow-xs transition-all duration-300 ${isCollapsed ? "w-20" : "w-64"}`}>
+    <aside className={`hidden lg:flex flex-col fixed top-0 left-0 bottom-0 bg-white border-r border-slate-200 z-[1030] shadow-xs transition-all duration-300 ${isCollapsed ? "w-20" : "w-64"}`}>
       <div className="flex flex-col flex-1 overflow-y-auto">
         {/* Sidebar Header with Logo */}
-        <div className={`h-16 sm:h-20 flex items-center px-6 border-b border-slate-100 mb-6 transition-all duration-300 ${isCollapsed ? "justify-center px-0" : ""}`}>
+        <div className={`h-16 sm:h-20 flex items-center px-6 border-b border-slate-200 mb-6 transition-all duration-300 ${isCollapsed ? "justify-center px-0" : ""}`}>
           <Link href="/" className="flex items-center gap-2 sm:gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1">
             <Image 
               src="/images/Parithyaga_Logo.png" 

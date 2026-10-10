@@ -11,7 +11,7 @@ import {
   getRejectedOrgAdmins,
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { Check, X, ChevronDown, ChevronUp, Search, Filter } from "lucide-react";
+import { Check, X, ChevronDown, ChevronUp, Search, Filter, CheckCircle2, XCircle, ShieldCheck } from "lucide-react";
 
 interface ConfirmationDialog {
   isOpen: boolean;
@@ -347,16 +347,20 @@ export default function ApprovalsPage() {
             {activeTab === "pending" && (
               <div>
                 {pendingRequests.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-lg">
-                    <p className="text-gray-600">
-                      No pending approval requests
-                    </p>
+                  <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center p-6 shadow-xs">
+                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-3">
+                      <CheckCircle2 size={24} />
+                    </div>
+                    <p className="text-base font-bold text-slate-800">No Pending Approval Requests</p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">All organization administrator applications have been processed.</p>
                   </div>
                 ) : filteredPending.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
-                    <p className="text-gray-600">
-                      No matching pending requests found
-                    </p>
+                  <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center p-6 shadow-xs">
+                    <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                      <Search size={24} />
+                    </div>
+                    <p className="text-base font-bold text-slate-800">No Matching Pending Requests</p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">Try changing your search query or organization type filter.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -392,14 +396,20 @@ export default function ApprovalsPage() {
             {activeTab === "approved" && (
               <div>
                 {approvedRequests.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-lg">
-                    <p className="text-gray-600">No approved admin requests</p>
+                  <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center p-6 shadow-xs">
+                    <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                      <ShieldCheck size={24} />
+                    </div>
+                    <p className="text-base font-bold text-slate-800">No Approved Requests</p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">Approved organization administrator accounts will appear here.</p>
                   </div>
                 ) : filteredApproved.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
-                    <p className="text-gray-600">
-                      No matching approved requests found
-                    </p>
+                  <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center p-6 shadow-xs">
+                    <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                      <Search size={24} />
+                    </div>
+                    <p className="text-base font-bold text-slate-800">No Matching Approved Requests</p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">Try changing your search query or organization type filter.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -425,14 +435,20 @@ export default function ApprovalsPage() {
             {activeTab === "rejected" && (
               <div>
                 {rejectedRequests.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-lg">
-                    <p className="text-gray-600">No rejected admin requests</p>
+                  <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center p-6 shadow-xs">
+                    <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                      <XCircle size={24} />
+                    </div>
+                    <p className="text-base font-bold text-slate-800">No Rejected Requests</p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">No organization registration requests have been rejected.</p>
                   </div>
                 ) : filteredRejected.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
-                    <p className="text-gray-600">
-                      No matching rejected requests found
-                    </p>
+                  <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center p-6 shadow-xs">
+                    <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                      <Search size={24} />
+                    </div>
+                    <p className="text-base font-bold text-slate-800">No Matching Rejected Requests</p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">Try changing your search query or organization type filter.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">

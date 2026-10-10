@@ -257,7 +257,7 @@ class Donation(models.Model):
     
     DONOR_TYPE_CHOICES = (
         ('private', 'Private Donor'),
-        ('government', 'Government'),
+        ('organization', 'Organization'),
     )
 
     # Basic donation info
@@ -269,7 +269,7 @@ class Donation(models.Model):
     estimated_delivery_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
-    # Donor type and details (supports both private and government donations)
+    # Donor type and details (supports both private and organization donations)
     donor_type = models.CharField(max_length=20, choices=DONOR_TYPE_CHOICES, default='private')
     
     # Private donor information
@@ -280,14 +280,63 @@ class Donation(models.Model):
     donor_email = models.EmailField(blank=True)
     donor_phone = models.CharField(max_length=20, blank=True)
     
-    # Government donor information
-    government_department = models.CharField(max_length=200, blank=True)
-    government_program = models.CharField(max_length=200, blank=True)
-    government_officer_name = models.CharField(max_length=200, blank=True)
-    government_officer_designation = models.CharField(max_length=100, blank=True)
-    government_officer_contact = models.CharField(max_length=20, blank=True)
-    government_email = models.EmailField(blank=True)
+    # Organization donor information
+    organization_name = models.CharField(max_length=200, blank=True)
+    organization_program = models.CharField(max_length=200, blank=True)
+    organization_officer_name = models.CharField(max_length=200, blank=True)
+    organization_officer_designation = models.CharField(max_length=100, blank=True)
+    organization_officer_contact = models.CharField(max_length=20, blank=True)
+    organization_email = models.EmailField(blank=True)
     
+    # Backward compatibility aliases for government_* fields
+    @property
+    def government_department(self):
+        return self.organization_name
+
+    @government_department.setter
+    def government_department(self, value):
+        self.organization_name = value
+
+    @property
+    def government_program(self):
+        return self.organization_program
+
+    @government_program.setter
+    def government_program(self, value):
+        self.organization_program = value
+
+    @property
+    def government_officer_name(self):
+        return self.organization_officer_name
+
+    @government_officer_name.setter
+    def government_officer_name(self, value):
+        self.organization_officer_name = value
+
+    @property
+    def government_officer_designation(self):
+        return self.organization_officer_designation
+
+    @government_officer_designation.setter
+    def government_officer_designation(self, value):
+        self.organization_officer_designation = value
+
+    @property
+    def government_officer_contact(self):
+        return self.organization_officer_contact
+
+    @government_officer_contact.setter
+    def government_officer_contact(self, value):
+        self.organization_officer_contact = value
+
+    @property
+    def government_email(self):
+        return self.organization_email
+
+    @government_email.setter
+    def government_email(self, value):
+        self.organization_email = value
+
     # Donation letter (PDF)
     donation_letter_file = models.FileField(upload_to='donation_letters/', null=True, blank=True)
 
@@ -297,6 +346,11 @@ class Donation(models.Model):
     received_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="received_donations")
     cancellation_reason = models.TextField(blank=True, default='')
     cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if self.donor_type == 'government':
+            self.donor_type = 'organization'
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Donation {self.id} - {self.quantity} units of {self.need_item.name}"

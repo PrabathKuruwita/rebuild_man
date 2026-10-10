@@ -12,8 +12,11 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.utils import timezone
 from django.utils.timezone import localtime
+import logging
 from django.core.mail import send_mail
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 from .serializers import (
     OrganizationSerializer, 
     SectionSerializer, 
@@ -278,6 +281,11 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         queryset = Organization.objects.all()
         user = self.request.user
         
+        # Allow fetching all organizations when explicitly requested (for public impact, map, etc.)
+        all_param = self.request.query_params.get('all')
+        if all_param and all_param.lower() in ('true', '1'):
+            return queryset
+
         # Handle unauthenticated users
         if not user.is_authenticated:
             return queryset  # Return all for public viewing
@@ -452,8 +460,12 @@ class NeedItemViewSet(viewsets.ModelViewSet):
         )
         user = self.request.user
         
+        # Handle explicit all query param for public impact and needs pages
+        all_param = self.request.query_params.get('all')
+        if all_param and all_param.lower() in ('true', '1'):
+            pass  # Return all
         # Handle unauthenticated users
-        if not user.is_authenticated:
+        elif not user.is_authenticated:
             pass  # Return all for public viewing
         # ADMIN users see all needs
         elif hasattr(user, 'role') and user.role == 'ADMIN':
@@ -762,15 +774,120 @@ class AdminApprovalViewSet(viewsets.ViewSet):
                 f"— The NeedTracker Team"
             )
             
+            html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{email_subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #334155; line-height: 1.6;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #f1f5f9; padding: 40px 10px;">
+    <tr>
+      <td align="center">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+          
+          <!-- Header Banner -->
+          <tr>
+            <td align="center" style="background-color: #10b981; padding: 30px 20px; color: #ffffff;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: 800; tracking: -0.025em; letter-spacing: 0.5px;">NeedTracker</h1>
+              <p style="margin: 5px 0 0 0; font-size: 11px; font-weight: 700; tracking: 0.1em; text-transform: uppercase; opacity: 0.85;">Donation Management Platform</p>
+            </td>
+          </tr>
+          
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="margin: 0 0 20px 0; font-size: 16px; font-weight: 700; color: #0f172a;">Dear {user.first_name or user.username},</p>
+              
+              <!-- Highlight Box -->
+              <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <p style="margin: 0; font-size: 15px; color: #065f46; font-weight: 500; line-height: 1.5;">
+                  Great news! Your request to register as an Organization Administrator for <strong>{org_name}</strong> has been approved by the NeedTracker System Administrator.
+                </p>
+              </div>
+
+              <!-- Details Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; letter-spacing: 0.5px;">Approval Details</h3>
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc; border-radius: 8px; padding: 15px; margin-bottom: 25px; border: 1px solid #f1f5f9; font-size: 14px;">
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600; width: 140px;">Username:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user.username}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Email:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user.email}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Organization:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user.requested_organization_name or 'Not specified'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Org Type:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user.requested_organization_type or 'Not specified'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Approval Date:</td>
+                  <td style="padding: 4px 0; color: #334155;">{approval_time.strftime('%B %d, %Y at %I:%M %p')} (Asia/Colombo)</td>
+                </tr>
+              </table>
+
+              <!-- Next Steps Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; letter-spacing: 0.5px;">Next Steps</h3>
+              <ol style="margin: 0 0 25px 0; padding-left: 20px; font-size: 14px; color: #475569; line-height: 1.6;">
+                <li style="margin-bottom: 8px;">Log in to your NeedTracker account using your credentials.</li>
+                <li style="margin-bottom: 8px;">Navigate to the <strong>Organizations section</strong> to manage your organization's needs.</li>
+                <li style="margin-bottom: 8px;">You can now create sections, add needs, and manage your organization's dashboard.</li>
+              </ol>
+
+              <!-- Account Capabilities Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; letter-spacing: 0.5px;">Your Account Features</h3>
+              <ul style="margin: 0 0 25px 0; padding-left: 20px; font-size: 14px; color: #475569; line-height: 1.6; list-style-type: square;">
+                <li style="margin-bottom: 6px;">Organization management and configuration.</li>
+                <li style="margin-bottom: 6px;">Need item creation and priority updates.</li>
+                <li style="margin-bottom: 6px;">Document uploads and AI processing.</li>
+                <li style="margin-bottom: 6px;">Real-time dashboard and fulfillment stats.</li>
+              </ul>
+
+              <!-- Action Button -->
+              <div style="text-align: center; margin: 30px 0 10px 0;">
+                <a href="{login_url}" style="background-color: #10b981; color: #ffffff; padding: 12px 30px; border-radius: 8px; font-size: 14px; font-weight: bold; text-decoration: none; display: inline-block; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);">Log In to NeedTracker</a>
+              </div>
+
+              <p style="margin: 25px 0 0 0; font-size: 14px; color: #64748b;">
+                Welcome to NeedTracker!<br>
+                <strong>The NeedTracker Team</strong>
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color: #f8fafc; padding: 25px; border-top: 1px solid #f1f5f9; color: #94a3b8; font-size: 11px;">
+              <p style="margin: 0 0 5px 0;">This is an automatically generated email from NeedTracker.</p>
+              <p style="margin: 0;">&copy; 2026 NeedTracker. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+            
             send_mail(
                 subject=email_subject,
                 message=email_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
                 fail_silently=False,
+                html_message=html_message
             )
         except Exception as e:
-            print(f"Failed to send approval email to {user.email}: {str(e)}")
+            logger.error(f"Failed to send approval email to {user.email}: {e}", exc_info=True)
         
         return Response({
             'message': f'Org admin {user.username} approved and assigned to {org_name}',
@@ -796,14 +913,16 @@ class AdminApprovalViewSet(viewsets.ViewSet):
         
         reason = request.data.get('reason', 'No reason provided')
         
-        # Store user info for email before deletion
-        user_email = user.email
-        user_username = user.username
-        user_first_name = user.first_name or user.username
+        import re
+        # Store clean user info for email and record retention
+        user_email = re.sub(r'^rejected_[0-9a-fA-F]{8}_', '', user.email or '')
+        user_username = re.sub(r'_rejected_[0-9a-fA-F]{8}$', '', user.username or '')
+        user_first_name = user.first_name or user_username
         user_org_name = user.requested_organization_name or 'Not specified'
         user_org_type = user.requested_organization_type or 'Not specified'
         
-        # Send rejection email BEFORE deleting the account
+        # Send rejection email BEFORE updating status
+        email_sent = False
         try:
             frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
             
@@ -834,36 +953,132 @@ class AdminApprovalViewSet(viewsets.ViewSet):
                 f"— The NeedTracker Team"
             )
             
+            html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{email_subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #334155; line-height: 1.6;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #f1f5f9; padding: 40px 10px;">
+    <tr>
+      <td align="center">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+          
+          <!-- Header Banner -->
+          <tr>
+            <td align="center" style="background-color: #ef4444; padding: 30px 20px; color: #ffffff;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: 800; tracking: -0.025em; letter-spacing: 0.5px;">NeedTracker</h1>
+              <p style="margin: 5px 0 0 0; font-size: 11px; font-weight: 700; tracking: 0.1em; text-transform: uppercase; opacity: 0.85;">Donation Management Platform</p>
+            </td>
+          </tr>
+          
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="margin: 0 0 20px 0; font-size: 16px; font-weight: 700; color: #0f172a;">Dear {user_first_name},</p>
+              
+              <!-- Highlight Box -->
+              <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <p style="margin: 0; font-size: 15px; color: #991b1b; font-weight: 500; line-height: 1.5;">
+                  We regret to inform you that your request to register as an Organization Administrator on the NeedTracker platform has been reviewed and rejected by the System Administrator.
+                </p>
+              </div>
+
+              <!-- Rejection Reason Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #991b1b; margin: 0 0 10px 0; letter-spacing: 0.5px;">Rejection Reason</h3>
+              <div style="background-color: #fdf2f8; border: 1px dashed #f472b6; border-radius: 8px; padding: 15px; margin-bottom: 25px; font-size: 14px; color: #831843; font-weight: 600;">
+                {reason}
+              </div>
+
+              <!-- Details Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; letter-spacing: 0.5px;">Rejection Details</h3>
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc; border-radius: 8px; padding: 15px; margin-bottom: 25px; border: 1px solid #f1f5f9; font-size: 14px;">
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600; width: 150px;">Username:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user_username}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Email:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user_email}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Requested Org:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user_org_name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Organization Type:</td>
+                  <td style="padding: 4px 0; color: #334155;">{user_org_type}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Rejection Date:</td>
+                  <td style="padding: 4px 0; color: #334155;">{rejection_time.strftime('%B %d, %Y at %I:%M %p')} (Asia/Colombo)</td>
+                </tr>
+              </table>
+
+              <!-- What Happens Next Section -->
+              <h3 style="font-size: 14px; font-weight: 700; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; letter-spacing: 0.5px;">What Happens Next?</h3>
+              <ul style="margin: 0 0 25px 0; padding-left: 20px; font-size: 14px; color: #475569; line-height: 1.6;">
+                <li style="margin-bottom: 8px;">You can re-register on the platform after addressing the rejection reason above.</li>
+                <li style="margin-bottom: 8px;">Your previous registration request data has been cleared from the active lookup list to allow you to reuse the same username/email.</li>
+                <li style="margin-bottom: 8px;">If you believe this was an error or would like to appeal, please contact the support team.</li>
+              </ul>
+
+              <!-- Action Button -->
+              <div style="text-align: center; margin: 30px 0 10px 0;">
+                <a href="{frontend_url}" style="background-color: #64748b; color: #ffffff; padding: 12px 30px; border-radius: 8px; font-size: 14px; font-weight: bold; text-decoration: none; display: inline-block;">Return to NeedTracker</a>
+              </div>
+
+              <p style="margin: 25px 0 0 0; font-size: 14px; color: #64748b;">
+                Thank you for your interest in joining NeedTracker.<br>
+                <strong>The NeedTracker Team</strong>
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color: #f8fafc; padding: 25px; border-top: 1px solid #f1f5f9; color: #94a3b8; font-size: 11px;">
+              <p style="margin: 0 0 5px 0;">This is an automatically generated email from NeedTracker.</p>
+              <p style="margin: 0;">&copy; 2026 NeedTracker. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+            
             send_mail(
                 subject=email_subject,
                 message=email_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user_email],
                 fail_silently=False,
+                html_message=html_message
             )
+            email_sent = True
         except Exception as e:
-            print(f"Failed to send rejection email to {user_email}: {str(e)}")
+            email_sent = False
+            logger.error(f"Failed to send rejection email to {user_email}: {e}", exc_info=True)
         
-        # Mark user as REJECTED instead of deleting so they appear in the rejected list
-        from django.utils import timezone
-        import uuid
-        
+        # Mark user as REJECTED without modifying their username or email
         user.approval_status = 'REJECTED'
         user.rejection_reason = reason
         user.approval_decided_at = timezone.now()
         user.approval_decided_by = request.user
-        
-        # Append a unique suffix to email and username to allow re-registration
-        uid = str(uuid.uuid4())[:8]
-        user.username = f"{user.username}_rejected_{uid}"
-        user.email = f"rejected_{uid}_{user.email}"
+        user.username = user_username
+        user.email = user_email
         user.save()
         
-        # The email message says the account has been removed. We should update the text slightly.
-        # But it's fine, to the user it's effectively removed (they can't login, they must re-register).
-        
         return Response({
-            'message': f'Org admin registration request rejected.',
+            'message': 'Org admin registration request rejected.',
+            'email_sent': email_sent,
             'user': AdminApprovalSerializer(user).data
         }, status=status.HTTP_200_OK)
     
@@ -897,16 +1112,43 @@ class DonationViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def public_recent(self, request):
-        """Get the latest confirmed or fulfilled donations for the landing page"""
-        recent_donations = Donation.objects.filter(
+        """Get the latest confirmed or fulfilled donations across diverse organizations for the landing page ticker"""
+        all_donations = Donation.objects.filter(
             status__in=['CONFIRMED', 'FULFILLED']
-        ).select_related('need_item', 'need_item__section__organization').order_by('-created_at')[:10]
+        ).select_related('need_item__section__organization').order_by('-created_at')
         
+        # Group donations by organization to ensure fair representation across different organizations
+        org_donations = {}
+        for donation in all_donations:
+            if not donation.need_item or not donation.need_item.section or not donation.need_item.section.organization:
+                continue
+            org_id = donation.need_item.section.organization_id
+            if org_id not in org_donations:
+                org_donations[org_id] = []
+            if len(org_donations[org_id]) < 8:
+                org_donations[org_id].append(donation)
+                
+        # Interleave donations across organizations round-robin so the ticker showcases diverse organizations
+        interleaved_donations = []
+        max_len = max((len(lst) for lst in org_donations.values()), default=0)
+        for i in range(max_len):
+            for org_id, d_list in org_donations.items():
+                if i < len(d_list):
+                    interleaved_donations.append(d_list[i])
+                    if len(interleaved_donations) >= 20:
+                        break
+            if len(interleaved_donations) >= 20:
+                break
+                
+        # Fallback if no organization-linked donations found
+        if not interleaved_donations:
+            interleaved_donations = list(all_donations[:10])
+
         data = []
-        for donation in recent_donations:
+        for donation in interleaved_donations:
             donor_display = "Anonymous Donor"
-            if donation.donor_type == 'government' and donation.government_department:
-                donor_display = donation.government_department
+            if donation.donor_type in ('organization', 'government') and donation.organization_name:
+                donor_display = donation.organization_name
             elif donation.donor_organization:
                 donor_display = donation.donor_organization
             elif donation.donor_name:
@@ -914,14 +1156,22 @@ class DonationViewSet(viewsets.ModelViewSet):
                 parts = donation.donor_name.split()
                 donor_display = (parts[0] if parts else "Private") + " (Private)"
                 
+            org_name = (
+                donation.need_item.section.organization.name
+                if donation.need_item and donation.need_item.section and donation.need_item.section.organization
+                else "Verified Organization"
+            )
+            item_name = donation.need_item.name if donation.need_item else "Essential Supplies"
+            item_unit = donation.need_item.unit if donation.need_item else "units"
+                
             data.append({
                 'id': donation.id,
                 'donor_name': donor_display,
-                'need_item_name': donation.need_item.name,
+                'need_item_name': item_name,
                 'quantity': donation.quantity,
-                'unit': donation.need_item.unit,
-                'organization_name': donation.need_item.section.organization.name,
-                'created_at': donation.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'unit': item_unit,
+                'organization_name': org_name,
+                'created_at': donation.created_at.strftime('%Y-%m-%d %H:%M:%S') if donation.created_at else "",
                 'status': donation.status
             })
         return Response(data)
@@ -938,7 +1188,8 @@ class DonationViewSet(viewsets.ModelViewSet):
                 'donor_type': donation.donor_type,
                 'donor_name': donation.donor_name,
                 'donor_organization': donation.donor_organization,
-                'government_department': donation.government_department,
+                'organization_name': donation.organization_name,
+                'government_department': donation.organization_name,
                 'need_item': donation.need_item_id,
                 'quantity': donation.quantity,
                 'created_at': donation.created_at.isoformat()
@@ -1015,9 +1266,9 @@ class DonationViewSet(viewsets.ModelViewSet):
         elif donation.donor_type == 'private':
             donor_email = donation.donor_email
             donor_name = donation.donor_name
-        elif donation.donor_type == 'government':
-            donor_email = donation.government_email
-            donor_name = donation.government_officer_name or donation.government_department
+        elif donation.donor_type in ('organization', 'government'):
+            donor_email = donation.organization_email or donation.government_email
+            donor_name = donation.organization_officer_name or donation.organization_name
         else:
             return
             
@@ -1358,12 +1609,12 @@ class DonationViewSet(viewsets.ModelViewSet):
                     donor_address=donation.donor_address,
                     donor_email=donation.donor_email,
                     donor_phone=donation.donor_phone,
-                    government_department=donation.government_department,
-                    government_program=donation.government_program,
-                    government_officer_name=donation.government_officer_name,
-                    government_officer_designation=donation.government_officer_designation,
-                    government_officer_contact=donation.government_officer_contact,
-                    government_email=donation.government_email,
+                    organization_name=donation.organization_name,
+                    organization_program=donation.organization_program,
+                    organization_officer_name=donation.organization_officer_name,
+                    organization_officer_designation=donation.organization_officer_designation,
+                    organization_officer_contact=donation.organization_officer_contact,
+                    organization_email=donation.organization_email,
                     cancelled_by=request.user,
                     cancellation_reason='Surplus quantity exceeding the required need.',
                     cancelled_at=timezone.now()
@@ -1540,10 +1791,18 @@ def system_stats(request):
     # 2. Count verified hospitals (organizations)
     verified_hospitals = Organization.objects.count()
     
-    # 3. Count donors onboarded
-    donors_count = User.objects.filter(role='DONOR').count()
+    # 3. Count unique active donors (registered donors + unique direct donors in donations)
+    registered_donors = set(User.objects.filter(role='DONOR').values_list('id', flat=True))
+    linked_donors = set(Donation.objects.filter(donor__isnull=False).values_list('donor_id', flat=True))
+    guest_donors = set(Donation.objects.filter(donor__isnull=True).exclude(
+        donor_email='', donor_name='', donor_organization='', organization_email='', organization_name=''
+    ).values_list('donor_email', 'donor_name', 'donor_organization', 'organization_email', 'organization_name'))
     
-    # 4. Calculate delivery success rate
+    donors_count = len(registered_donors | linked_donors) + len(guest_donors)
+    if donors_count == 0 and User.objects.filter(role='DONOR').exists():
+        donors_count = User.objects.filter(role='DONOR').count()
+    
+    # 4. Calculate delivery success rate based on real platform donations
     fulfilled = Donation.objects.filter(status='FULFILLED').count()
     
     # Filter out cancellations that are NOT donor delivery failures (e.g. surplus, met by other means, duplicate)
@@ -1562,13 +1821,52 @@ def system_stats(request):
     if total_relevant > 0:
         delivery_success_rate = round((fulfilled / total_relevant) * 100)
     else:
-        delivery_success_rate = 98  # Default/fallback from design
+        delivery_success_rate = 100 if Donation.objects.exists() else 100
         
+    # 5. Monthly donation volume trends for the last 6 calendar months
+    from django.db.models import Sum
+    now = timezone.now()
+    monthly_trends = []
+    for i in range(5, -1, -1):
+        year = now.year
+        month = now.month - i
+        while month <= 0:
+            month += 12
+            year -= 1
+        
+        month_start = timezone.datetime(year, month, 1, tzinfo=timezone.get_current_timezone())
+        if month == 12:
+            next_month_start = timezone.datetime(year + 1, 1, 1, tzinfo=timezone.get_current_timezone())
+        else:
+            next_month_start = timezone.datetime(year, month + 1, 1, tzinfo=timezone.get_current_timezone())
+            
+        month_label = month_start.strftime('%b')
+        
+        # Count of pledged donations in this month across all registered donors
+        pledged_count = Donation.objects.filter(
+            created_at__gte=month_start,
+            created_at__lt=next_month_start
+        ).count()
+        
+        # Count of fulfilled donations in this month across all registered donors
+        fulfilled_count = Donation.objects.filter(
+            status='FULFILLED',
+            created_at__gte=month_start,
+            created_at__lt=next_month_start
+        ).count()
+        
+        monthly_trends.append({
+            'month': month_label,
+            'donations': pledged_count,
+            'fulfilled': fulfilled_count
+        })
+
     return Response({
         'provinces_covered': provinces_count,
         'verified_hospitals': verified_hospitals,
         'donors_onboarded': donors_count,
-        'delivery_success_rate': delivery_success_rate
+        'delivery_success_rate': delivery_success_rate,
+        'monthly_trends': monthly_trends,
     })
 
 

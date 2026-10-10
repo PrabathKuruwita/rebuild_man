@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { NeedItem, updateNeed, unitLabels } from "@/lib/api";
+import SuccessCheckmark from "@/components/SuccessCheckmark";
 
 interface EditNeedModalProps {
   need: NeedItem;
@@ -71,7 +72,7 @@ export default function EditNeedModal({
       setTimeout(() => {
         onSuccess();
         onClose();
-      }, 900);
+      }, 1000);
     } catch (err: unknown) {
       console.error("Error updating need:", err);
       const errorMessage =
@@ -125,26 +126,14 @@ export default function EditNeedModal({
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {success ? (
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-8 h-8 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+            <div className="flex flex-col items-center justify-center h-full py-8 gap-4 text-center">
+              <SuccessCheckmark size="lg" />
+              <div className="animate-success-content space-y-1">
+                <h3 className="text-xl font-bold text-gray-900">Updated!</h3>
+                <p className="text-gray-500 text-sm">
+                  Changes saved successfully.
+                </p>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">Updated!</h3>
-              <p className="text-gray-500 text-sm">
-                Changes saved successfully.
-              </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -158,6 +147,8 @@ export default function EditNeedModal({
                 </label>
                 <input
                   id="need-name"
+                  name="name"
+                  autoComplete="off"
                   type="text"
                   value={form.name}
                   onChange={(e) =>
@@ -211,6 +202,8 @@ export default function EditNeedModal({
                   </label>
                   <input
                     id="quantity-required"
+                    name="quantity_required"
+                    autoComplete="off"
                     type="number"
                     min={1}
                     value={form.quantity_required}
@@ -234,6 +227,8 @@ export default function EditNeedModal({
                   </label>
                   <input
                     id="quantity-received"
+                    name="quantity_received"
+                    autoComplete="off"
                     type="number"
                     min={0}
                     value={form.quantity_received}
@@ -246,10 +241,13 @@ export default function EditNeedModal({
 
               {/* Unit */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="need-unit" className="block text-sm font-medium text-gray-700 mb-1.5">
                   Unit
                 </label>
                 <select
+                  id="need-unit"
+                  name="unit"
+                  autoComplete="off"
                   value={form.unit}
                   onChange={(e) =>
                     setForm((f) => ({
@@ -270,10 +268,13 @@ export default function EditNeedModal({
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="need-description" className="block text-sm font-medium text-gray-700 mb-1.5">
                   Description
                 </label>
                 <textarea
+                  id="need-description"
+                  name="description"
+                  autoComplete="off"
                   rows={3}
                   value={form.description}
                   onChange={(e) =>

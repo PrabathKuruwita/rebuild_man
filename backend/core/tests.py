@@ -334,6 +334,15 @@ class DonationSplitTests(APITestCase):
             estimated_delivery_date=date_3_days_away
         )
         
+        # 6. Non-matching donation - fulfilled status (FULFILLED, 3 days away)
+        fulfilled_donation = Donation.objects.create(
+            donor=donor_user,
+            need_item=self.need_item,
+            quantity=10,
+            status='FULFILLED',
+            estimated_delivery_date=date_3_days_away
+        )
+        
         # Run command
         call_command('send_delivery_reminders')
         
@@ -557,5 +566,250 @@ class AdminApprovalSerializerTests(APITestCase):
         from core.serializers import AdminApprovalSerializer
         serializer = AdminApprovalSerializer(user)
         self.assertEqual(serializer.data['approval_decided_by_username'], "Org Admin (Pasindu Promodaya)")
+
+
+class AdminApprovalTests(APITestCase):
+    def setUp(self):
+        # Create system admin
+        self.sys_admin = User.objects.create_user(
+            username="sysadmin",
+            email="sysadmin@example.com",
+            password="password",
+            role="ADMIN"
+        )
+        
+        # Create pending org admin
+        self.pending_org_admin = User.objects.create_user(
+            username="pendingorgadmin",
+            email="pending@example.com",
+            password="password",
+            role="ORG_ADMIN",
+            approval_status="PENDING",
+            requested_organization_name="New Hospital"
+        )
+        
+        # Authenticate as sys admin
+        self.client.force_authenticate(user=self.sys_admin)
+
+    def test_reject_sends_email_and_no_db_notification(self):
+        """
+        Rejecting an org admin registration request sends an email with the reason
+        and does not create a database notification.
+        """
+        from core.models import Notification
+        from django.core import mail
+        
+        # Ensure no notifications exist and clear mail outbox
+        Notification.objects.all().delete()
+        mail.outbox = []
+        
+        url_reject = reverse('admin_approval-reject', kwargs={'pk': self.pending_org_admin.id})
+        rejection_reason = "Incomplete documentation provided."
+        
+        response = self.client.post(url_reject, {'reason': rejection_reason}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Verify that no DB notification was created for this user
+        notifications = Notification.objects.filter(recipient=self.pending_org_admin)
+        self.assertEqual(notifications.count(), 0)
+        
+        # Verify email was sent
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.to, ["pending@example.com"])
+        self.assertIn("Registration Request Has Been Rejected", email.subject)
+        self.assertIn(rejection_reason, email.body)
+        
+        # Verify original username and email are preserved (not mangled with rejected_ prefix/suffix)
+        self.pending_org_admin.refresh_from_db()
+        self.assertEqual(self.pending_org_admin.approval_status, 'REJECTED')
+        self.assertEqual(self.pending_org_admin.username, "pendingorgadmin")
+        self.assertEqual(self.pending_org_admin.email, "pending@example.com")
+        self.assertFalse("rejected_" in self.pending_org_admin.username)
+        self.assertFalse("rejected_" in self.pending_org_admin.email)
+        
+        # Verify rejected_list endpoint returns clean original credentials
+        url_rejected_list = reverse('admin_approval-rejected-list')
+        list_response = self.client.get(url_rejected_list)
+        self.assertEqual(list_response.status_code, status.HTTP_200_OK)
+        rejected_entry = next((item for item in list_response.data if item['id'] == self.pending_org_admin.id), None)
+        self.assertIsNotNone(rejected_entry)
+        self.assertEqual(rejected_entry['username'], "pendingorgadmin")
+        self.assertEqual(rejected_entry['email'], "pending@example.com")
+
+    def test_rejected_org_admin_re_registration(self):
+        """
+        A previously rejected org admin can re-register with the same email,
+        recycling their record back to PENDING status without duplicate user creation.
+        """
+        # First reject the pending admin
+        url_reject = reverse('admin_approval-reject', kwargs={'pk': self.pending_org_admin.id})
+        self.client.post(url_reject, {'reason': 'Invalid docs'}, format='json')
+        
+        self.pending_org_admin.refresh_from_db()
+        self.assertEqual(self.pending_org_admin.approval_status, 'REJECTED')
+        
+        # Unauthenticate to simulate registration page
+        self.client.force_authenticate(user=None)
+        
+        url_register = reverse('auth_register_org_admin')
+        re_register_data = {
+            'username': 'pending_org_admin_new',
+            'email': 'pending@example.com',
+            'password': 'NewStrongPassword123!',
+            'password2': 'NewStrongPassword123!',
+            'first_name': 'Pending',
+            'last_name': 'AdminUpdated',
+            'phone_number': '+94770000000',
+            'organization_name': 'Updated Hospital',
+            'organization_type': 'HOSPITAL',
+        }
+        
+        res = self.client.post(url_register, re_register_data, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        
+        # Verify existing record was updated and recycled back to PENDING
+        self.pending_org_admin.refresh_from_db()
+        self.assertEqual(self.pending_org_admin.approval_status, 'PENDING')
+        self.assertEqual(self.pending_org_admin.rejection_reason, '')
+        self.assertIsNone(self.pending_org_admin.approval_decided_at)
+        self.assertEqual(self.pending_org_admin.first_name, 'Pending')
+        self.assertEqual(self.pending_org_admin.last_name, 'AdminUpdated')
+
+    def test_duplicate_username_org_admin_registration_rejected(self):
+        """
+        ATC_REG_001 / BUG_003:
+        Verify that Org Admin registration is rejected when the chosen username already exists,
+        rather than silently auto-incrementing the username with a numeric suffix (e.g., _1).
+        """
+        # Ensure an active user already exists with username 'sadev_nhsl'
+        User.objects.create_user(
+            username='sadev_nhsl',
+            email='existing_admin@example.com',
+            password='ExistingPass@123',
+            role='ORG_ADMIN'
+        )
+
+        self.client.force_authenticate(user=None)
+        url_register = reverse('auth_register_org_admin')
+        registration_data = {
+            'username': 'sadev_nhsl',
+            'email': 'pasinduofficial6@gmail.com',
+            'password': 'SecurePass@123',
+            'password2': 'SecurePass@123',
+            'first_name': 'Amal',
+            'last_name': 'Perera',
+            'phone_number': '+94 11 289 3500',
+            'organization_name': 'Homagama Hospital',
+            'organization_type': 'HOSPITAL',
+        }
+
+        res = self.client.post(url_register, registration_data, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', res.data)
+        self.assertIn('already exists', str(res.data['username']))
+
+        # Ensure no duplicate user or suffix-mutated user (sadev_nhsl_1) was created
+        self.assertFalse(User.objects.filter(username='sadev_nhsl_1').exists())
+        self.assertEqual(User.objects.filter(username='sadev_nhsl').count(), 1)
+
+    def test_duplicate_username_donor_registration_rejected(self):
+        """
+        Verify that standard donor registration is also rejected when username already exists.
+        """
+        User.objects.create_user(
+            username='donor_existing',
+            email='donor_existing@example.com',
+            password='ExistingPass@123',
+            role='DONOR'
+        )
+
+        self.client.force_authenticate(user=None)
+        url_register = reverse('auth_register')
+        registration_data = {
+            'username': 'donor_existing',
+            'email': 'new_donor@example.com',
+            'password': 'SecurePass@123',
+            'password2': 'SecurePass@123',
+            'first_name': 'Donor',
+            'last_name': 'Test',
+            'phone_number': '+94771234567',
+        }
+
+        res = self.client.post(url_register, registration_data, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', res.data)
+        self.assertIn('already exists', str(res.data['username']))
+        self.assertFalse(User.objects.filter(username='donor_existing_1').exists())
+
+    def test_donation_single_donor_type_isolation(self):
+        """
+        Verify that creating a private donation strips out any residual organization details,
+        ensuring a donation request uses only ONE donor type at a time.
+        """
+        org = Organization.objects.create(
+            name="Isolation General Hospital",
+            registration_number="REG9988",
+            address="456 Health Ave",
+            district="colombo",
+            org_type="HOSPITAL"
+        )
+        section = Section.objects.create(
+            organization=org,
+            name="Pediatric Ward"
+        )
+        need_item = NeedItem.objects.create(
+            section=section,
+            name="Hospital Beds",
+            priority="CRITICAL",
+            quantity_required=10,
+            unit="UNIT"
+        )
+
+        donor_user = User.objects.create_user(
+            username='donor_isolation_test',
+            email='isolation@example.com',
+            password='Password123!',
+            role='DONOR'
+        )
+        self.client.force_authenticate(user=donor_user)
+        url_donations = reverse('donation-list')
+
+        # Create private donation with accidental/residual org fields
+        donation_payload = {
+            'need_item': need_item.id,
+            'quantity': 2,
+            'status': 'PENDING',
+            'estimated_delivery_date': '2026-10-15',
+            'donor_type': 'private',
+            'donor_name': 'Pasindu Weragala',
+            'donor_email': 'pasindu@example.com',
+            'donor_phone': '0763372067',
+            'donor_address': '1, Hokandara East, Hokandara',
+            # Residual organization fields
+            'organization_name': 'Shakthi',
+            'organization_program': 'Arogya',
+            'organization_officer_name': 'Kanchana Herath',
+            'organization_officer_designation': 'President',
+            'organization_officer_contact': '0762287654',
+            'organization_email': 'probusiness@example.com',
+        }
+
+        res = self.client.post(url_donations, donation_payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        created_donation = Donation.objects.get(id=res.data['id'])
+        self.assertEqual(created_donation.donor_type, 'private')
+        self.assertEqual(created_donation.donor_name, 'Pasindu Weragala')
+        self.assertEqual(created_donation.donor_email, 'pasindu@example.com')
+        # Org fields must be wiped clean
+        self.assertEqual(created_donation.organization_name, '')
+        self.assertEqual(created_donation.organization_program, '')
+        self.assertEqual(created_donation.organization_officer_name, '')
+        self.assertEqual(created_donation.organization_officer_designation, '')
+        self.assertEqual(created_donation.organization_officer_contact, '')
+        self.assertEqual(created_donation.organization_email, '')
+
+
 
 

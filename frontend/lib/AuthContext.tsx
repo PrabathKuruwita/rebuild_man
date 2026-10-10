@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Token might be invalid
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        setUser(null);
       } finally {
         setLoading(false);
       }

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Clock, AlertCircle, TrendingUp, HandHeart } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, TrendingUp, HandHeart, Layers } from "lucide-react";
 import StatsCard from "./StatsCard";
 import ElevatedCard from "./ElevatedCard";
 import AnalyticsLineChart from "./AnalyticsLineChart";
@@ -14,13 +14,25 @@ interface AnalyticsMetric {
   status?: "critical" | "warning" | "success" | "neutral";
 }
 
+interface TrendDataPoint {
+  month: string;
+  donations: number;
+  fulfilled?: number;
+}
+
 interface AnalyticsViewProps {
   fulfillmentRate: number;
   donationRate: number;
   sectionMetrics: AnalyticsMetric[];
+  trendData?: TrendDataPoint[];
 }
 
-export default function AnalyticsView({ fulfillmentRate, donationRate, sectionMetrics }: AnalyticsViewProps) {
+export default function AnalyticsView({
+  fulfillmentRate,
+  donationRate,
+  sectionMetrics,
+  trendData,
+}: AnalyticsViewProps) {
   return (
     <div className="space-y-8">
       {/* High-level Progress Bars */}
@@ -58,43 +70,57 @@ export default function AnalyticsView({ fulfillmentRate, donationRate, sectionMe
       
       {/* Main Trend Chart - Visually Dominant */}
       <ElevatedCard className="p-8" isDominant={true}>
-        <AnalyticsLineChart />
+        <AnalyticsLineChart data={trendData} />
       </ElevatedCard>
 
       {/* Section-wise Analytics */}
       <ElevatedCard className="p-8">
         <h3 className="font-heading font-bold text-slate-900 mb-6 text-xl">Fulfillment by Section</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sectionMetrics.map((metric, idx) => (
-            <div key={idx} className="p-5 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition-all hover:-translate-y-0.5 hover:shadow-sm">
-              <div className="flex justify-between items-start mb-3">
-                <span className="text-sm font-bold text-slate-700 font-body">{metric.label}</span>
-                {metric.status === "success" ? (
-                  <CheckCircle2 className="text-status-success" size={18} />
-                ) : metric.status === "critical" ? (
-                  <AlertCircle className="text-status-critical" size={18} />
-                ) : (
-                  <Clock className="text-status-warning" size={18} />
-                )}
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-slate-900 font-heading">
-                  {typeof metric.value === 'number' ? <AnimatedStat value={metric.value} /> : metric.value}
-                </span>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest font-label">/ {metric.total} items</span>
-              </div>
-              <div className="mt-4 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-700 ${
-                    metric.status === "success" ? "bg-status-success" : 
-                    metric.status === "critical" ? "bg-status-critical" : "bg-status-warning"
-                  }`}
-                  style={{ width: `${metric.percentage}%` }}
-                />
-              </div>
+        {sectionMetrics.length === 0 ? (
+          <div className="py-12 px-6 flex flex-col items-center justify-center text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+            <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+              <Layers size={22} />
             </div>
-          ))}
-        </div>
+            <h4 className="font-heading font-bold text-slate-800 text-base mb-1">
+              No Section Fulfillment Data Available
+            </h4>
+            <p className="font-body text-xs sm:text-sm text-slate-500 max-w-sm">
+              Section fulfillment metrics will appear once needs are registered under specific department sections.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sectionMetrics.map((metric, idx) => (
+              <div key={idx} className="p-5 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition-all hover:-translate-y-0.5 hover:shadow-sm">
+                <div className="flex justify-between items-start mb-3">
+                  <span className="text-sm font-bold text-slate-700 font-body">{metric.label}</span>
+                  {metric.status === "success" ? (
+                    <CheckCircle2 className="text-status-success" size={18} />
+                  ) : metric.status === "critical" ? (
+                    <AlertCircle className="text-status-critical" size={18} />
+                  ) : (
+                    <Clock className="text-status-warning" size={18} />
+                  )}
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-slate-900 font-heading">
+                    {typeof metric.value === 'number' ? <AnimatedStat value={metric.value} /> : metric.value}
+                  </span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest font-label">/ {metric.total} items</span>
+                </div>
+                <div className="mt-4 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-700 ${
+                      metric.status === "success" ? "bg-status-success" : 
+                      metric.status === "critical" ? "bg-status-critical" : "bg-status-warning"
+                    }`}
+                    style={{ width: `${metric.percentage}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </ElevatedCard>
     </div>
   );

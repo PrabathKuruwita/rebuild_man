@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { updateCurrentUser } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { User, Mail, Phone, Lock, UserCircle, Save } from "lucide-react";
+import { User, Mail, Phone, Lock, UserCircle, Save, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -31,15 +31,15 @@ export default function ProfilePage() {
       {/* Teal Header Section - Matches Theme */}
       <div className="bg-gradient-to-r from-primary to-teal-800 text-white pt-16 pb-32">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start sm:items-center justify-between gap-4">
             <div>
-              <div className="inline-block px-3 py-1 bg-white/10 rounded-lg text-[10px] font-bold tracking-widest uppercase mb-4">
+              <div className="inline-block px-3 py-1 bg-white/10 rounded-lg text-[10px] font-bold tracking-widest uppercase mb-3 sm:mb-4">
                 User Profile
               </div>
-              <h1 className="text-4xl font-black tracking-tight">
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
                 {user.username}
               </h1>
-              <p className="text-teal-100 mt-2 text-sm max-w-xl">
+              <p className="text-teal-100 mt-2 text-xs sm:text-sm max-w-xl leading-relaxed">
                 Manage your personal information and account security settings.
                 Current login session is active.
               </p>
@@ -52,11 +52,14 @@ export default function ProfilePage() {
                     ? "/org-admin"
                     : "/"
               }
-              className="bg-white text-primary px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:bg-slate-50 transition-all"
+              className="bg-white text-primary px-3 py-1.5 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold sm:font-bold shadow-md hover:bg-slate-50 transition-all whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 self-start sm:self-auto mt-1 sm:mt-0"
             >
-              {user.role === "ADMIN" || user.role === "ORG_ADMIN"
-                ? "Back to Dashboard"
-                : "Back to Home"}
+              <ArrowLeft size={13} className="shrink-0 sm:w-4 sm:h-4" />
+              <span>
+                {user.role === "ADMIN" || user.role === "ORG_ADMIN"
+                  ? "Back to Dashboard"
+                  : "Back to Home"}
+              </span>
             </Link>
           </div>
         </div>
@@ -94,6 +97,9 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
     new_password: "",
     new_password2: "",
   });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -305,20 +311,34 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
               >
                 Current password
               </label>
-              <input
-                id="current_password"
-                title="Current Password"
-                placeholder="Current password"
-                type="password"
-                value={passwordForm.current_password}
-                onChange={(e) =>
-                  setPasswordForm((p) => ({
-                    ...p,
-                    current_password: e.target.value,
-                  }))
-                }
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
-              />
+              <div className="relative">
+                <input
+                  id="current_password"
+                  title="Current Password"
+                  placeholder="Current password"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={passwordForm.current_password}
+                  onChange={(e) =>
+                    setPasswordForm((p) => ({
+                      ...p,
+                      current_password: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-4 pr-11 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 rounded-lg p-1 transition-colors"
+                  aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}
+                >
+                  {showCurrentPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>
@@ -328,20 +348,34 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
               >
                 New password
               </label>
-              <input
-                id="new_password"
-                title="New Password"
-                placeholder="New password"
-                type="password"
-                value={passwordForm.new_password}
-                onChange={(e) =>
-                  setPasswordForm((p) => ({
-                    ...p,
-                    new_password: e.target.value,
-                  }))
-                }
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
-              />
+              <div className="relative">
+                <input
+                  id="new_password"
+                  title="New Password"
+                  placeholder="New password"
+                  type={showNewPassword ? "text" : "password"}
+                  value={passwordForm.new_password}
+                  onChange={(e) =>
+                    setPasswordForm((p) => ({
+                      ...p,
+                      new_password: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-4 pr-11 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 rounded-lg p-1 transition-colors"
+                  aria-label={showNewPassword ? "Hide new password" : "Show new password"}
+                >
+                  {showNewPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>
@@ -351,20 +385,34 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
               >
                 Confirm new password
               </label>
-              <input
-                id="confirm_password"
-                title="Confirm new password"
-                placeholder="Confirm new password"
-                type="password"
-                value={passwordForm.new_password2}
-                onChange={(e) =>
-                  setPasswordForm((p) => ({
-                    ...p,
-                    new_password2: e.target.value,
-                  }))
-                }
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
-              />
+              <div className="relative">
+                <input
+                  id="confirm_password"
+                  title="Confirm new password"
+                  placeholder="Confirm new password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={passwordForm.new_password2}
+                  onChange={(e) =>
+                    setPasswordForm((p) => ({
+                      ...p,
+                      new_password2: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-4 pr-11 py-3 text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-primary transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/50 rounded-lg p-1 transition-colors"
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
             </div>
 
             <button

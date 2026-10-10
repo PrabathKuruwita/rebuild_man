@@ -133,10 +133,10 @@ export default function Navbar() {
     <nav
       ref={navRef}
       onMouseMove={handleNavMouseMove}
-      className={`fixed top-0 left-0 right-0 h-20 sm:h-24 z-[1020] transition-all duration-300 ${isSidebarLayout ? "navbar-sidebar-offset" : "w-full"} ${navBg} border-b`}
+      className={`fixed top-0 left-0 right-0 h-16 sm:h-20 z-[1020] transition-all duration-300 ${isSidebarLayout ? "navbar-sidebar-offset" : "w-full"} ${navBg} border-b`}
     >
-      <div className={isSidebarLayout ? "w-full px-4 sm:px-8" : "w-full px-4 sm:px-8 lg:px-12"}>
-        <div className="flex justify-between items-center h-20 sm:h-24">
+      <div className={isSidebarLayout ? "w-full px-4 sm:px-8" : "w-full px-4 sm:px-6 lg:px-8 xl:px-12"}>
+        <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo - Responsive sizing */}
           <div className={`shrink-0 flex items-center ${isSidebarLayout ? "lg:hidden" : ""}`}>
             <Link href="/" className="flex items-center gap-2 sm:gap-3">
@@ -156,8 +156,8 @@ export default function Navbar() {
           </div>
 
 
-          {/* Navigation Links - Hidden on mobile, shown on desktop */}
-          <div className="hidden lg:flex items-center justify-center space-x-12 flex-1">
+          {/* Navigation Links - Hidden below XL, shown on desktop XL */}
+          <div className="hidden xl:flex items-center justify-center space-x-6 2xl:space-x-8 flex-1">
             {(!user || (user.role !== "ADMIN" && user.role !== "ORG_ADMIN")) && (
               <>
                 <Link
@@ -195,31 +195,37 @@ export default function Navbar() {
           </div>
 
           {/* Search + Auth Section */}
-          <div className="flex items-center gap-1 sm:gap-3 lg:gap-4 shrink-0">
-            {/* Desktop Auth Buttons - Hidden on mobile */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Desktop Auth Buttons (Unauthenticated) */}
             {!user ? (
-              <div className="hidden sm:flex items-center gap-2 md:gap-4">
-                <Link
-                  href="/login"
-                  className={`text-base font-medium transition-colors whitespace-nowrap ${textColor} ${textHoverColor}`}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/login?tab=org-admin"
-                  className={`text-base font-medium px-5 py-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap ${btnOutlineClass}`}
-                >
-                  Register Organization
-                </Link>
-                <Link
-                  href="/login?tab=register"
-                  className={`text-base font-medium px-6 py-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap ${btnPrimaryClass}`}
-                >
-                  Become a Donor
-                </Link>
-              </div>
+              <>
+                {/* Full Desktop Buttons (XL+ screens) */}
+                <div className="hidden xl:flex items-center gap-2.5 2xl:gap-3">
+                  <Link
+                    href="/login"
+                    className={`text-sm font-medium transition-colors whitespace-nowrap px-1 ${textColor} ${textHoverColor}`}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/login?tab=org-admin"
+                    className={`text-sm font-medium px-4 py-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap ${btnOutlineClass}`}
+                  >
+                    Register Organization
+                  </Link>
+                  <Link
+                    href="/login?tab=register"
+                    className={`text-sm font-semibold px-5 py-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap ${btnPrimaryClass}`}
+                  >
+                    Become a Donor
+                  </Link>
+                </div>
+
+                {/* Mobile Drawer Trigger for screens below XL */}
+                <MobileNav isSolid={isSolid} />
+              </>
             ) : (
-              <div className="hidden sm:flex items-center gap-4">
+              <div className="hidden xl:flex items-center gap-2 sm:gap-3">
                 {/* Pulsing System Status */}
                 {isSidebarLayout && (
                   <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full animate-fade-in mr-2 shrink-0 select-none">
@@ -272,24 +278,35 @@ export default function Navbar() {
                                 setShowNotifications(false);
                                 router.push(`/notifications?id=${n.id}`);
                               }}
-                              className={`p-4 flex gap-3 cursor-pointer transition-colors hover:bg-slate-50 relative ${!n.is_read ? 'bg-blue-50/20' : ''}`}
+                              className={`p-3.5 flex items-start gap-2.5 cursor-pointer transition-colors hover:bg-slate-50 relative ${
+                                !n.is_read ? 'bg-teal-50/30' : ''
+                              }`}
                             >
+                              <div className="pt-1 shrink-0">
+                                {!n.is_read ? (
+                                  <span className="block w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20" />
+                                ) : (
+                                  <span className="block w-2 h-2 rounded-full bg-transparent" />
+                                )}
+                              </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-start gap-1">
-                                  <p className={`text-xs text-slate-900 truncate ${!n.is_read ? 'font-semibold' : 'font-medium'}`}>
+                                <div className="flex justify-between items-baseline gap-2">
+                                  <p
+                                    className={`text-xs text-slate-900 truncate ${
+                                      !n.is_read ? 'font-semibold' : 'font-medium'
+                                    }`}
+                                    title={n.title}
+                                  >
                                     {n.title}
                                   </p>
-                                  <span className="text-[9px] text-slate-400 shrink-0">
+                                  <span className="text-[10px] text-slate-400 shrink-0 whitespace-nowrap">
                                     {formatTimeAgo(n.created_at)}
                                   </span>
                                 </div>
-                                <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">
+                                <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-relaxed">
                                   {n.message}
                                 </p>
                               </div>
-                              {!n.is_read && (
-                                <span className="absolute top-4 right-4 w-2 h-2 bg-primary rounded-full" />
-                              )}
                             </div>
                           ))
                         )}
@@ -384,8 +401,32 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Mobile Menu - Only on mobile */}
-            <MobileNav />
+            {/* Mobile & Tablet Actions for Logged in Users (< XL: mobile, foldables & tablets like iPad Pro 1032px) */}
+            {user && (
+              <div className="xl:hidden flex items-center gap-1 sm:gap-1.5">
+                <Link
+                  href="/notifications"
+                  title="Notifications"
+                  aria-label="Notifications"
+                  className={`p-2 rounded-lg transition-colors relative touch-manipulation flex items-center justify-center ${
+                    pathname === "/notifications"
+                      ? "text-primary bg-primary/10"
+                      : isSolid
+                        ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                        : "text-slate-200 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <Bell size={22} />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 rounded-full border-2 border-white"></span>
+                    </span>
+                  )}
+                </Link>
+                <MobileNav isSolid={isSolid} />
+              </div>
+            )}
           </div>
         </div>
       </div>

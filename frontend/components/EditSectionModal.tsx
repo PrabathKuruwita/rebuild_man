@@ -91,10 +91,13 @@ export default function EditSectionModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Section Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="edit-section-name" className="block text-sm font-medium text-gray-700 mb-1.5">
               Section Name <span className="text-red-500">*</span>
             </label>
             <input
+              id="edit-section-name"
+              name="name"
+              autoComplete="off"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -107,11 +110,14 @@ export default function EditSectionModal({
 
           {/* Head of Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="edit-head-of-section" className="block text-sm font-medium text-gray-700 mb-1.5">
               Head of Section{" "}
               <span className="text-gray-400 font-normal">(optional)</span>
             </label>
             <input
+              id="edit-head-of-section"
+              name="head_of_section"
+              autoComplete="name"
               type="text"
               value={headOfSection}
               onChange={(e) => setHeadOfSection(e.target.value)}
