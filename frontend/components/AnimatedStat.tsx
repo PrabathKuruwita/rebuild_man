@@ -21,24 +21,23 @@ export default function AnimatedStat({
   const prevValueRef = useRef(0);
 
   useEffect(() => {
-    if (value === 0) {
-      setCurrentValue(0);
-      prevValueRef.current = 0;
-      return;
-    }
-
     const startVal = prevValueRef.current;
     const diff = value - startVal;
     let startTimestamp: number | null = null;
     let animationFrameId: number;
 
     const step = (timestamp: number) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      
-      // easeOutQuart easing function
+      if (startTimestamp === null) {
+        startTimestamp = timestamp;
+      }
+
+      const progress = Math.min(
+        (timestamp - startTimestamp) / duration,
+        1,
+      );
+
       const easeProgress = 1 - Math.pow(1 - progress, 4);
-      
+
       setCurrentValue(Math.round(startVal + diff * easeProgress));
 
       if (progress < 1) {
@@ -50,9 +49,9 @@ export default function AnimatedStat({
     };
 
     animationFrameId = window.requestAnimationFrame(step);
-    
+
     return () => {
-      if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
+      window.cancelAnimationFrame(animationFrameId);
     };
   }, [value, duration]);
 

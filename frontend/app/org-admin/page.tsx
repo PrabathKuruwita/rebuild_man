@@ -23,7 +23,6 @@ import {
   HeartHandshake,
   FileText,
   BarChart3,
-  CheckCircle2,
   Inbox,
 } from "lucide-react";
 import { useRouter } from "next/navigation";

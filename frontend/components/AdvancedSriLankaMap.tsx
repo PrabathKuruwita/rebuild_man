@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { Marker } from "leaflet";
 import { Organization } from "@/lib/api";
 import "leaflet/dist/leaflet.css";
 
@@ -68,7 +69,7 @@ export default function AdvancedSriLankaMap({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<LeafletMap | null>(null);
   const leafletRef = useRef<typeof import("leaflet") | null>(null);
-  const markersRef = useRef<any[]>([]);
+  const markersRef = useRef<Marker[]>([]);
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const hasAnimatedRef = useRef(false);
 

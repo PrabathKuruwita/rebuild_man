@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import { 
   AreaChart, 
   Area, 
@@ -35,6 +35,10 @@ interface CustomTooltipProps {
   payload?: TooltipEntry[];
   label?: string;
 }
+
+const emptySubscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 // Custom Tooltip for Recharts
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
@@ -75,14 +79,13 @@ export default function AnalyticsLineChart({
   title = "Donation Volume Trends",
   subtitle
 }: AnalyticsLineChartProps) {
-  // Use state to delay rendering the chart until mounted to prevent hydration mismatches
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = useSyncExternalStore(
+    emptySubscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
   const [isInView, setIsInView] = useState(false);
   const chartContainerRef = React.useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!isMounted) return;

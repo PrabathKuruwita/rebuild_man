@@ -90,8 +90,11 @@ export default function ManualNeedEntryForm({
         section: parseInt(form.section_id),
       });
 
-      onSuccess();
-      onClose();
+      setSuccess(true);
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+      }, 1000);
     } catch (err: unknown) {
       console.error("Error saving need:", err);
       const errorMessage =

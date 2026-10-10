@@ -1190,7 +1190,6 @@ function DonationsContent() {
 
                         return needDonations.map((donation, idx) => {
                           const isFirst = idx === 0;
-                          const isLast = idx === needDonations.length - 1;
 
                           return (
                             <tr

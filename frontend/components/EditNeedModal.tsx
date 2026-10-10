@@ -68,8 +68,11 @@ export default function EditNeedModal({
         unit: form.unit,
         description: form.description.trim(),
       });
-      onSuccess();
-      onClose();
+      setSuccess(true);
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+      }, 1000);
     } catch (err: unknown) {
       console.error("Error updating need:", err);
       const errorMessage =
