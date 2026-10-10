@@ -451,6 +451,9 @@ export default function DonateModal({
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div className="relative flex-1">
                       <input
+                        id="donate-quantity"
+                        name="quantity"
+                        autoComplete="off"
                         type="number"
                         min="1"
                         max={needItem.quantity_required - needItem.quantity_confirmed}
@@ -522,10 +525,13 @@ export default function DonateModal({
 
                 {/* Message */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="donate-message" className="block text-sm font-semibold text-gray-700 mb-2">
                     Message
                   </label>
                   <textarea
+                    id="donate-message"
+                    name="message"
+                    autoComplete="off"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Add a message with your donation..."
@@ -537,10 +543,13 @@ export default function DonateModal({
 
                 {/* Delivery Date */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="donate-delivery-date" className="block text-sm font-semibold text-gray-700 mb-2">
                     Estimated Delivery Date <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="donate-delivery-date"
+                    name="delivery_date"
+                    autoComplete="off"
                     type="date"
                     required
                     value={estimatedDeliveryDate}
@@ -556,8 +565,10 @@ export default function DonateModal({
                     Donor Type
                   </label>
                   <div className="flex gap-6">
-                    <label className="flex items-center cursor-pointer select-none">
+                    <label htmlFor="donate-type-private" className="flex items-center cursor-pointer select-none">
                       <input
+                        id="donate-type-private"
+                        name="donor_type"
                         type="radio"
                         value="private"
                         checked={donorType === "private"}
@@ -566,8 +577,10 @@ export default function DonateModal({
                       />
                       <span className="text-sm font-medium text-gray-800">Private Donor</span>
                     </label>
-                    <label className="flex items-center cursor-pointer select-none">
+                    <label htmlFor="donate-type-org" className="flex items-center cursor-pointer select-none">
                       <input
+                        id="donate-type-org"
+                        name="donor_type"
                         type="radio"
                         value="organization"
                         checked={donorType === "organization"}
@@ -586,25 +599,38 @@ export default function DonateModal({
                       Donor Information
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      <input
-                        type="text"
-                        required
-                        placeholder="Full Name (e.g., John Doe) *"
-                        value={donorName}
-                        onChange={(e) => setDonorName(e.target.value)}
-                        className="px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
-                      />
-                      <input
-                        type="email"
-                        required
-                        placeholder="Email Address *"
-                        value={donorEmail}
-                        onChange={(e) => setDonorEmail(e.target.value)}
-                        className="px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
-                      />
+                      <div>
+                        <input
+                          id="donate-donor-name"
+                          name="donor_name"
+                          autoComplete="name"
+                          type="text"
+                          required
+                          placeholder="Full Name (e.g., John Doe) *"
+                          value={donorName}
+                          onChange={(e) => setDonorName(e.target.value)}
+                          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          id="donate-donor-email"
+                          name="donor_email"
+                          autoComplete="email"
+                          type="email"
+                          required
+                          placeholder="Email Address *"
+                          value={donorEmail}
+                          onChange={(e) => setDonorEmail(e.target.value)}
+                          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
+                        />
+                      </div>
                     </div>
                     <div>
                       <input
+                        id="donate-donor-phone"
+                        name="donor_phone"
+                        autoComplete="tel"
                         type="tel"
                         required
                         placeholder="Contact Number *"
@@ -615,6 +641,9 @@ export default function DonateModal({
                     </div>
                     <div>
                       <textarea
+                        id="donate-donor-address"
+                        name="donor_address"
+                        autoComplete="street-address"
                         required
                         placeholder="Address *"
                         value={donorAddress}
@@ -630,57 +659,87 @@ export default function DonateModal({
                       Organization Information
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      <input
-                        type="text"
-                        required
-                        placeholder="Organization Name *"
-                        value={organizationName}
-                        onChange={(e) => setOrganizationName(e.target.value)}
-                        className="px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Program Name"
-                        value={organizationProgram}
-                        onChange={(e) => setOrganizationProgram(e.target.value)}
-                        className="px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
-                      />
-                      <input
-                        type="text"
-                        required
-                        placeholder="Officer Name *"
-                        value={organizationOfficerName}
-                        onChange={(e) => setOrganizationOfficerName(e.target.value)}
-                        className="px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
-                      />
-                      <input
-                        type="text"
-                        required
-                        placeholder="Officer Designation *"
-                        value={organizationOfficerDesignation}
-                        onChange={(e) =>
-                          setOrganizationOfficerDesignation(e.target.value)
-                        }
-                        className="px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
-                      />
-                      <input
-                        type="tel"
-                        required
-                        placeholder="Officer Contact Number *"
-                        value={organizationOfficerContact}
-                        onChange={(e) =>
-                          setOrganizationOfficerContact(e.target.value)
-                        }
-                        className="px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
-                      />
-                      <input
-                        type="email"
-                        required
-                        placeholder="Email Address *"
-                        value={organizationEmail}
-                        onChange={(e) => setOrganizationEmail(e.target.value)}
-                        className="px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
-                      />
+                      <div>
+                        <input
+                          id="donate-org-name"
+                          name="organization_name"
+                          autoComplete="organization"
+                          type="text"
+                          required
+                          placeholder="Organization Name *"
+                          value={organizationName}
+                          onChange={(e) => setOrganizationName(e.target.value)}
+                          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          id="donate-org-program"
+                          name="organization_program"
+                          autoComplete="off"
+                          type="text"
+                          placeholder="Program Name"
+                          value={organizationProgram}
+                          onChange={(e) => setOrganizationProgram(e.target.value)}
+                          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          id="donate-officer-name"
+                          name="officer_name"
+                          autoComplete="name"
+                          type="text"
+                          required
+                          placeholder="Officer Name *"
+                          value={organizationOfficerName}
+                          onChange={(e) => setOrganizationOfficerName(e.target.value)}
+                          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          id="donate-officer-designation"
+                          name="officer_designation"
+                          autoComplete="organization-title"
+                          type="text"
+                          required
+                          placeholder="Officer Designation *"
+                          value={organizationOfficerDesignation}
+                          onChange={(e) =>
+                            setOrganizationOfficerDesignation(e.target.value)
+                          }
+                          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          id="donate-officer-phone"
+                          name="officer_phone"
+                          autoComplete="tel"
+                          type="tel"
+                          required
+                          placeholder="Officer Contact Number *"
+                          value={organizationOfficerContact}
+                          onChange={(e) =>
+                            setOrganizationOfficerContact(e.target.value)
+                          }
+                          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          id="donate-org-email"
+                          name="organization_email"
+                          autoComplete="email"
+                          type="email"
+                          required
+                          placeholder="Email Address *"
+                          value={organizationEmail}
+                          onChange={(e) => setOrganizationEmail(e.target.value)}
+                          className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}

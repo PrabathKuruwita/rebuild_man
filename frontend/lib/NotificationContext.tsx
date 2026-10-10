@@ -37,7 +37,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setNotifications(data);
       setUnreadCount(data.filter(n => !n.is_read).length);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.debug('Notifications unavailable or session expired:', error);
     }
   }, [user]);
 

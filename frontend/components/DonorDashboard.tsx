@@ -629,9 +629,9 @@ export default function DonorDashboard() {
 
                 {pieChartData.length > 0 ? (
                   <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between flex-1 mt-4 gap-4 sm:gap-6">
-                    <div className="w-[160px] sm:w-[180px] h-[160px] sm:h-[180px] shrink-0">
+                    <div className="w-[160px] sm:w-[180px] h-[160px] sm:h-[180px] shrink-0" style={{ minWidth: 160, minHeight: 160 }}>
                       {isMounted && (
-                      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                      <ResponsiveContainer width="100%" height="100%" minWidth={160} minHeight={160} debounce={50}>
                         <PieChart>
                           <Pie
                             data={pieChartData}
@@ -703,16 +703,17 @@ export default function DonorDashboard() {
                 </div>
 
                 {barChartData.length > 0 ? (
-                  <div className="flex-1 mt-6 h-[220px] overflow-x-auto overflow-y-hidden pb-1">
+                  <div className="flex-1 mt-6 h-[220px] overflow-x-auto overflow-y-hidden pb-1" style={{ minHeight: 220 }}>
                     {isMounted && (
                       <div
                         style={{
                           width: barChartData.length > 5 ? `${Math.max(barChartData.length * 85, 480)}px` : "100%",
                           height: "100%",
-                          minWidth: "100%",
+                          minWidth: barChartData.length > 5 ? `${Math.max(barChartData.length * 85, 480)}px` : "100%",
+                          minHeight: 200,
                         }}
                       >
-                        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                        <ResponsiveContainer width="100%" height="100%" minWidth={240} minHeight={200} debounce={50}>
                           <BarChart data={barChartData} margin={{ top: 5, right: 15, left: -20, bottom: 25 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                             <XAxis
@@ -1055,6 +1056,9 @@ export default function DonorDashboard() {
               <div className="relative flex-1 min-w-0 w-full">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                 <input
+                  id="donor-pledge-search"
+                  name="search"
+                  autoComplete="off"
                   type="text"
                   placeholder="Search need, organization, section, pledged date..."
                   value={searchQuery}
@@ -1084,6 +1088,8 @@ export default function DonorDashboard() {
                   </label>
                   <select
                     id="donor-type-filter"
+                    name="donor_type_filter"
+                    autoComplete="off"
                     value={donorTypeFilter}
                     onChange={(e) => setDonorTypeFilter(e.target.value)}
                     className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-900 font-medium transition cursor-pointer shadow-xs"
@@ -1104,6 +1110,8 @@ export default function DonorDashboard() {
                   </label>
                   <select
                     id="status-filter"
+                    name="status_filter"
+                    autoComplete="off"
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-900 font-medium transition cursor-pointer shadow-xs"
@@ -1301,12 +1309,15 @@ export default function DonorDashboard() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label htmlFor="edit-pledge-quantity" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                         Quantity ({currentUnit}) <span className="text-red-500">*</span>
                       </label>
                       <div className="flex items-center gap-3 sm:gap-4">
                         <div className="relative flex-1">
                           <input
+                            id="edit-pledge-quantity"
+                            name="quantity"
+                            autoComplete="off"
                             type="number"
                             min="1"
                             max={realTimeRequired}
@@ -1372,10 +1383,13 @@ export default function DonorDashboard() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label htmlFor="edit-pledge-delivery-date" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                         Estimated Delivery Date
                       </label>
                       <input
+                        id="edit-pledge-delivery-date"
+                        name="delivery_date"
+                        autoComplete="off"
                         type="date"
                         value={editDeliveryDate}
                         onChange={(e) => setEditDeliveryDate(e.target.value)}
@@ -1384,10 +1398,13 @@ export default function DonorDashboard() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label htmlFor="edit-pledge-message" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                         Message / Notes
                       </label>
                       <textarea
+                        id="edit-pledge-message"
+                        name="message"
+                        autoComplete="off"
                         placeholder="Any additional messages or details..."
                         value={editMessage}
                         onChange={(e) => setEditMessage(e.target.value)}
@@ -1409,10 +1426,13 @@ export default function DonorDashboard() {
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label htmlFor="edit-org-name" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Organization Name <span className="text-red-500">*</span>
                               </label>
                               <input
+                                id="edit-org-name"
+                                name="organization_name"
+                                autoComplete="organization"
                                 type="text"
                                 value={editOrgName}
                                 onChange={(e) => setEditOrgName(e.target.value)}
@@ -1421,10 +1441,13 @@ export default function DonorDashboard() {
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label htmlFor="edit-org-program" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Program Name
                               </label>
                               <input
+                                id="edit-org-program"
+                                name="organization_program"
+                                autoComplete="off"
                                 type="text"
                                 value={editOrgProgram}
                                 onChange={(e) => setEditOrgProgram(e.target.value)}
@@ -1432,10 +1455,13 @@ export default function DonorDashboard() {
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label htmlFor="edit-officer-name" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Officer Name <span className="text-red-500">*</span>
                               </label>
                               <input
+                                id="edit-officer-name"
+                                name="officer_name"
+                                autoComplete="name"
                                 type="text"
                                 value={editOfficerName}
                                 onChange={(e) => setEditOfficerName(e.target.value)}
@@ -1444,10 +1470,13 @@ export default function DonorDashboard() {
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label htmlFor="edit-officer-designation" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Officer Designation <span className="text-red-500">*</span>
                               </label>
                               <input
+                                id="edit-officer-designation"
+                                name="officer_designation"
+                                autoComplete="organization-title"
                                 type="text"
                                 value={editOfficerDesignation}
                                 onChange={(e) => setEditOfficerDesignation(e.target.value)}
@@ -1456,10 +1485,13 @@ export default function DonorDashboard() {
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label htmlFor="edit-officer-phone" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Officer Contact Number <span className="text-red-500">*</span>
                               </label>
                               <input
+                                id="edit-officer-phone"
+                                name="officer_phone"
+                                autoComplete="tel"
                                 type="text"
                                 value={editOfficerPhone}
                                 onChange={(e) => setEditOfficerPhone(e.target.value)}
@@ -1468,10 +1500,13 @@ export default function DonorDashboard() {
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label htmlFor="edit-org-email" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Email Address <span className="text-red-500">*</span>
                               </label>
                               <input
+                                id="edit-org-email"
+                                name="organization_email"
+                                autoComplete="email"
                                 type="email"
                                 value={editOrgEmail}
                                 onChange={(e) => setEditOrgEmail(e.target.value)}
@@ -1493,10 +1528,13 @@ export default function DonorDashboard() {
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label htmlFor="edit-donor-name" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Full Name <span className="text-red-500">*</span>
                               </label>
                               <input
+                                id="edit-donor-name"
+                                name="donor_name"
+                                autoComplete="name"
                                 type="text"
                                 value={editDonorName}
                                 onChange={(e) => setEditDonorName(e.target.value)}
@@ -1505,10 +1543,13 @@ export default function DonorDashboard() {
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label htmlFor="edit-donor-phone" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Contact Number <span className="text-red-500">*</span>
                               </label>
                               <input
+                                id="edit-donor-phone"
+                                name="donor_phone"
+                                autoComplete="tel"
                                 type="text"
                                 value={editDonorPhone}
                                 onChange={(e) => setEditDonorPhone(e.target.value)}
@@ -1517,10 +1558,13 @@ export default function DonorDashboard() {
                               />
                             </div>
                             <div className="sm:col-span-2">
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label htmlFor="edit-donor-email" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Email Address <span className="text-red-500">*</span>
                               </label>
                               <input
+                                id="edit-donor-email"
+                                name="donor_email"
+                                autoComplete="email"
                                 type="email"
                                 value={editDonorEmail}
                                 onChange={(e) => setEditDonorEmail(e.target.value)}
@@ -1529,10 +1573,13 @@ export default function DonorDashboard() {
                               />
                             </div>
                             <div className="sm:col-span-2">
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label htmlFor="edit-donor-address" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                 Address <span className="text-red-500">*</span>
                               </label>
                               <textarea
+                                id="edit-donor-address"
+                                name="donor_address"
+                                autoComplete="street-address"
                                 rows={2}
                                 value={editDonorAddress}
                                 onChange={(e) => setEditDonorAddress(e.target.value)}
@@ -1792,6 +1839,8 @@ export default function DonorDashboard() {
               </label>
               <select
                 id="donor-cancel-reason"
+                name="cancel_reason"
+                autoComplete="off"
                 value={cancelReasonOption}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -1821,6 +1870,8 @@ export default function DonorDashboard() {
                 </label>
                 <textarea
                   id="donor-cancel-other"
+                  name="cancel_other_reason"
+                  autoComplete="off"
                   placeholder="Please specify your cancellation reason..."
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}

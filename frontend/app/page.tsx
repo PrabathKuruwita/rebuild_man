@@ -282,12 +282,12 @@ export default function Home() {
       void fetchData(false);
     });
 
-    // Auto-refresh data every 10 seconds for real-time synchronization
+    // Auto-refresh data every 30 seconds for real-time synchronization
     const pollInterval = setInterval(() => {
       if (isMounted) {
         fetchData(true);
       }
-    }, 10000);
+    }, 30000);
 
     // Refresh immediately when window/tab regains visibility
     const handleVisibilityChange = () => {
@@ -327,6 +327,8 @@ export default function Home() {
           <img
             src="https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1920&q=80"
             alt="Hero Background"
+            loading="eager"
+            fetchPriority="high"
             className="w-full h-full object-cover opacity-60 animate-slow-zoom"
           />
           <div className="absolute inset-0 bg-[#030B1C]/40 mix-blend-multiply"></div>
@@ -796,7 +798,15 @@ export default function Home() {
               <h4 className="text-white font-bold mb-6 text-lg">Stay Updated</h4>
               <p className="text-sm leading-relaxed">Subscribe to our newsletter for the latest updates on critical needs and success stories.</p>
               <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
-                <input type="email" placeholder="Enter your email address" className="bg-slate-800/50 border border-slate-700 rounded-none px-4 py-3 text-sm w-full focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-white transition-all" />
+                <input
+                  id="newsletter-email"
+                  name="email"
+                  autoComplete="email"
+                  type="email"
+                  placeholder="Enter your email address"
+                  aria-label="Email address for newsletter"
+                  className="bg-slate-800/50 border border-slate-700 rounded-none px-4 py-3 text-sm w-full focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-white transition-all"
+                />
                 <button type="submit" className="bg-primary hover:bg-teal-700 text-white px-6 py-3 rounded-full text-sm font-bold transition-all shadow-lg shadow-primary/20">Subscribe</button>
               </form>
               <p className="text-xs text-slate-500 font-medium">We respect your privacy. No spam.</p>

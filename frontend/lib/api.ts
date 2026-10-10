@@ -195,6 +195,9 @@ export interface Donation {
   };
 }
 
+// Token refresh mutex to prevent duplicate concurrent refresh requests
+let refreshPromise: Promise<string | null> | null = null;
+
 // Token refresh function
 async function refreshAccessToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
@@ -202,30 +205,40 @@ async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem("refreshToken");
   if (!refreshToken) return null;
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ refresh: refreshToken }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const newAccessToken = data.access;
-      localStorage.setItem("accessToken", newAccessToken);
-      return newAccessToken;
-    } else {
-      // Refresh token is invalid, clear tokens
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      return null;
-    }
-  } catch (error) {
-    console.error("Token refresh failed:", error);
-    return null;
+  if (refreshPromise) {
+    return refreshPromise;
   }
+
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newAccessToken = data.access;
+        localStorage.setItem("accessToken", newAccessToken);
+        return newAccessToken;
+      } else {
+        // Refresh token is invalid or expired, clear tokens
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        return null;
+      }
+    } catch (error) {
+      console.warn("Token refresh network failure:", error);
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
 // API Functions
@@ -245,24 +258,8 @@ async function fetchAPI<T>(
     ...(options?.headers as HeadersInit),
   };
 
-  // Add debugging for authentication issues
-  if (
-    !token &&
-    (options?.method === "POST" ||
-      options?.method === "PATCH" ||
-      options?.method === "DELETE")
-  ) {
-    console.warn(
-      `[API] No authentication token found for ${options?.method} ${endpoint}`,
-    );
-  } else if (token) {
-    console.debug(
-      `[API] Sending request with authentication token to ${endpoint}`,
-    );
-  }
-
   const fullUrl = `${API_BASE_URL}${endpoint}`;
-  console.log(`[API] Fetching: ${fullUrl}`);
+  console.debug(`[API] Fetching: ${fullUrl}`);
   let response = await fetch(fullUrl, {
     ...options,
     headers,
@@ -270,14 +267,10 @@ async function fetchAPI<T>(
 
   // If we get a 401 and have a refresh token, try to refresh and retry
   if (response.status === 401 && typeof window !== "undefined") {
-    console.warn(
-      `[API] Received 401 for ${endpoint}, attempting token refresh`,
-    );
     const refreshToken = localStorage.getItem("refreshToken");
     if (refreshToken) {
       const newAccessToken = await refreshAccessToken();
       if (newAccessToken) {
-        console.debug(`[API] Token refreshed, retrying request`);
         // Retry with new token
         const retryHeaders: HeadersInit = {
           "Content-Type": "application/json",
@@ -289,10 +282,28 @@ async function fetchAPI<T>(
           headers: retryHeaders,
         });
       } else {
-        console.error(`[API] Failed to refresh token`);
+        // Refresh token failed/expired; if request was a GET, retry anonymously for public endpoints
+        if (!options?.method || options.method === "GET") {
+          const publicHeaders = { ...(options?.headers as Record<string, string>) };
+          delete publicHeaders["Authorization"];
+          delete publicHeaders["authorization"];
+          response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers: publicHeaders,
+          });
+        }
       }
     } else {
-      console.warn(`[API] No refresh token available for retry`);
+      // No refresh token available; if request was a GET, retry anonymously for public endpoints
+      if (!options?.method || options.method === "GET") {
+        const publicHeaders = { ...(options?.headers as Record<string, string>) };
+        delete publicHeaders["Authorization"];
+        delete publicHeaders["authorization"];
+        response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          ...options,
+          headers: publicHeaders,
+        });
+      }
     }
   }
 
