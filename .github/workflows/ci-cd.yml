@@ -201,15 +201,27 @@ jobs:
             ravindudilhan/rebuild-frontend:latest
             ravindudilhan/rebuild-frontend:${{ github.sha }}
 
+      - name: Cache Trivy vulnerability database
+        uses: actions/cache@v4
+        with:
+          path: .cache/trivy
+          key: trivy-db-${{ runner.os }}
+          restore-keys: |
+            trivy-db-
+
       - name: Scan published images
         id: frontend_image_scan
         continue-on-error: true
         uses: aquasecurity/trivy-action@v0.22.0
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
         with:
           image-ref: ravindudilhan/rebuild-frontend:${{ github.sha }}
           scanners: vuln
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          cache-dir: ${{ github.workspace }}/.cache/trivy
+          timeout: 15m
           format: table
           output: trivy-frontend-image.txt
           exit-code: 1
@@ -219,11 +231,15 @@ jobs:
         if: always()
         continue-on-error: true
         uses: aquasecurity/trivy-action@v0.22.0
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
         with:
           image-ref: ravindudilhan/rebuild-backend:${{ github.sha }}
           scanners: vuln
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          cache-dir: ${{ github.workspace }}/.cache/trivy
+          timeout: 15m
           format: table
           output: trivy-backend-image.txt
           exit-code: 1
