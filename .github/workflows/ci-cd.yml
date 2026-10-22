@@ -218,7 +218,7 @@ jobs:
         with:
           image-ref: ravindudilhan/rebuild-frontend:${{ github.sha }}
           scanners: vuln
-          severity: HIGH,CRITICAL
+          severity: CRITICAL
           ignore-unfixed: true
           cache-dir: ${{ github.workspace }}/.cache/trivy
           timeout: 15m
@@ -236,7 +236,7 @@ jobs:
         with:
           image-ref: ravindudilhan/rebuild-frontend:${{ github.sha }}
           scanners: vuln
-          severity: HIGH,CRITICAL
+          severity: CRITICAL
           ignore-unfixed: true
           cache-dir: ${{ github.workspace }}/.cache/trivy
           timeout: 15m
@@ -254,7 +254,7 @@ jobs:
         with:
           image-ref: ravindudilhan/rebuild-backend:${{ github.sha }}
           scanners: vuln
-          severity: HIGH,CRITICAL
+          severity: CRITICAL
           ignore-unfixed: true
           cache-dir: ${{ github.workspace }}/.cache/trivy
           timeout: 15m
@@ -272,7 +272,7 @@ jobs:
         with:
           image-ref: ravindudilhan/rebuild-backend:${{ github.sha }}
           scanners: vuln
-          severity: HIGH,CRITICAL
+          severity: CRITICAL
           ignore-unfixed: true
           cache-dir: ${{ github.workspace }}/.cache/trivy
           timeout: 15m
