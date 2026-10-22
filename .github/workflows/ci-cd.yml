@@ -212,7 +212,25 @@ jobs:
       - name: Scan published images
         id: frontend_image_scan
         continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.22.0
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
+        with:
+          image-ref: ravindudilhan/rebuild-frontend:${{ github.sha }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          cache-dir: ${{ github.workspace }}/.cache/trivy
+          timeout: 15m
+          format: table
+          output: trivy-frontend-image.txt
+          exit-code: 1
+
+      - name: Retry frontend image scan
+        id: frontend_image_scan_retry
+        if: steps.frontend_image_scan.outcome == 'failure'
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
         env:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
         with:
@@ -230,7 +248,25 @@ jobs:
         id: backend_image_scan
         if: always()
         continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.22.0
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
+        with:
+          image-ref: ravindudilhan/rebuild-backend:${{ github.sha }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          cache-dir: ${{ github.workspace }}/.cache/trivy
+          timeout: 15m
+          format: table
+          output: trivy-backend-image.txt
+          exit-code: 1
+
+      - name: Retry backend image scan
+        id: backend_image_scan_retry
+        if: steps.backend_image_scan.outcome == 'failure'
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
         env:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
         with:
@@ -253,7 +289,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Fail when published images have vulnerabilities
-        if: steps.frontend_image_scan.outcome == 'failure' || steps.backend_image_scan.outcome == 'failure'
+        if: steps.frontend_image_scan_retry.outcome == 'failure' || steps.backend_image_scan_retry.outcome == 'failure'
         run: exit 1
 
   deploy-k3s:
