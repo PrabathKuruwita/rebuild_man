@@ -185,7 +185,7 @@ export default function SectionAccordion({
           </div>
 
           {section.needs && section.needs.length > 0 ? (
-            <div className="grid gap-4 mt-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 mt-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
               {section.needs.map((need) => (
                 <NeedCard
                   key={need.id}

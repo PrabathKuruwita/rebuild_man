@@ -18,7 +18,7 @@ interface ManualNeedEntryFormProps {
 
 const defaultForm = {
   name: "",
-  priority: "ESSENTIAL" as "CRITICAL" | "ESSENTIAL" | "NICE",
+  priority: "CRITICAL" as "CRITICAL" | "ESSENTIAL" | "NICE",
   quantity_required: 1,
   unit: "UNIT" as "UNIT" | "BOX" | "KG" | "LITER",
   description: "",
@@ -45,33 +45,54 @@ export default function ManualNeedEntryForm({
 
   useEffect(() => {
     getOrganizations()
-      .then(setOrganizations)
+      .then((orgs) => {
+        setOrganizations(orgs);
+        const targetOrg = initialOrgId
+          ? orgs.find((o) => o.id === initialOrgId) || orgs[0]
+          : orgs.length > 0
+            ? orgs[0]
+            : undefined;
+
+        if (targetOrg) {
+          setForm((f) => ({
+            ...f,
+            organization_id: String(targetOrg.id),
+            section_id: initialSectionId
+              ? String(initialSectionId)
+              : f.section_id || "",
+          }));
+        }
+      })
       .catch(() =>
         setError(
           "Could not load organizations. Make sure the backend is running.",
         ),
       )
       .finally(() => setLoadingOrgs(false));
-  }, []);
+  }, [initialOrgId, initialSectionId]);
 
-  const selectedOrg = Array.isArray(organizations)
-    ? organizations.find((o) => o.id.toString() === form.organization_id)
+  const selectedOrg = Array.isArray(organizations) && organizations.length > 0
+    ? organizations.find((o) => o.id.toString() === form.organization_id) || organizations[0]
     : undefined;
   const sections = selectedOrg?.sections ?? [];
-
-  function handleOrgChange(orgId: string) {
-    setForm((f) => ({ ...f, organization_id: orgId, section_id: "" }));
-  }
 
   async function submitForm() {
     setError(null);
 
     if (!form.section_id) {
-      setError("Please select an organization and section.");
+      setError("Please select a section / department.");
       return;
     }
     if (!form.name.trim()) {
       setError("Need name is required.");
+      return;
+    }
+    if (form.name.trim().length > 75) {
+      setError("Need name cannot exceed 75 characters.");
+      return;
+    }
+    if (form.description.trim().length > 300) {
+      setError("Description cannot exceed 300 characters.");
       return;
     }
     if (form.quantity_required < 1) {
@@ -204,30 +225,25 @@ export default function ManualNeedEntryForm({
                     No organizations found. Please create an organization first.
                   </div>
                 ) : (
-                  <select
-                    value={form.organization_id}
-                    onChange={(e) => handleOrgChange(e.target.value)}
-                    required
-                    title="Organization"
+                  <input
+                    type="text"
+                    readOnly
+                    value={
+                      selectedOrg
+                        ? `${selectedOrg.name}${selectedOrg.district ? ` — ${selectedOrg.district}` : ""}`
+                        : "No organization assigned"
+                    }
+                    className="form-input w-full bg-gray-50 border border-gray-200 text-gray-800 font-medium cursor-default select-none focus:outline-none focus:ring-0 focus:border-gray-200"
                     aria-label="Organization"
-                    className="form-select w-full bg-white text-gray-900"
-                  >
-                    <option value="">Select organization…</option>
-                    {Array.isArray(organizations)
-                      ? organizations.map((org) => (
-                          <option key={org.id} value={org.id}>
-                            {org.name} — {org.district}
-                          </option>
-                        ))
-                      : null}
-                  </select>
+                    title="Organization"
+                  />
                 )}
               </div>
 
               {/* Section */}
               <div>
                 <label className="form-label">
-                  Section / Department <span className="text-red-500">*</span>
+                  Section <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={form.section_id}
@@ -236,8 +252,8 @@ export default function ManualNeedEntryForm({
                   }
                   required
                   disabled={!form.organization_id || sections.length === 0}
-                  aria-label="Section / Department"
-                  title="Section / Department"
+                  aria-label="Section"
+                  title="Section"
                   className="form-select w-full bg-white text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">
@@ -260,11 +276,17 @@ export default function ManualNeedEntryForm({
 
               {/* Need Name */}
               <div>
-                <label className="form-label">
-                  Need Item Name <span className="text-red-500">*</span>
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="form-label mb-0">
+                    Need Item Name <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-xs text-gray-400">
+                    {form.name.length}/75
+                  </span>
+                </div>
                 <input
                   type="text"
+                  maxLength={75}
                   value={form.name}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, name: e.target.value }))
@@ -357,11 +379,17 @@ export default function ManualNeedEntryForm({
 
               {/* Description */}
               <div>
-                <label className="form-label">
-                  Description
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="form-label mb-0">
+                    Description
+                  </label>
+                  <span className="text-xs text-gray-400">
+                    {form.description.length}/300
+                  </span>
+                </div>
                 <textarea
                   rows={3}
+                  maxLength={300}
                   value={form.description}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, description: e.target.value }))

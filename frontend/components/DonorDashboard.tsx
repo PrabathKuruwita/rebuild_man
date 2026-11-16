@@ -680,7 +680,7 @@ export default function DonorDashboard() {
               </div>
 
               {/* Contributions Chart */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col justify-between h-[340px]">
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col justify-between min-h-[360px] sm:min-h-[340px] h-auto">
                 <div className="flex flex-col items-start gap-1.5">
                   <div className="flex items-center justify-between w-full">
                     <h3 className="text-sm font-bold text-slate-800 whitespace-nowrap">
@@ -1398,14 +1398,20 @@ export default function DonorDashboard() {
                     </div>
 
                     <div>
-                      <label htmlFor="edit-pledge-message" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Message / Notes
-                      </label>
+                      <div className="flex justify-between items-center mb-2">
+                        <label htmlFor="edit-pledge-message" className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                          Message / Notes
+                        </label>
+                        <span className={`text-[11px] font-medium ${editMessage.length >= 500 ? "text-red-500" : editMessage.length >= 450 ? "text-amber-500" : "text-slate-400"}`}>
+                          {editMessage.length}/500
+                        </span>
+                      </div>
                       <textarea
                         id="edit-pledge-message"
                         name="message"
                         autoComplete="off"
-                        placeholder="Any additional messages or details..."
+                        maxLength={500}
+                        placeholder="Any additional messages or details (max 500 characters)..."
                         value={editMessage}
                         onChange={(e) => setEditMessage(e.target.value)}
                         className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white text-gray-900 min-h-[85px] font-medium resize-y"
@@ -1455,8 +1461,23 @@ export default function DonorDashboard() {
                               />
                             </div>
                             <div>
+                              <label htmlFor="edit-officer-phone" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                                Organization's Contact Number <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                id="edit-officer-phone"
+                                name="officer_phone"
+                                autoComplete="tel"
+                                type="text"
+                                value={editOfficerPhone}
+                                onChange={(e) => setEditOfficerPhone(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white text-gray-900 font-medium"
+                                required
+                              />
+                            </div>
+                            <div>
                               <label htmlFor="edit-officer-name" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Officer Name <span className="text-red-500">*</span>
+                                Contact Person's Full Name <span className="text-red-500">*</span>
                               </label>
                               <input
                                 id="edit-officer-name"
@@ -1471,7 +1492,7 @@ export default function DonorDashboard() {
                             </div>
                             <div>
                               <label htmlFor="edit-officer-designation" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Officer Designation <span className="text-red-500">*</span>
+                                Contact Person's Designation <span className="text-red-500">*</span>
                               </label>
                               <input
                                 id="edit-officer-designation"
@@ -1485,23 +1506,8 @@ export default function DonorDashboard() {
                               />
                             </div>
                             <div>
-                              <label htmlFor="edit-officer-phone" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Officer Contact Number <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                id="edit-officer-phone"
-                                name="officer_phone"
-                                autoComplete="tel"
-                                type="text"
-                                value={editOfficerPhone}
-                                onChange={(e) => setEditOfficerPhone(e.target.value)}
-                                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white text-gray-900 font-medium"
-                                required
-                              />
-                            </div>
-                            <div>
                               <label htmlFor="edit-org-email" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Email Address <span className="text-red-500">*</span>
+                                Organization's Email Address <span className="text-red-500">*</span>
                               </label>
                               <input
                                 id="edit-org-email"
@@ -1762,7 +1768,7 @@ export default function DonorDashboard() {
                         )}
                         {initialEditValues && editOfficerName !== initialEditValues.officerName && (
                           <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Officer:</span>
+                            <span className="text-slate-500 shrink-0">Updated Contact Person:</span>
                             <span className="font-bold text-slate-800 text-right break-words">
                               {editOfficerName}
                             </span>
@@ -1778,7 +1784,7 @@ export default function DonorDashboard() {
                         )}
                         {initialEditValues && editOfficerPhone !== initialEditValues.officerPhone && (
                           <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Officer Phone:</span>
+                            <span className="text-slate-500 shrink-0">Updated Contact Number:</span>
                             <span className="font-bold text-slate-800 text-right break-words">
                               {editOfficerPhone}
                             </span>
@@ -2016,25 +2022,25 @@ export default function DonorDashboard() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Officer Name</p>
-                        <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                          {selectedViewingDonation.organization_officer_name || selectedViewingDonation.government_officer_name || selectedViewingDonation.donor_name || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Officer Designation</p>
-                        <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                          {selectedViewingDonation.organization_officer_designation || selectedViewingDonation.government_officer_designation || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Officer Contact Number</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Organization's Contact Number</p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-words">
                           {selectedViewingDonation.organization_officer_contact || selectedViewingDonation.government_officer_contact || selectedViewingDonation.donor_phone || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Email Address</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contact Person's Full Name</p>
+                        <p className="font-semibold text-slate-800 mt-0.5 break-words">
+                          {selectedViewingDonation.organization_officer_name || selectedViewingDonation.government_officer_name || selectedViewingDonation.donor_name || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contact Person's Designation</p>
+                        <p className="font-semibold text-slate-800 mt-0.5 break-words">
+                          {selectedViewingDonation.organization_officer_designation || selectedViewingDonation.government_officer_designation || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Organization's Email Address</p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-all">
                           {selectedViewingDonation.organization_email || selectedViewingDonation.government_email || selectedViewingDonation.donor_email || "-"}
                         </p>
@@ -2105,6 +2111,17 @@ export default function DonorDashboard() {
                     <p className="font-semibold text-purple-700 mt-0.5 break-words">
                       {selectedViewingDonation.received_by_name}
                       {selectedViewingDonation.received_by_role && ` (${selectedViewingDonation.received_by_role.replace("_", " ")})`}
+                    </p>
+                  </div>
+                )}
+
+                {(selectedViewingDonation.status === "FULFILLED" || selectedViewingDonation.received_at) && (
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Received Date</p>
+                    <p className="font-semibold text-purple-700 mt-0.5 break-words">
+                      {selectedViewingDonation.received_at
+                        ? new Date(selectedViewingDonation.received_at).toLocaleDateString()
+                        : "N/A"}
                     </p>
                   </div>
                 )}

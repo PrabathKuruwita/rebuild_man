@@ -436,18 +436,18 @@ export default function OrgAdminDashboard() {
 
         {/* Analytics & Graphs */}
         <div id="analytics-section" className="mb-12">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
             <div>
-              <h2 className="text-2xl font-black text-slate-900">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900">
                 Organization Analytics
               </h2>
-              <p className="text-slate-500 text-sm">
+              <p className="text-slate-500 text-xs sm:text-sm">
                 Visualizing donation trends and fulfillment impact
               </p>
             </div>
-            <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 flex items-center gap-2 shadow-sm">
+            <div className="bg-white px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-slate-200 flex items-center gap-2 shadow-xs self-start sm:self-auto">
               <BarChart3 className="text-primary" size={18} />
-              <span className="text-sm font-bold text-slate-700">
+              <span className="text-xs sm:text-sm font-bold text-slate-700">
                 Full Report
               </span>
             </div>
@@ -495,21 +495,21 @@ export default function OrgAdminDashboard() {
                   {criticalNeeds.map((need) => (
                     <div
                       key={need.id}
-                      className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center"
+                      className="p-3.5 sm:p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center gap-3"
                     >
-                      <div>
-                        <p className="font-bold text-slate-900">{need.name}</p>
-                        <p className="text-xs text-slate-500">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-slate-900 text-sm sm:text-base truncate">{need.name}</p>
+                        <p className="text-xs text-slate-500 truncate">
                           {need.section_detail?.name}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-rose-600">
+                      <div className="text-right shrink-0">
+                        <p className="text-xs sm:text-sm font-bold text-rose-600">
                           {need.quantity_required - need.quantity_confirmed} left
                         </p>
                         <progress
-                          className="w-24 h-1.5 mt-1 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-rose-500 [&::-moz-progress-bar]:bg-rose-500 bg-slate-200 text-rose-500"
-                          value={need.quantity_confirmed}
+                          className="w-20 sm:w-24 h-1.5 mt-1 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-rose-500 [&::-moz-progress-bar]:bg-rose-500 bg-slate-200 text-rose-500"
+                          value={need.quantity_received || 0}
                           max={need.quantity_required}
                         />
                       </div>

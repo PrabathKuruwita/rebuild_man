@@ -1,6 +1,6 @@
 import React from "react";
 import { Organization, NeedItem, Donation, Section } from "@/lib/api";
-import { Building2, Layers, CheckCircle2, Flame, PlayCircle, ClipboardList, Users, AlertTriangle } from "lucide-react";
+import { Building2, Layers, CheckCircle2, Flame, PlayCircle, ClipboardList, Users, AlertTriangle, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -92,37 +92,49 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
           onClick={handleCardClick}
           className="h-full w-full bg-slate-50 border border-slate-200/80 rounded-2xl p-5 shadow-sm hover:border-blue-400 hover:shadow-md hover:shadow-blue-500/5 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer"
         >
-          {/* Section Title & Header */}
-          <div className="mb-4">
-            <div className="flex justify-between items-start w-full gap-1 mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                  <Layers size={16} />
-                </div>
-                <div>
-                  <h5 className="font-bold text-slate-800 text-sm leading-tight break-all">
-                    {sec.name}
-                  </h5>
-                  {sec.head_of_section && (
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      Head: {sec.head_of_section}
-                    </p>
-                  )}
-                </div>
+          {/* Section Header Top Area */}
+          <div>
+            {/* Title & Icon Row */}
+            <div className="flex items-center gap-2.5 mb-2.5">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
+                <Layers size={17} />
               </div>
+              <div className="min-w-0 flex-1">
+                <h5 className="font-bold text-slate-800 text-sm leading-snug truncate" title={sec.name}>
+                  {sec.name}
+                </h5>
+                <p className="text-[11px] text-slate-400 font-medium truncate" title={sec.head_of_section ? `Head: ${sec.head_of_section}` : "Section Department"}>
+                  {sec.head_of_section ? `Head: ${sec.head_of_section}` : "Section Department"}
+                </p>
+              </div>
+            </div>
 
-              <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                {hasCritical && (
-                  <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md border border-rose-200/50 uppercase tracking-wider animate-pulse shadow-sm" title="Critical Needs Unfulfilled">
-                    <AlertTriangle size={9} /> Urgent
-                  </span>
-                )}
-                {pendingDonationsCount > 0 && (
-                  <span className="flex items-center gap-0.5 text-[9px] font-extrabold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/50 uppercase tracking-wider shadow-sm" title="Donations Pending Confirmation">
-                    ⏳ {pendingDonationsCount} Pending
-                  </span>
-                )}
-              </div>
+            {/* Status Badges Row - Dedicated row with consistent min-height for uniform baseline across all cards */}
+            <div className="flex items-center gap-1.5 min-h-[26px] mb-3">
+              {hasCritical && (
+                <span
+                  className="inline-flex items-center gap-1 text-[9px] font-extrabold text-rose-700 bg-rose-50 border border-rose-200/70 px-2 py-0.5 rounded-md uppercase tracking-wider shadow-2xs animate-pulse"
+                  title="Critical Needs Unfulfilled"
+                >
+                  <AlertTriangle size={10} className="shrink-0 text-rose-600" />
+                  Urgent
+                </span>
+              )}
+              {pendingDonationsCount > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 text-[9px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded-md uppercase tracking-wider shadow-2xs"
+                  title={`${pendingDonationsCount} donation(s) pending confirmation`}
+                >
+                  <Clock size={10} className="shrink-0 text-amber-600" />
+                  {pendingDonationsCount} Pending
+                </span>
+              )}
+              {!hasCritical && pendingDonationsCount === 0 && (
+                <span className="inline-flex items-center gap-1 text-[9px] font-medium text-slate-400 bg-slate-100/70 border border-slate-200/40 px-2 py-0.5 rounded-md">
+                  <CheckCircle2 size={10} className="shrink-0 text-emerald-500" />
+                  All Clear
+                </span>
+              )}
             </div>
           </div>
 

@@ -457,7 +457,7 @@ class DonationSerializer(serializers.ModelSerializer):
             'government_officer_contact', 'government_email',
             'donation_letter_file',
             'confirmed_by_name', 'confirmed_by_role', 'cancelled_by_name', 'cancelled_by_role', 'cancellation_reason', 'cancelled_at',
-            'received_by_name', 'received_by_role'
+            'received_by_name', 'received_by_role', 'received_at'
         ]
         read_only_fields = [
             'government_department', 'government_program',

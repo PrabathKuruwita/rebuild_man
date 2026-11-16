@@ -8,7 +8,8 @@ import {
   markNotificationAsRead as apiMarkAsRead,
   markAllNotificationsAsRead as apiMarkAllAsRead,
   deleteNotification as apiDelete,
-  clearAllNotifications as apiClearAll
+  clearAllNotifications as apiClearAll,
+  isTokenExpired
 } from './api';
 
 interface NotificationContextProps {
@@ -30,12 +31,28 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
 
+  // Clear notifications immediately if session expires
+  useEffect(() => {
+    const handleExpired = () => {
+      setNotifications([]);
+      setUnreadCount(0);
+    };
+    window.addEventListener('auth:session_expired', handleExpired);
+    return () => window.removeEventListener('auth:session_expired', handleExpired);
+  }, []);
+
   const refresh = useCallback(async () => {
     if (!user) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+    if (!token && !refreshToken) return;
+    if (token && isTokenExpired(token) && (!refreshToken || isTokenExpired(refreshToken))) return;
     try {
       const data = await getNotifications();
-      setNotifications(data);
-      setUnreadCount(data.filter(n => !n.is_read).length);
+      if (Array.isArray(data)) {
+        setNotifications(data);
+        setUnreadCount(data.filter(n => !n.is_read).length);
+      }
     } catch (error) {
       console.debug('Notifications unavailable or session expired:', error);
     }

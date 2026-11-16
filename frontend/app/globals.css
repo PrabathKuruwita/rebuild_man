@@ -26,6 +26,7 @@ input[type="password"]::-ms-clear {
   --color-status-neutral: var(--color-slate-500);
   
   /* Legacy status colors (will be deprecated, kept for safety until fully refactored) */
+  --color-success: #10b981;
   --color-success-legacy: #22C55E;
   --color-warning-legacy: #F59E0B;
   --color-urgent-legacy: #F59E0B;
@@ -1022,4 +1023,99 @@ button:active {
   .notification-actions-hover {
     opacity: 1 !important;
   }
+}
+
+@keyframes progressFillBar {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-progress-fill {
+  animation: progressFillBar 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes testimonialTimer {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes lineTravel {
+  0% {
+    left: 0%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  85% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+}
+
+.animate-line-travel {
+  animation: lineTravel 850ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Luminous Button Highlight Animations */
+@keyframes btnShimmer {
+  0% {
+    transform: translateX(-150%) skewX(-12deg);
+  }
+  28% {
+    transform: translateX(350%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(350%) skewX(-12deg);
+  }
+}
+
+.animate-btn-shimmer {
+  animation: btnShimmer 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-shift {
+  animation: gradientShift 4.5s ease infinite;
+}
+
+@keyframes pulseSlow {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.03);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 2.6s ease-in-out infinite;
 }

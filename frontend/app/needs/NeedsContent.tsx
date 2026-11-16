@@ -77,9 +77,9 @@ export default function NeedsContent() {
     }
     if (sortBy === "progress") {
       const progressA =
-        a.quantity_required > 0 ? a.quantity_confirmed / a.quantity_required : 0;
+        a.quantity_required > 0 ? (a.quantity_received || 0) / a.quantity_required : 0;
       const progressB =
-        b.quantity_required > 0 ? b.quantity_confirmed / b.quantity_required : 0;
+        b.quantity_required > 0 ? (b.quantity_received || 0) / b.quantity_required : 0;
       return progressA - progressB; // Show least fulfilled first
     }
     return 0;
@@ -91,7 +91,7 @@ export default function NeedsContent() {
     critical: needs.filter((n) => n.priority === "CRITICAL").length,
     essential: needs.filter((n) => n.priority === "ESSENTIAL").length,
     nice: needs.filter((n) => n.priority === "NICE").length,
-    fulfilled: needs.filter((n) => n.quantity_confirmed >= n.quantity_required)
+    fulfilled: needs.filter((n) => (n.quantity_received || 0) >= n.quantity_required)
       .length,
   };
 
@@ -110,33 +110,32 @@ export default function NeedsContent() {
       </div>
 
       {/* Stats Bar */}
-      <div className="bg-white rounded-none shadow-sm border border-gray-100 p-4 mb-6">
-        <div className="flex flex-wrap gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-            <span className="text-sm text-gray-600">
+      <div className="bg-white rounded-none shadow-sm border border-gray-100 p-3 sm:p-4 mb-6">
+        <div className="flex flex-wrap gap-3 sm:gap-6">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-gray-400 rounded-full"></div>
+            <span className="text-xs sm:text-sm text-gray-600">
               Total: <strong>{stats.total}</strong>
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full"></div>
+            <span className="text-xs sm:text-sm text-gray-600">
               Critical: <strong>{stats.critical}</strong>
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-yellow-500 rounded-full"></div>
+            <span className="text-xs sm:text-sm text-gray-600">
               Essential: <strong>{stats.essential}</strong>
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
+            <span className="text-xs sm:text-sm text-gray-600">
               Nice to Have: <strong>{stats.nice}</strong>
             </span>
           </div>
-
         </div>
       </div>
 

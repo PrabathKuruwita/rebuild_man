@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/AuthContext";
 import DonorDashboard from "@/components/DonorDashboard";
 import AnimatedStat from "@/components/AnimatedStat";
 import AnalyticsLineChart from "@/components/AnalyticsLineChart";
-import { ShieldCheck, Eye, Activity, Heart, Building, CheckCircle2, HandHeart, CheckCircle, Navigation, ArrowRight, Shield } from "lucide-react";
+import { ShieldCheck, Eye, Activity, Heart, Building, CheckCircle2, HandHeart, CheckCircle, Navigation, ArrowRight, Shield, ChevronLeft, ChevronRight, Sparkles, Pause } from "lucide-react";
 import { FaFacebook, FaTwitter, FaLinkedin, FaInstagram } from "react-icons/fa";
 
 interface SuccessStory {
@@ -19,7 +19,74 @@ interface SuccessStory {
   name: string;
   orgName: string;
   progress: number;
+  quantityReceived?: number;
+  quantityRequired?: number;
+  unit?: string;
 }
+
+interface TestimonialItem {
+  id: number;
+  quote: string;
+  name: string;
+  designation: string;
+  organization: string;
+  initials: string;
+  avatarBg: string;
+  avatarTextColor: string;
+}
+
+const testimonials: TestimonialItem[] = [
+  {
+    id: 1,
+    quote: "Parithyaga has completely transformed how we receive supplies. The transparency gives donors confidence, and we get exactly what we need, when we need it most.",
+    name: "Dr. Samarakoon",
+    designation: "Director",
+    organization: "Regional Hospital",
+    initials: "DS",
+    avatarBg: "bg-slate-200",
+    avatarTextColor: "text-slate-700",
+  },
+  {
+    id: 2,
+    quote: "Directly linking our surgical department's inventory deficits with verified donors has eliminated critical equipment shortages during emergency operations.",
+    name: "Dr. Priyantha Senanayake",
+    designation: "Head of Surgery",
+    organization: "Colombo South Teaching Hospital",
+    initials: "PS",
+    avatarBg: "bg-sky-100",
+    avatarTextColor: "text-sky-800",
+  },
+  {
+    id: 3,
+    quote: "Receiving essential textbooks and scientific laboratory equipment directly through this platform empowered our students with modern learning resources transparently and rapidly.",
+    name: "Mrs. Kanthi Jayawardena",
+    designation: "Principal",
+    organization: "Bandaranaike National College",
+    initials: "KJ",
+    avatarBg: "bg-amber-100",
+    avatarTextColor: "text-amber-800",
+  },
+  {
+    id: 4,
+    quote: "Seeing community contributions deliver specialized neonatal care monitors within days of posting an urgent need has saved precious young lives in our pediatric ward.",
+    name: "Dr. Nirmala Wickramasinghe",
+    designation: "Consultant Pediatrician",
+    organization: "Karapitiya National Hospital",
+    initials: "NW",
+    avatarBg: "bg-emerald-100",
+    avatarTextColor: "text-emerald-800",
+  },
+  {
+    id: 5,
+    quote: "The real-time tracking provides complete accountability from donor pledge to warehouse arrival, establishing unprecedented public trust across all relief operations.",
+    name: "Mr. Roshan Perera",
+    designation: "Logistics Coordinator",
+    organization: "Disaster Relief Foundation",
+    initials: "RP",
+    avatarBg: "bg-violet-100",
+    avatarTextColor: "text-violet-800",
+  },
+];
 
 export default function Home() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -33,6 +100,64 @@ export default function Home() {
   const [storiesVisible, setStoriesVisible] = useState(false);
   const statsSectionRef = useRef<HTMLElement | null>(null);
   const storiesSectionRef = useRef<HTMLElement | null>(null);
+  const cardsTrackRef = useRef<HTMLDivElement | null>(null);
+  const howItWorksSectionRef = useRef<HTMLElement | null>(null);
+  const [howItWorksVisible, setHowItWorksVisible] = useState(false);
+  const testimonialRef = useRef<HTMLDivElement | null>(null);
+  const [testimonialVisible, setTestimonialVisible] = useState(false);
+  const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
+  const [isTestimonialHovered, setIsTestimonialHovered] = useState(false);
+  const [isTestimonialTouching, setIsTestimonialTouching] = useState(false);
+  const [isTestimonialClicked, setIsTestimonialClicked] = useState(false);
+
+  const isTestimonialPaused = isTestimonialHovered || isTestimonialTouching || isTestimonialClicked;
+  const [carouselPage, setCarouselPage] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const [cardsPerPage, setCardsPerPage] = useState(3);
+
+  // Responsive cards per page
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setCardsPerPage(3);
+      } else if (window.innerWidth >= 640) {
+        setCardsPerPage(2);
+      } else {
+        setCardsPerPage(1);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const totalCarouselPages = Math.max(1, Math.ceil(stories.length / cardsPerPage));
+
+  // Auto advance carousel every 4.5 seconds if not paused
+  useEffect(() => {
+    if (stories.length <= cardsPerPage || isCarouselPaused) return;
+
+    const interval = setInterval(() => {
+      setCarouselPage((prev) => (prev + 1) % totalCarouselPages);
+    }, 4500);
+
+    return () => clearInterval(interval);
+  }, [stories.length, cardsPerPage, isCarouselPaused, totalCarouselPages]);
+
+  // Clamp current page when cardsPerPage changes
+  useEffect(() => {
+    if (carouselPage >= totalCarouselPages) {
+      setCarouselPage(0);
+    }
+  }, [totalCarouselPages, carouselPage]);
+
+  const handlePrevSlide = () => {
+    setCarouselPage((prev) => (prev - 1 + totalCarouselPages) % totalCarouselPages);
+  };
+
+  const handleNextSlide = () => {
+    setCarouselPage((prev) => (prev + 1) % totalCarouselPages);
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -68,8 +193,8 @@ export default function Home() {
   }, [loading]);
 
   useEffect(() => {
-    if (loading) return;
-    const node = storiesSectionRef.current;
+    if (loading || stories.length === 0) return;
+    const node = cardsTrackRef.current || storiesSectionRef.current;
     if (!node) return;
 
     if (typeof IntersectionObserver !== "undefined") {
@@ -83,14 +208,18 @@ export default function Home() {
             }
           }
         },
-        { threshold: 0.15 }
+        { 
+          // Trigger directly when cards container enters viewport
+          threshold: 0.2,
+          rootMargin: "0px 0px -40px 0px"
+        }
       );
       observer.observe(node);
       return () => observer.disconnect();
     } else {
       const handleScroll = () => {
         const rect = node.getBoundingClientRect();
-        if (rect.top <= window.innerHeight * 0.85 && rect.bottom >= 0) {
+        if (rect.top <= window.innerHeight * 0.8 && rect.bottom >= 0) {
           setStoriesVisible(true);
           window.removeEventListener("scroll", handleScroll);
         }
@@ -98,7 +227,93 @@ export default function Home() {
       window.addEventListener("scroll", handleScroll, { passive: true });
       return () => window.removeEventListener("scroll", handleScroll);
     }
+  }, [loading, stories.length]);
+
+  useEffect(() => {
+    if (loading) return;
+    const node = testimonialRef.current;
+    if (!node) return;
+
+    if (typeof IntersectionObserver !== "undefined") {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              setTestimonialVisible(true);
+              observer.disconnect();
+              break;
+            }
+          }
+        },
+        { threshold: 0.25, rootMargin: "0px 0px -40px 0px" }
+      );
+      observer.observe(node);
+      return () => observer.disconnect();
+    } else {
+      const handleScroll = () => {
+        const rect = node.getBoundingClientRect();
+        if (rect.top <= window.innerHeight * 0.8 && rect.bottom >= 0) {
+          setTestimonialVisible(true);
+          window.removeEventListener("scroll", handleScroll);
+        }
+      };
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
   }, [loading]);
+
+  // Observer for How It Works section entrance on first scroll
+  useEffect(() => {
+    if (loading) return;
+    const node = howItWorksSectionRef.current;
+    if (!node) return;
+
+    if (typeof IntersectionObserver !== "undefined") {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              setHowItWorksVisible(true);
+              observer.disconnect();
+              break;
+            }
+          }
+        },
+        { threshold: 0.2, rootMargin: "0px 0px -40px 0px" }
+      );
+      observer.observe(node);
+      return () => observer.disconnect();
+    } else {
+      const handleScroll = () => {
+        const rect = node.getBoundingClientRect();
+        if (rect.top <= window.innerHeight * 0.85 && rect.bottom >= 0) {
+          setHowItWorksVisible(true);
+          window.removeEventListener("scroll", handleScroll);
+        }
+      };
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+  }, [loading]);
+
+  // Auto-advance testimonial every 6.5 seconds when visible and not paused by user
+  useEffect(() => {
+    if (!testimonialVisible || isTestimonialPaused) return;
+
+    const interval = setInterval(() => {
+      setActiveTestimonialIndex((prev) => (prev + 1) % testimonials.length);
+    }, 6500);
+
+    return () => clearInterval(interval);
+  }, [testimonialVisible, isTestimonialPaused]);
+
+  const handlePrevTestimonial = () => {
+    setActiveTestimonialIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+  };
+
+  const handleNextTestimonial = () => {
+    setActiveTestimonialIndex((prev) => (prev + 1) % testimonials.length);
+  };
   
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
   const heroContents = [
@@ -231,33 +446,73 @@ export default function Home() {
           }
         }
 
-        // Compute success story needs based on highest progress (only with real donor support)
-        const storiesSource = allNeeds
-          .filter((n) => n.quantity_required > 0 && ((n.quantity_received || 0) > 0 || (n.quantity_confirmed || 0) > 0))
+        // Compute top 6 success story needs across all organizations with fair diversity
+        // Strictly only show needs where required quantity === received quantity (no surplus, fully fulfilled)
+        const eligibleNeeds = allNeeds
+          .filter((n) => n.quantity_required > 0 && n.quantity_received === n.quantity_required)
           .map((n) => {
-            const receivedOrConfirmed = Math.max(n.quantity_received || 0, n.quantity_confirmed || 0);
-            const progress = Math.min(
-              100,
-              Math.round((receivedOrConfirmed / n.quantity_required) * 100),
-            );
             return {
               id: n.id,
               name: n.name,
-              orgName: n.section_detail?.organization_name || "Healthcare Facility",
-              progress,
-              quantityReceived: n.quantity_received || 0,
+              orgName: n.section_detail?.organization_name || "Verified Facility",
+              progress: 100,
+              quantityReceived: n.quantity_received,
               quantityRequired: n.quantity_required,
+              unit: n.unit || "Units",
+              createdAt: n.created_at ? new Date(n.created_at).getTime() : 0,
             };
           })
-          .sort((a, b) => b.progress - a.progress || b.quantityReceived - a.quantityReceived)
-          .slice(0, 3);
+          .sort((a, b) => b.createdAt - a.createdAt);
 
-        const storiesList: SuccessStory[] = storiesSource.map((item, index) => ({
+        // Group by organization to ensure diverse representation across different organizations
+        const orgBuckets = new Map<string, typeof eligibleNeeds>();
+        const seenNames = new Set<string>();
+        for (const item of eligibleNeeds) {
+          const nameKey = `${item.name.toLowerCase().trim()}_${item.orgName.toLowerCase().trim()}`;
+          if (seenNames.has(nameKey)) continue;
+          seenNames.add(nameKey);
+
+          const list = orgBuckets.get(item.orgName) || [];
+          list.push(item);
+          orgBuckets.set(item.orgName, list);
+        }
+
+        const selectedStories: typeof eligibleNeeds = [];
+        let maxOrgItems = 0;
+        orgBuckets.forEach((list) => {
+          if (list.length > maxOrgItems) maxOrgItems = list.length;
+        });
+
+        for (let round = 0; round < maxOrgItems; round++) {
+          for (const [, list] of orgBuckets) {
+            if (round < list.length && selectedStories.length < 6) {
+              selectedStories.push(list[round]);
+            }
+          }
+          if (selectedStories.length >= 6) break;
+        }
+
+        // Fill remaining slots up to 6 if needed from remaining eligible items
+        if (selectedStories.length < 6 && eligibleNeeds.length > selectedStories.length) {
+          const selectedKeys = new Set(selectedStories.map((s) => `${s.name.toLowerCase().trim()}_${s.orgName.toLowerCase().trim()}`));
+          for (const item of eligibleNeeds) {
+            const key = `${item.name.toLowerCase().trim()}_${item.orgName.toLowerCase().trim()}`;
+            if (!selectedKeys.has(key) && selectedStories.length < 6) {
+              selectedKeys.add(key);
+              selectedStories.push(item);
+            }
+          }
+        }
+
+        const storiesList: SuccessStory[] = selectedStories.map((item, index) => ({
           id: item.id,
           title: `Success Story ${index + 1}`,
           name: item.name,
           orgName: item.orgName,
           progress: item.progress,
+          quantityReceived: item.quantityReceived,
+          quantityRequired: item.quantityRequired,
+          unit: item.unit,
         }));
 
         setStories(storiesList);
@@ -418,14 +673,14 @@ export default function Home() {
                       <div className="flex justify-between text-xs sm:text-sm font-bold font-label tracking-wide">
                         <span className="text-slate-300">
                           <AnimatedStat
-                            value={urgentNeed.quantity_confirmed}
-                            suffix={urgentNeed.unit ? ` ${urgentNeed.unit} pledged` : " pledged"}
+                            value={urgentNeed.quantity_received || 0}
+                            suffix={urgentNeed.unit ? ` ${urgentNeed.unit} fulfilled` : " fulfilled"}
                           />
                         </span>
                         <span className="text-red-500">Target: {urgentNeed.quantity_required} {urgentNeed.unit}</span>
                       </div>
                       <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden shadow-inner">
-                        <div className="h-full bg-gradient-to-r from-red-800 to-red-600 rounded-full transition-all duration-1000 relative" style={{ width: `${Math.min(100, Math.round((urgentNeed.quantity_confirmed / urgentNeed.quantity_required) * 100))}%` }}>
+                        <div className="h-full bg-gradient-to-r from-red-800 to-red-600 rounded-full transition-all duration-1000 relative" style={{ width: `${Math.min(100, Math.round(((urgentNeed.quantity_received || 0) / urgentNeed.quantity_required) * 100))}%` }}>
                            <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                         </div>
                       </div>
@@ -448,9 +703,15 @@ export default function Home() {
 
 
       {/* How it Works (Timeline) */}
-      <section id="how-it-works" className="py-24 bg-slate-50 relative overflow-hidden">
+      <section id="how-it-works" ref={howItWorksSectionRef} className="py-24 bg-slate-50 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center space-y-4 mb-20 animate-fade-in-up">
+          <div 
+            className="text-center space-y-4 mb-20 transition-all duration-700 ease-out"
+            style={{
+              opacity: howItWorksVisible ? 1 : 0,
+              transform: howItWorksVisible ? "translateY(0)" : "translateY(20px)",
+            }}
+          >
             <div className="inline-block px-4 py-1.5 bg-primary/10 rounded-full font-label text-sm font-bold tracking-[0.2em] uppercase text-cyan-500">
               How it works
             </div>
@@ -460,32 +721,155 @@ export default function Home() {
           </div>
 
           <div className="relative">
-            {/* Connecting line (desktop only) */}
-            <div className="hidden md:block absolute top-12 left-[15%] right-[15%] h-0.5 border-t-2 border-dashed border-slate-300 z-0"></div>
+            {/* Desktop Connecting Line Segments */}
+            {/* Segment 1: Step 1 to Step 2 (Left 16.66% to 50%) */}
+            <div className="hidden md:block absolute top-12 left-[16.66%] w-[33.34%] h-0.5 z-0 pointer-events-none">
+              {/* Base inactive gray dashed line */}
+              <div className="absolute inset-0 border-t-2 border-dashed border-slate-300"></div>
+
+              {/* Continuously coloring teal dashed line */}
+              <div 
+                className="absolute inset-0 border-t-2 border-dashed border-primary transition-[clip-path] ease-linear"
+                style={{
+                  clipPath: howItWorksVisible ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
+                  transitionDuration: howItWorksVisible ? "850ms" : "0ms",
+                  transitionDelay: howItWorksVisible ? "700ms" : "0ms",
+                }}
+              ></div>
+
+              {/* Glowing traveling spark head */}
+              {howItWorksVisible && (
+                <div 
+                  className="absolute top-1/2 -mt-[1px] w-3 h-3 rounded-full bg-primary shadow-[0_0_12px_#0d9488]"
+                  style={{
+                    animation: "lineTravel 850ms cubic-bezier(0.4, 0, 0.2, 1) 700ms forwards",
+                    opacity: 0,
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Segment 2: Step 2 to Step 3 (Left 50% to 83.33%) */}
+            <div className="hidden md:block absolute top-12 left-[50%] w-[33.34%] h-0.5 z-0 pointer-events-none">
+              {/* Base inactive gray dashed line */}
+              <div className="absolute inset-0 border-t-2 border-dashed border-slate-300"></div>
+
+              {/* Continuously coloring green dashed line */}
+              <div 
+                className="absolute inset-0 border-t-2 border-dashed border-green-600 transition-[clip-path] ease-linear"
+                style={{
+                  clipPath: howItWorksVisible ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
+                  transitionDuration: howItWorksVisible ? "850ms" : "0ms",
+                  transitionDelay: howItWorksVisible ? "2100ms" : "0ms",
+                }}
+              ></div>
+
+              {/* Glowing traveling spark head */}
+              {howItWorksVisible && (
+                <div 
+                  className="absolute top-1/2 -mt-[1px] w-3 h-3 rounded-full bg-green-500 shadow-[0_0_12px_#16a34a]"
+                  style={{
+                    animation: "lineTravel 850ms cubic-bezier(0.4, 0, 0.2, 1) 2100ms forwards",
+                    opacity: 0,
+                  }}
+                />
+              )}
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
               {/* Step 1 */}
-              <div className="flex flex-col items-center text-center animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center border-4 border-white shadow-xl mb-6 relative hover:scale-110 transition-transform duration-300">
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">1</div>
+              <div 
+                className="flex flex-col items-center text-center transition-all ease-out"
+                style={{
+                  opacity: howItWorksVisible ? 1 : 0,
+                  transform: howItWorksVisible ? "translateY(0) scale(1)" : "translateY(28px) scale(0.9)",
+                  transitionDuration: howItWorksVisible ? "700ms" : "0ms",
+                  transitionDelay: howItWorksVisible ? "150ms" : "0ms",
+                }}
+              >
+                <div 
+                  className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center border-4 border-white shadow-xl mb-6 relative hover:scale-110 transition-all duration-300"
+                  style={{
+                    boxShadow: howItWorksVisible 
+                      ? "0 20px 25px -5px rgba(13, 148, 136, 0.2), 0 8px 10px -6px rgba(13, 148, 136, 0.1)" 
+                      : undefined,
+                  }}
+                >
+                  <div 
+                    className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md transition-all duration-500"
+                    style={{
+                      transform: howItWorksVisible ? "scale(1)" : "scale(0)",
+                      transitionDelay: howItWorksVisible ? "300ms" : "0ms",
+                    }}
+                  >
+                    1
+                  </div>
                   <Eye className="w-[40px] h-[40px] text-primary" strokeWidth={1.5} />
                 </div>
                 <h3 className="font-heading text-xl font-semibold text-slate-900 mb-3">Browse Needs</h3>
                 <p className="font-body text-base text-slate-500 leading-relaxed max-w-xs">Verified organizations post their critical requirements. Browse and find a cause that resonates with you.</p>
               </div>
+
               {/* Step 2 */}
-              <div className="flex flex-col items-center text-center animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center border-4 border-white shadow-xl mb-6 relative hover:scale-110 transition-transform duration-300">
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">2</div>
+              <div 
+                className="flex flex-col items-center text-center transition-all ease-out"
+                style={{
+                  opacity: howItWorksVisible ? 1 : 0,
+                  transform: howItWorksVisible ? "translateY(0) scale(1)" : "translateY(28px) scale(0.9)",
+                  transitionDuration: howItWorksVisible ? "700ms" : "0ms",
+                  transitionDelay: howItWorksVisible ? "1550ms" : "0ms",
+                }}
+              >
+                <div 
+                  className="w-24 h-24 rounded-full bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center border-4 border-white shadow-xl mb-6 relative hover:scale-110 transition-all duration-300"
+                  style={{
+                    boxShadow: howItWorksVisible 
+                      ? "0 20px 25px -5px rgba(22, 163, 74, 0.2), 0 8px 10px -6px rgba(22, 163, 74, 0.1)" 
+                      : undefined,
+                  }}
+                >
+                  <div 
+                    className="absolute -top-2 -right-2 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md transition-all duration-500"
+                    style={{
+                      transform: howItWorksVisible ? "scale(1)" : "scale(0)",
+                      transitionDelay: howItWorksVisible ? "1700ms" : "0ms",
+                    }}
+                  >
+                    2
+                  </div>
                   <HandHeart className="w-[40px] h-[40px] text-green-600" strokeWidth={1.5} />
                 </div>
                 <h3 className="font-heading text-xl font-semibold text-slate-900 mb-3">Donate Securely</h3>
                 <p className="font-body text-base text-slate-500 leading-relaxed max-w-xs">Commit to fulfilling a need entirely or partially. Every contribution moves the progress bar forward.</p>
               </div>
+
               {/* Step 3 */}
-              <div className="flex flex-col items-center text-center animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-50 to-cyan-100 flex items-center justify-center border-4 border-white shadow-xl mb-6 relative hover:scale-110 transition-transform duration-300">
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-accent text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">3</div>
+              <div 
+                className="flex flex-col items-center text-center transition-all ease-out"
+                style={{
+                  opacity: howItWorksVisible ? 1 : 0,
+                  transform: howItWorksVisible ? "translateY(0) scale(1)" : "translateY(28px) scale(0.9)",
+                  transitionDuration: howItWorksVisible ? "700ms" : "0ms",
+                  transitionDelay: howItWorksVisible ? "2950ms" : "0ms",
+                }}
+              >
+                <div 
+                  className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-50 to-cyan-100 flex items-center justify-center border-4 border-white shadow-xl mb-6 relative hover:scale-110 transition-all duration-300"
+                  style={{
+                    boxShadow: howItWorksVisible 
+                      ? "0 20px 25px -5px rgba(0, 180, 216, 0.2), 0 8px 10px -6px rgba(0, 180, 216, 0.1)" 
+                      : undefined,
+                  }}
+                >
+                  <div 
+                    className="absolute -top-2 -right-2 w-8 h-8 bg-accent text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md transition-all duration-500"
+                    style={{
+                      transform: howItWorksVisible ? "scale(1)" : "scale(0)",
+                      transitionDelay: howItWorksVisible ? "3100ms" : "0ms",
+                    }}
+                  >
+                    3
+                  </div>
                   <CheckCircle className="w-[40px] h-[40px] text-accent" strokeWidth={1.5} />
                 </div>
                 <h3 className="font-heading text-xl font-semibold text-slate-900 mb-3">Track Impact</h3>
@@ -500,111 +884,261 @@ export default function Home() {
       <section id="stats-banner" ref={statsSectionRef} className="bg-slate-950 py-6 sm:py-8 border-y border-white/5 relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 md:divide-x divide-white/10">
+            {/* Stat 1: Provinces Covered */}
             <div 
               style={{ transitionDelay: statsVisible ? "0ms" : "0ms" }}
-              className={`text-center px-2 sm:px-4 hover:scale-105 transition-all duration-700 ease-out ${
+              className={`group text-center px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 ease-out cursor-default hover:scale-105 hover:bg-white/[0.03] ${
                 statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               }`}
             >
               <div className="flex justify-center mb-2 sm:mb-3">
-                <Navigation className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-transform duration-300 hover:-translate-y-1 hover:translate-x-0.5 hover:-rotate-12" />
+                <Navigation 
+                  className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-cyan-400 group-hover:-translate-y-1 group-hover:translate-x-0.5 group-hover:-rotate-12 group-hover:scale-115 group-hover:drop-shadow-[0_0_10px_rgba(34,211,238,0.75)]" 
+                />
               </div>
-              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">
+              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1 transition-all duration-300 group-hover:text-cyan-300 group-hover:drop-shadow-[0_0_12px_rgba(34,211,238,0.4)]">
                 <AnimatedStat value={statsVisible ? provinces : 0} duration={1200} />
               </div>
-              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1">Provinces Covered</div>
+              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1 transition-colors duration-300 group-hover:text-slate-200">
+                Provinces Covered
+              </div>
             </div>
 
+            {/* Stat 2: Verified Organizations */}
             <div 
               style={{ transitionDelay: statsVisible ? "120ms" : "0ms" }}
-              className={`text-center px-2 sm:px-4 hover:scale-105 transition-all duration-700 ease-out ${
+              className={`group text-center px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 ease-out cursor-default hover:scale-105 hover:bg-white/[0.03] ${
                 statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               }`}
             >
               <div className="flex justify-center mb-2 sm:mb-3">
-                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-transform duration-300 hover:scale-110 hover:text-emerald-400" />
+                <ShieldCheck 
+                  className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-emerald-400 group-hover:scale-120 group-hover:-translate-y-0.5 group-hover:drop-shadow-[0_0_10px_rgba(52,211,153,0.75)]" 
+                />
               </div>
-              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">
+              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1 transition-all duration-300 group-hover:text-emerald-300 group-hover:drop-shadow-[0_0_12px_rgba(52,211,153,0.4)]">
                 <AnimatedStat value={statsVisible ? totalOrgs : 0} duration={1200} />
               </div>
-              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1">Verified Organizations</div>
+              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1 transition-colors duration-300 group-hover:text-slate-200">
+                Verified Organizations
+              </div>
             </div>
 
+            {/* Stat 3: Donors Onboarded */}
             <div 
               style={{ transitionDelay: statsVisible ? "240ms" : "0ms" }}
-              className={`text-center px-2 sm:px-4 hover:scale-105 transition-all duration-700 ease-out ${
+              className={`group text-center px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 ease-out cursor-default hover:scale-105 hover:bg-white/[0.03] ${
                 statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               }`}
             >
               <div className="flex justify-center mb-2 sm:mb-3">
-                <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-transform duration-300 hover:scale-125 hover:text-rose-400" />
+                <Heart 
+                  className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-rose-400 group-hover:scale-125 group-hover:-translate-y-0.5 group-hover:drop-shadow-[0_0_10px_rgba(251,113,133,0.75)] group-hover:fill-rose-500/20" 
+                />
               </div>
-              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">
+              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1 transition-all duration-300 group-hover:text-rose-300 group-hover:drop-shadow-[0_0_12px_rgba(251,113,133,0.4)]">
                 <AnimatedStat value={statsVisible ? donorsOnboarded : 0} duration={1200} />
               </div>
-              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1">Donors Onboarded</div>
+              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1 transition-colors duration-300 group-hover:text-slate-200">
+                Donors Onboarded
+              </div>
             </div>
 
+            {/* Stat 4: Delivery Success Rate */}
             <div 
               style={{ transitionDelay: statsVisible ? "360ms" : "0ms" }}
-              className={`text-center px-2 sm:px-4 hover:scale-105 transition-all duration-700 ease-out ${
+              className={`group text-center px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 ease-out cursor-default hover:scale-105 hover:bg-white/[0.03] ${
                 statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               }`}
             >
               <div className="flex justify-center mb-2 sm:mb-3">
-                <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-transform duration-300 hover:scale-110 hover:text-teal-400" />
+                <CheckCircle2 
+                  className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-teal-300 group-hover:scale-120 group-hover:-translate-y-0.5 group-hover:drop-shadow-[0_0_10px_rgba(45,212,191,0.75)]" 
+                />
               </div>
-              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1">
+              <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1 transition-all duration-300 group-hover:text-teal-200 group-hover:drop-shadow-[0_0_12px_rgba(45,212,191,0.4)]">
                 <AnimatedStat value={statsVisible ? deliverySuccessRate : 0} suffix="%" duration={1200} />
               </div>
-              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1">Delivery Success Rate</div>
+              <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1 transition-colors duration-300 group-hover:text-slate-200">
+                Delivery Success Rate
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Success Stories */}
-      <section ref={storiesSectionRef} className="py-14 sm:py-20 md:py-24 bg-white relative">
+      {/* Success Stories Carousel */}
+      <section 
+        ref={storiesSectionRef} 
+        className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-white via-slate-50/60 to-white relative overflow-hidden"
+        onMouseEnter={() => setIsCarouselPaused(true)}
+        onMouseLeave={() => setIsCarouselPaused(false)}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-3 sm:space-y-4 mb-10 sm:mb-16 animate-fade-in-up">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-              Recent Successes
-            </h2>
-            <p className="text-slate-500 max-w-2xl mx-auto text-base sm:text-lg">See how the community is coming together to fulfill critical requirements.</p>
+          {/* Header with Title and Carousel Controls */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 sm:mb-14">
+            <div className="space-y-2.5">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full font-label text-xs font-bold tracking-widest uppercase text-emerald-700">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                Community Impact Milestones
+              </div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
+                Recent Successes
+              </h2>
+              <p className="text-slate-500 max-w-2xl text-sm sm:text-base">
+                Discover the top verified needs fulfilled through generous donor contributions across diverse Sri Lankan institutions.
+              </p>
+            </div>
+
+            {/* Navigation Buttons & Progress Status */}
+            {totalCarouselPages > 1 && (
+              <div className="flex items-center gap-3 self-start md:self-auto shrink-0">
+                <button
+                  onClick={handlePrevSlide}
+                  aria-label="Previous slide"
+                  className="w-10 h-10 rounded-full border border-slate-200 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 hover:text-slate-900 flex items-center justify-center transition-all shadow-sm hover:shadow"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div className="text-xs font-semibold text-slate-400 px-1 font-label">
+                  <span className="text-slate-800 font-bold">{carouselPage + 1}</span> / {totalCarouselPages}
+                </div>
+                <button
+                  onClick={handleNextSlide}
+                  aria-label="Next slide"
+                  className="w-10 h-10 rounded-full border border-slate-200 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 hover:text-slate-900 flex items-center justify-center transition-all shadow-sm hover:shadow"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
           </div>
 
           {stories.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {stories.map((story, i) => (
-                <div key={story.id || i} className="bg-white rounded-none p-5 sm:p-6 md:p-8 border border-slate-100 shadow-md transition-all duration-300 group animate-fade-in-up hover:shadow-lg" style={{ animationDelay: `${0.1 * (i+1)}s` }}>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-secondary/10 rounded-sm mb-4 sm:mb-6 font-label text-xs font-bold tracking-widest uppercase text-amber-600">
-                    <ShieldCheck className="w-3 h-3" />
-                    Verified Organization
-                  </div>
-                  <h3 className="font-heading text-base sm:text-lg font-semibold text-slate-900 leading-snug mb-2 min-h-[44px] sm:min-h-[56px] line-clamp-2">
-                    {story.name}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-500 mb-6 sm:mb-8 min-h-[32px] sm:min-h-[40px] line-clamp-2 font-medium">
-                    For {story.orgName}
-                  </p>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="font-label text-xs font-semibold tracking-wider uppercase text-slate-400">Fulfillment Progress</span>
-                      <span className="bg-green-50 px-2 py-0.5 rounded-sm font-body text-sm font-bold text-amber-500 tabular-nums">
-                        <AnimatedStat value={storiesVisible ? story.progress : 0} suffix="%" />
-                      </span>
-                    </div>
-                    <div className="h-2 w-full bg-slate-100 rounded-sm overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-warning to-success rounded-sm transition-all duration-1000" style={{ width: `${storiesVisible ? story.progress : 0}%` }}></div>
-                    </div>
-                    <p className="text-[11px] text-slate-400 font-medium pt-2 text-right">Fulfilled by donors</p>
-                  </div>
+            <div ref={cardsTrackRef} className="relative">
+              {/* Sliding Carousel Track */}
+              <div className="overflow-hidden rounded-2xl py-2">
+                <div 
+                  className="flex transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
+                  style={{ transform: `translateX(-${carouselPage * 100}%)` }}
+                >
+                  {Array.from({ length: totalCarouselPages }).map((_, pageIdx) => {
+                    const pageStories = stories.slice(pageIdx * cardsPerPage, (pageIdx + 1) * cardsPerPage);
+                    return (
+                      <div 
+                        key={pageIdx} 
+                        className="w-full shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 px-1"
+                      >
+                        {pageStories.map((story, i) => (
+                          <div 
+                            key={story.id || `${pageIdx}-${i}`} 
+                            className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col justify-between relative overflow-hidden transform hover:-translate-y-1.5"
+                          >
+                            {/* Top Accent Gradient Bar */}
+                            <div className={`absolute top-0 left-0 right-0 h-1.5 ${
+                              story.progress >= 100 
+                                ? "bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" 
+                                : "bg-gradient-to-r from-amber-500 via-orange-400 to-emerald-500"
+                            }`} />
+
+                            <div>
+                              {/* Header Badges */}
+                              <div className="flex items-center justify-between gap-2 mb-4">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200/80 rounded-full font-label text-[11px] font-semibold tracking-wider uppercase text-slate-600">
+                                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                  Verified
+                                </span>
+                                {story.progress >= 100 ? (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full">
+                                    <Sparkles className="w-3 h-3 text-emerald-500" />
+                                    100% Fulfilled
+                                  </span>
+                                ) : (
+                                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+                                    {story.progress}% Reached
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Title */}
+                              <h3 className="font-heading text-lg sm:text-xl font-bold text-slate-900 group-hover:text-primary transition-colors leading-snug mb-1.5 line-clamp-2">
+                                {story.name}
+                              </h3>
+
+                              {/* Facility / Organization */}
+                              <p className="text-xs sm:text-sm text-slate-500 font-medium flex items-center gap-2 mb-6">
+                                <Building className="w-4 h-4 text-slate-400 shrink-0" />
+                                <span className="truncate">{story.orgName}</span>
+                              </p>
+                            </div>
+
+                            {/* Progress & Metrics */}
+                            <div className="space-y-2.5 pt-4 border-t border-slate-100">
+                              <div className="flex justify-between items-center text-xs sm:text-sm">
+                                <span className="font-label text-xs font-semibold tracking-wider uppercase text-slate-400">
+                                  Fulfillment Progress
+                                </span>
+                                <span className="font-body text-xs sm:text-sm font-bold text-slate-800 tabular-nums">
+                                  {story.quantityReceived !== undefined && story.quantityRequired !== undefined ? (
+                                    <span>
+                                      <strong className="text-emerald-600">{story.quantityReceived}</strong> / {story.quantityRequired} {story.unit || "Units"}
+                                    </span>
+                                  ) : (
+                                    <AnimatedStat value={storiesVisible ? story.progress : 0} suffix="%" />
+                                  )}
+                                </span>
+                              </div>
+
+                              {/* Animated Progress Bar */}
+                              <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden p-0.5 relative shadow-inner">
+                                <div 
+                                  className="h-full rounded-full transition-all duration-[2200ms] ease-[cubic-bezier(0.16,1,0.3,1)] bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 relative shadow-sm"
+                                  style={{ 
+                                    width: storiesVisible ? "100%" : "0%",
+                                    transitionDelay: `${(i % cardsPerPage) * 120}ms`,
+                                  }}
+                                >
+                                  {storiesVisible && (
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent animate-pulse" />
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-1 text-[11px] text-slate-400 font-medium">
+                                <span>Fulfilled by donors</span>
+                                <span className="font-bold text-emerald-600 tabular-nums">
+                                  <AnimatedStat value={storiesVisible ? 100 : 0} suffix="%" duration={2200} />
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              </div>
+
+              {/* Bottom Pagination Dots */}
+              {totalCarouselPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-8">
+                  {Array.from({ length: totalCarouselPages }).map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCarouselPage(idx)}
+                      aria-label={`Go to slide ${idx + 1}`}
+                      className={`h-2.5 rounded-full transition-all duration-300 ${
+                        carouselPage === idx 
+                          ? "w-8 bg-emerald-600" 
+                          : "w-2.5 bg-slate-200 hover:bg-slate-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
-            <div className="py-16 px-6 text-center flex flex-col items-center justify-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <div className="py-16 px-6 text-center flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200">
               <ShieldCheck className="w-10 h-10 text-slate-300 mb-3" />
               <h3 className="font-heading font-bold text-slate-800 text-base mb-1">No Success Stories Published</h3>
               <p className="font-body text-xs sm:text-sm text-slate-500 max-w-sm">Impact milestones and successful fulfillment records will appear here as ongoing hospital needs are met.</p>
@@ -674,24 +1208,190 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="relative animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20 rounded-sm transform rotate-3 scale-105 blur-lg"></div>
-              <div className="bg-white p-10 md:p-12 rounded-sm shadow-xl border border-slate-100 relative z-10">
-                <svg className="w-12 h-12 text-slate-200 mb-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                </svg>
-                <p className="text-lg md:text-xl text-slate-700 italic font-medium leading-relaxed mb-8">
-                  &quot;Parithyaga has completely transformed how we receive supplies. The transparency gives donors confidence, and we get exactly what we need, when we need it most.&quot;
-                </p>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-slate-200 rounded-full overflow-hidden shrink-0 border border-slate-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="https://ui-avatars.com/api/?name=Dr+Samarakoon&background=e2e8f0&color=475569" alt="Avatar" className="w-full h-full object-cover" />
+            <div ref={testimonialRef} className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary/25 to-teal-400/20 rounded-2xl transform rotate-2 scale-105 blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+              
+              <div 
+                className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100/90 relative z-10 overflow-hidden transition-all duration-300"
+                onMouseEnter={() => setIsTestimonialHovered(true)}
+                onMouseLeave={() => {
+                  setIsTestimonialHovered(false);
+                  setIsTestimonialClicked(false);
+                }}
+                onTouchStart={() => setIsTestimonialTouching(true)}
+                onTouchEnd={() => setIsTestimonialTouching(false)}
+                onTouchCancel={() => setIsTestimonialTouching(false)}
+                onClick={() => setIsTestimonialClicked((prev) => !prev)}
+                title={isTestimonialPaused ? "Click or leave to resume auto-rotation" : "Click or hover to pause and read"}
+              >
+                {/* Header row: Double quote icon + Reading Mode / Auto-advancing Badge */}
+                <div className="p-8 pb-0 md:p-11 md:pb-0 flex items-center justify-between">
+                  <svg 
+                    className="w-12 h-12 text-teal-200/90 transition-all duration-700 ease-out" 
+                    style={{
+                      opacity: testimonialVisible ? 1 : 0,
+                      transform: testimonialVisible ? "scale(1) rotate(0deg)" : "scale(0.7) rotate(-10deg)",
+                    }}
+                    fill="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+                  </svg>
+
+                  {/* Reading mode / auto-advancing pill */}
+                  {isTestimonialPaused ? (
+                    <div 
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-semibold border border-amber-200/80 shadow-2xs transition-all duration-300"
+                      title="Paused to give you time to read. Move mouse away or click to continue."
+                    >
+                      <Pause className="w-3 h-3 text-amber-600 fill-amber-600" />
+                      <span>Reading mode • Paused</span>
+                    </div>
+                  ) : (
+                    <div 
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50/90 text-teal-700 text-xs font-medium border border-teal-100 transition-all duration-300"
+                      title="Auto-advancing through verified testimonials. Hover, touch, or click to pause."
+                    >
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                      </span>
+                      <span>Auto-advancing ({activeTestimonialIndex + 1}/{testimonials.length})</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sliding Card Carousel Track */}
+                <div className="overflow-hidden">
+                  <div 
+                    className="flex transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
+                    style={{ transform: `translateX(-${activeTestimonialIndex * 100}%)` }}
+                  >
+                    {testimonials.map((item, cardIdx) => {
+                      const words = item.quote.split(" ");
+                      const isActive = activeTestimonialIndex === cardIdx;
+                      return (
+                        <div 
+                          key={item.id} 
+                          className="w-full shrink-0 p-8 pt-4 pb-6 md:p-11 md:pt-6 md:pb-6 flex flex-col justify-between"
+                        >
+                          {/* Quote sentence with live staggered streaming words */}
+                          <p className="text-lg md:text-xl text-slate-700 italic font-medium leading-relaxed mb-8 min-h-[110px] md:min-h-[96px]">
+                            <span 
+                              className="text-primary font-bold text-2xl mr-1 select-none transition-opacity duration-500"
+                              style={{ opacity: testimonialVisible && isActive ? 1 : 0 }}
+                            >
+                              &ldquo;
+                            </span>
+                            {words.map((word, wIdx) => (
+                              <span
+                                key={wIdx}
+                                className="inline-block transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                style={{
+                                  opacity: testimonialVisible && isActive ? 1 : 0,
+                                  transform: testimonialVisible && isActive ? "translateY(0)" : "translateY(8px)",
+                                  filter: testimonialVisible && isActive ? "blur(0px)" : "blur(4px)",
+                                  transitionDelay: isActive ? `${100 + wIdx * 35}ms` : "0ms",
+                                }}
+                              >
+                                {word}&nbsp;
+                              </span>
+                            ))}
+                            <span 
+                              className="text-primary font-bold text-2xl ml-0.5 select-none transition-opacity duration-500"
+                              style={{ 
+                                opacity: testimonialVisible && isActive ? 1 : 0,
+                                transitionDelay: isActive ? `${100 + words.length * 35}ms` : "0ms",
+                              }}
+                            >
+                              &rdquo;
+                            </span>
+                          </p>
+
+                          {/* Author info & avatar */}
+                          <div 
+                            className="flex items-center gap-4 transition-all duration-700 ease-out"
+                            style={{
+                              opacity: testimonialVisible && isActive ? 1 : 0,
+                              transform: testimonialVisible && isActive ? "translateY(0)" : "translateY(12px)",
+                              transitionDelay: isActive ? `${100 + words.length * 35 + 80}ms` : "0ms",
+                            }}
+                          >
+                            <div className={`w-12 h-12 ${item.avatarBg} ${item.avatarTextColor} rounded-full flex items-center justify-center font-bold text-sm tracking-wide shrink-0 border border-slate-200/80 ring-2 ring-teal-50 shadow-sm`}>
+                              {item.initials}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900 leading-tight">{item.name}</div>
+                              <div className="text-sm text-slate-500 font-medium">{item.designation}, {item.organization}</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div>
-                    <div className="font-bold text-slate-900">Dr. Samarakoon</div>
-                    <div className="text-sm text-slate-500 font-medium">Director, Regional Hospital</div>
+                </div>
+
+                {/* Bottom Navigation Toolbar */}
+                <div className="px-8 pb-5 pt-3 md:px-11 md:pb-6 border-t border-slate-100 flex items-center justify-between gap-4 bg-slate-50/40">
+                  {/* Interactive Pagination Dots */}
+                  <div className="flex items-center gap-2" role="tablist" aria-label="Testimonials">
+                    {testimonials.map((_, dotIdx) => (
+                      <button
+                        key={dotIdx}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveTestimonialIndex(dotIdx);
+                        }}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          activeTestimonialIndex === dotIdx 
+                            ? "w-7 bg-primary" 
+                            : "w-2 bg-slate-200 hover:bg-slate-300"
+                        }`}
+                        aria-label={`Go to testimonial ${dotIdx + 1}`}
+                      />
+                    ))}
                   </div>
+
+                  {/* Previous / Next Controls */}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePrevTestimonial();
+                      }}
+                      className="w-8 h-8 rounded-full border border-slate-200 hover:border-slate-300 hover:bg-white text-slate-600 flex items-center justify-center transition-colors shadow-2xs"
+                      aria-label="Previous testimonial"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNextTestimonial();
+                      }}
+                      className="w-8 h-8 rounded-full border border-slate-200 hover:border-slate-300 hover:bg-white text-slate-600 flex items-center justify-center transition-colors shadow-2xs"
+                      aria-label="Next testimonial"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Bottom Animated Progress Line */}
+                <div className="w-full bg-slate-100 h-1 overflow-hidden">
+                  <div
+                    key={`progress-${activeTestimonialIndex}`}
+                    className="h-full bg-gradient-to-r from-teal-400 to-primary"
+                    style={{
+                      animation: !isTestimonialPaused ? "testimonialTimer 6500ms linear forwards" : "none",
+                      width: isTestimonialPaused ? "100%" : undefined,
+                      opacity: isTestimonialPaused ? 0.35 : 1,
+                      transition: "opacity 0.2s ease",
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -713,8 +1413,24 @@ export default function Home() {
                   <p className="font-body text-sm text-slate-300 leading-relaxed mt-2 mb-8 max-w-sm">
                     Create a free account and start contributing directly to verified organizational needs today.
                   </p>
-                  <Link href="/login?tab=register" className="inline-flex items-center gap-2 px-8 py-4 bg-success hover:bg-green-600 text-white rounded-full transition-all shadow-lg shadow-green-500/20 font-body text-sm font-semibold">
-                    Become a Donor <ArrowRight className="w-5 h-5" />
+                  <Link 
+                    href="/login?tab=register" 
+                    className="relative group/donor-btn inline-flex items-center gap-3 px-9 py-4 rounded-full font-heading text-base font-bold text-white transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 active:scale-95 overflow-hidden shadow-[0_10px_35px_-5px_rgba(13,148,136,0.65)] hover:shadow-[0_15px_45px_-5px_rgba(16,185,129,0.85)] ring-2 ring-emerald-400/40 hover:ring-emerald-300/70"
+                  >
+                    {/* Animated radiant gradient backdrop */}
+                    <span className="absolute inset-0 bg-gradient-to-r from-teal-600 via-emerald-500 to-cyan-500 bg-[length:200%_auto] animate-gradient-shift"></span>
+
+                    {/* Ambient breathing aura glow */}
+                    <span className="absolute -inset-1 rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 opacity-70 blur-md group-hover/donor-btn:opacity-100 group-hover/donor-btn:blur-lg transition-all duration-300 animate-pulse-slow -z-10"></span>
+
+                    {/* Continuous passing light reflection sheen */}
+                    <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 translate-x-[-150%] animate-btn-shimmer pointer-events-none"></span>
+
+                    {/* Button text & icon with micro-interaction */}
+                    <span className="relative z-10 flex items-center gap-2.5 tracking-wide drop-shadow-sm font-bold">
+                      Become a Donor 
+                      <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover/donor-btn:translate-x-1.5" />
+                    </span>
                   </Link>
                 </div>
               </div>

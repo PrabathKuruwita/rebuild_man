@@ -13,7 +13,7 @@ import {
   receiveDonation,
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { CheckCircle2, XCircle, Clock, Gift, Search } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Gift, Search, Filter } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -494,6 +494,33 @@ function DonationsContent() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+              <span className="text-gray-500 font-medium text-xs sm:text-sm">Status</span>
+              <div className="sm:col-span-2 flex items-center">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusBadge(
+                    donation.status
+                  )}`}
+                >
+                  {donation.status === "CONFIRMED" && <CheckCircle2 size={13} className="text-green-700" />}
+                  {donation.status === "CANCELLED" && <XCircle size={13} className="text-red-700" />}
+                  {donation.status === "FULFILLED" && <Gift size={13} className="text-purple-700" />}
+                  {(!donation.status || donation.status === "PENDING") && <Clock size={13} className="text-yellow-700" />}
+                  <span>
+                    {donation.status === "PENDING"
+                      ? "Pending"
+                      : donation.status === "CONFIRMED"
+                      ? "Confirmed"
+                      : donation.status === "FULFILLED"
+                      ? "Fulfilled"
+                      : donation.status === "CANCELLED"
+                      ? "Cancelled"
+                      : donation.status}
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
               <span className="text-gray-500 font-medium text-xs sm:text-sm">Donor Type</span>
               <span className="sm:col-span-2 text-gray-900 text-sm break-words capitalize">
                 {donation.donor_type === "private"
@@ -505,7 +532,7 @@ function DonationsContent() {
             {donation.donor_type === "private" ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Donor Name</span>
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Full Name</span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.donor_name || "N/A"}
                   </span>
@@ -574,23 +601,7 @@ function DonationsContent() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
                   <span className="text-gray-500 font-medium text-xs sm:text-sm">
-                    Officer Name
-                  </span>
-                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.organization_officer_name || donation.government_officer_name || "N/A"}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Officer Designation</span>
-                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.organization_officer_designation || donation.government_officer_designation || "N/A"}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
-                    Officer Contact Number
+                    Organization's Contact Number
                   </span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.organization_officer_contact || donation.government_officer_contact || "N/A"}
@@ -598,7 +609,23 @@ function DonationsContent() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Email Address</span>
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                    Contact Person's Full Name
+                  </span>
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
+                    {donation.organization_officer_name || donation.government_officer_name || "N/A"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Contact Person's Designation</span>
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
+                    {donation.organization_officer_designation || donation.government_officer_designation || "N/A"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Organization's Email Address</span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.organization_email || donation.government_email || "N/A"}
                   </span>
@@ -648,6 +675,19 @@ function DonationsContent() {
                 <span className="sm:col-span-2 text-gray-900 font-semibold text-purple-700 text-sm break-words">
                   {donation.received_by_name || "N/A"}
                   {donation.received_by_role && ` (${donation.received_by_role.replace("_", " ")})`}
+                </span>
+              </div>
+            )}
+
+            {(donation.status === "FULFILLED" || donation.received_at) && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                  Received Date
+                </span>
+                <span className="sm:col-span-2 text-gray-900 font-semibold text-purple-700 text-sm break-words">
+                  {donation.received_at
+                    ? new Date(donation.received_at).toLocaleDateString()
+                    : "N/A"}
                 </span>
               </div>
             )}
@@ -1048,9 +1088,9 @@ function DonationsContent() {
         </div>
 
         {/* Filter Controls Row: Search bar & dropdown filters */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
           {/* Search bar */}
-          <div className="search-bar-container">
+          <div className="search-bar-container max-w-full lg:max-w-md flex-1">
             <Search className="search-bar-icon" />
             <input
               type="text"
@@ -1061,17 +1101,23 @@ function DonationsContent() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          {/* Filter dropdowns toolbar */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 shrink-0">
+              <Filter size={14} className="text-slate-400" />
+              <span>Filter by:</span>
+            </div>
+
             {/* Donor Type Filter */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="donor-type-filter" className="form-label mb-0 whitespace-nowrap">
-                Filter Table by:
+            <div className="flex-1 sm:flex-initial min-w-[150px]">
+              <label htmlFor="donor-type-filter" className="sr-only">
+                Filter Table by Donor Type
               </label>
               <select
                 id="donor-type-filter"
                 value={donorTypeFilter}
                 onChange={(e) => setDonorTypeFilter(e.target.value)}
-                className="form-select px-3 py-1.5 font-medium bg-white text-gray-900"
+                className="form-select w-full px-3 py-2 text-xs sm:text-sm font-medium bg-white border border-slate-200 rounded-xl text-slate-800 shadow-2xs hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
               >
                 <option value="ALL">All Donor Types</option>
                 <option value="private">Private Donor</option>
@@ -1080,9 +1126,9 @@ function DonationsContent() {
             </div>
 
             {/* Section Filter */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="section-filter" className="form-label mb-0 whitespace-nowrap">
-                Filter Table by:
+            <div className="flex-1 sm:flex-initial min-w-[150px]">
+              <label htmlFor="section-filter" className="sr-only">
+                Filter Table by Section
               </label>
               <select
                 id="section-filter"
@@ -1098,7 +1144,7 @@ function DonationsContent() {
                   const newSearch = params.toString();
                   router.push(`/admin/donations${newSearch ? `?${newSearch}` : ""}`);
                 }}
-                className="form-select px-3 py-1.5 font-medium bg-white text-gray-900"
+                className="form-select w-full px-3 py-2 text-xs sm:text-sm font-medium bg-white border border-slate-200 rounded-xl text-slate-800 shadow-2xs hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
               >
                 <option value="ALL">All Sections</option>
                 {sections.map((sec) => (
@@ -1563,20 +1609,20 @@ function DonationsContent() {
         </div>
 
         {/* Visual Analytics Section */}
-        <div className="mt-12 bg-white rounded-3xl border border-slate-200 p-8 shadow-sm animate-in fade-in duration-500">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6 mb-8">
+        <div className="mt-12 bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-4 sm:p-6 lg:p-8 shadow-sm animate-in fade-in duration-500">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-6">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900">
                 Visual Analytics Overview
               </h2>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
                 Visualizing needs and quantity fulfillment metrics
               </p>
             </div>
 
             {/* Separate Dropdown Filter for both charts */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="chart-section-filter" className="text-sm text-gray-600 font-medium">
+            <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+              <label htmlFor="chart-section-filter" className="text-xs sm:text-sm text-gray-600 font-medium whitespace-nowrap">
                 Filter Charts by:
               </label>
               <select
@@ -1586,7 +1632,7 @@ function DonationsContent() {
                   const val = e.target.value;
                   setChartSectionFilter(val === "ALL" ? "ALL" : Number(val));
                 }}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium transition"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium transition"
               >
                 <option value="ALL">All Sections</option>
                 {sections.map((sec) => (
@@ -1598,31 +1644,32 @@ function DonationsContent() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
             {/* Chart 1: Needs Fulfillment Status */}
-            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-6 flex flex-col justify-between h-[320px]">
+            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-4 sm:p-6 flex flex-col justify-between min-h-[360px] sm:min-h-[320px] h-full min-w-0 overflow-hidden">
               <div className="flex flex-col items-start gap-1.5">
-                <h3 className="text-base font-bold text-slate-800 whitespace-nowrap">Needs Fulfillment Overview</h3>
-                <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
-                  Metric: Needs
-                </span>
-                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
-                  {activeChartSectionName}
-                </span>
+                <h3 className="text-sm sm:text-base font-bold text-slate-800">Needs Fulfillment Overview</h3>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
+                    Metric: Needs
+                  </span>
+                  <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
+                    {activeChartSectionName}
+                  </span>
+                </div>
               </div>
 
               {totalNeedsCount > 0 ? (
-                <div className="flex items-center justify-between flex-1 mt-4">
-                  <div className="w-[180px] h-[180px]">
+                <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between flex-1 mt-4 gap-4 sm:gap-6 min-w-0">
+                  <div className="w-[170px] h-[170px] shrink-0 mx-auto sm:mx-0 flex items-center justify-center">
                     {isMounted && (
-                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                      <PieChart>
+                      <PieChart width={170} height={170}>
                         <Pie
                           data={chart1Data}
                           cx="50%"
                           cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
+                          innerRadius={52}
+                          outerRadius={74}
                           paddingAngle={3}
                           dataKey="value"
                         >
@@ -1632,16 +1679,15 @@ function DonationsContent() {
                         </Pie>
                         <Tooltip content={<CustomTooltip />} />
                       </PieChart>
-                    </ResponsiveContainer>
                     )}
                   </div>
 
                   {/* Custom Legend */}
-                  <div className="flex-1 flex flex-col justify-center pl-6 space-y-3">
+                  <div className="w-full sm:flex-1 min-w-0 flex flex-col justify-center space-y-2.5">
                     {chart1Data.map((entry, index) => (
-                      <div key={index} className="flex items-start gap-2.5">
-                        <span className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: CHART1_COLORS[index] }} />
-                        <div>
+                      <div key={index} className="flex items-start gap-2.5 bg-white/80 p-2.5 rounded-xl border border-slate-100/80 shadow-2xs">
+                        <span className="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style={{ backgroundColor: CHART1_COLORS[index] }} />
+                        <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold text-slate-700 leading-tight">{entry.name}</p>
                           <p className="text-[11px] text-slate-500 font-bold mt-0.5">
                             {entry.value} {entry.value === 1 ? 'need' : 'needs'} ({entry.percentage}%)
@@ -1649,8 +1695,9 @@ function DonationsContent() {
                         </div>
                       </div>
                     ))}
-                    <div className="pt-2 border-t border-slate-100">
-                      <p className="text-[10px] text-slate-400 font-medium">Total Created Needs: <span className="font-bold text-slate-600">{totalNeedsCount}</span></p>
+                    <div className="pt-2 px-1 border-t border-slate-200/60 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-500 font-medium">Total Created Needs</span>
+                      <span className="text-xs font-bold text-slate-800">{totalNeedsCount}</span>
                     </div>
                   </div>
                 </div>
@@ -1667,29 +1714,30 @@ function DonationsContent() {
             </div>
 
             {/* Chart 2: Quantity Fulfillment Status */}
-            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-6 flex flex-col justify-between h-[320px]">
+            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-4 sm:p-6 flex flex-col justify-between min-h-[360px] sm:min-h-[320px] h-full min-w-0 overflow-hidden">
               <div className="flex flex-col items-start gap-1.5">
-                <h3 className="text-base font-bold text-slate-800 whitespace-nowrap">Quantity Fulfillment Overview</h3>
-                <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
-                  Metric: Units
-                </span>
-                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
-                  {activeChartSectionName}
-                </span>
+                <h3 className="text-sm sm:text-base font-bold text-slate-800">Quantity Fulfillment Overview</h3>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
+                    Metric: Units
+                  </span>
+                  <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
+                    {activeChartSectionName}
+                  </span>
+                </div>
               </div>
 
               {totalRequiredQuantity > 0 ? (
-                <div className="flex items-center justify-between flex-1 mt-4">
-                  <div className="w-[180px] h-[180px]">
+                <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between flex-1 mt-4 gap-4 sm:gap-6 min-w-0">
+                  <div className="w-[170px] h-[170px] shrink-0 mx-auto sm:mx-0 flex items-center justify-center">
                     {isMounted && (
-                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                      <PieChart>
+                      <PieChart width={170} height={170}>
                         <Pie
                           data={chart2Data}
                           cx="50%"
                           cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
+                          innerRadius={52}
+                          outerRadius={74}
                           paddingAngle={3}
                           dataKey="value"
                         >
@@ -1699,16 +1747,15 @@ function DonationsContent() {
                         </Pie>
                         <Tooltip content={<CustomTooltip />} />
                       </PieChart>
-                    </ResponsiveContainer>
                     )}
                   </div>
 
                   {/* Custom Legend */}
-                  <div className="flex-1 flex flex-col justify-center pl-6 space-y-3">
+                  <div className="w-full sm:flex-1 min-w-0 flex flex-col justify-center space-y-2.5">
                     {chart2Data.map((entry, index) => (
-                      <div key={index} className="flex items-start gap-2.5">
-                        <span className="w-3 h-3 rounded-full mt-1 shrink-0" style={{ backgroundColor: CHART2_COLORS[index] }} />
-                        <div>
+                      <div key={index} className="flex items-start gap-2.5 bg-white/80 p-2.5 rounded-xl border border-slate-100/80 shadow-2xs">
+                        <span className="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style={{ backgroundColor: CHART2_COLORS[index] }} />
+                        <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold text-slate-700 leading-tight">{entry.name}</p>
                           <p className="text-[11px] text-slate-500 font-bold mt-0.5">
                             {entry.value.toLocaleString()} units ({entry.percentage}%)
@@ -1716,8 +1763,9 @@ function DonationsContent() {
                         </div>
                       </div>
                     ))}
-                    <div className="pt-2 border-t border-slate-100">
-                      <p className="text-[10px] text-slate-400 font-medium">Total Required Qty: <span className="font-bold text-slate-600">{totalRequiredQuantity.toLocaleString()} units</span></p>
+                    <div className="pt-2 px-1 border-t border-slate-200/60 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-500 font-medium">Total Required Qty</span>
+                      <span className="text-xs font-bold text-slate-800">{totalRequiredQuantity.toLocaleString()} units</span>
                     </div>
                   </div>
                 </div>

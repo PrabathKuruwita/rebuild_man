@@ -54,6 +54,14 @@ export default function EditNeedModal({
       setError("Need name is required.");
       return;
     }
+    if (form.name.trim().length > 75) {
+      setError("Need name cannot exceed 75 characters.");
+      return;
+    }
+    if (form.description.trim().length > 300) {
+      setError("Description cannot exceed 300 characters.");
+      return;
+    }
     if (form.quantity_required < 1) {
       setError("Quantity must be at least 1.");
       return;
@@ -139,17 +147,23 @@ export default function EditNeedModal({
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Need Name */}
               <div>
-                <label
-                  htmlFor="need-name"
-                  className="block text-sm font-medium text-gray-700 mb-1.5"
-                >
-                  Need Item Name <span className="text-red-500">*</span>
-                </label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label
+                    htmlFor="need-name"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Need Item Name <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-xs text-gray-400">
+                    {form.name.length}/75
+                  </span>
+                </div>
                 <input
                   id="need-name"
                   name="name"
                   autoComplete="off"
                   type="text"
+                  maxLength={75}
                   value={form.name}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, name: e.target.value }))
@@ -268,14 +282,20 @@ export default function EditNeedModal({
 
               {/* Description */}
               <div>
-                <label htmlFor="need-description" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Description
-                </label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label htmlFor="need-description" className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <span className="text-xs text-gray-400">
+                    {form.description.length}/300
+                  </span>
+                </div>
                 <textarea
                   id="need-description"
                   name="description"
                   autoComplete="off"
                   rows={3}
+                  maxLength={300}
                   value={form.description}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, description: e.target.value }))

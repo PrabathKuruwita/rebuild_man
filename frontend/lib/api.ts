@@ -188,6 +188,7 @@ export interface Donation {
   cancelled_at?: string;
   received_by_name?: string;
   received_by_role?: string;
+  received_at?: string;
   need_item_detail?: {
     id: number;
     name: string;
@@ -195,15 +196,46 @@ export interface Donation {
   };
 }
 
+// Helper to decode JWT payload without external library
+export function parseJwtPayload(token: string): { exp?: number; [key: string]: unknown } | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
+export function isTokenExpired(token: string): boolean {
+  const payload = parseJwtPayload(token);
+  if (!payload || !payload.exp) return true;
+  // Expired if current time is within 15 seconds of expiration
+  return Date.now() >= payload.exp * 1000 - 15000;
+}
+
 // Token refresh mutex to prevent duplicate concurrent refresh requests
 let refreshPromise: Promise<string | null> | null = null;
 
 // Token refresh function
-async function refreshAccessToken(): Promise<string | null> {
+export async function refreshAccessToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
 
   const refreshToken = localStorage.getItem("refreshToken");
   if (!refreshToken) return null;
+
+  if (isTokenExpired(refreshToken)) {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    return null;
+  }
 
   if (refreshPromise) {
     return refreshPromise;
@@ -223,6 +255,10 @@ async function refreshAccessToken(): Promise<string | null> {
         const data = await response.json();
         const newAccessToken = data.access;
         localStorage.setItem("accessToken", newAccessToken);
+        // Important: SimpleJWT rotates refresh tokens if ROTATE_REFRESH_TOKENS=True. Save new refresh token!
+        if (data.refresh) {
+          localStorage.setItem("refreshToken", data.refresh);
+        }
         return newAccessToken;
       } else {
         // Refresh token is invalid or expired, clear tokens
@@ -241,6 +277,30 @@ async function refreshAccessToken(): Promise<string | null> {
   return refreshPromise;
 }
 
+const PUBLIC_ENDPOINTS = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/token",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/needs",
+  "/organizations",
+  "/sections",
+  "/stats",
+  "/donations/public_recent",
+  "/donations/public_impact",
+  "/search",
+];
+
+function isEndpointPublic(endpoint: string): boolean {
+  // /auth/me specifically requires an authenticated session
+  if (endpoint.startsWith("/auth/me")) {
+    return false;
+  }
+  return PUBLIC_ENDPOINTS.some((prefix) => endpoint.startsWith(prefix));
+}
+
 // API Functions
 async function fetchAPI<T>(
   endpoint: string,
@@ -250,6 +310,34 @@ async function fetchAPI<T>(
   let token: string | null = null;
   if (typeof window !== "undefined") {
     token = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
+
+    // Proactively refresh access token before firing request if expired or close to expiring
+    if (token && isTokenExpired(token)) {
+      if (refreshToken && !isTokenExpired(refreshToken)) {
+        const refreshedToken = await refreshAccessToken();
+        if (refreshedToken) {
+          token = refreshedToken;
+        } else {
+          token = null;
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          window.dispatchEvent(new Event("auth:session_expired"));
+        }
+      } else {
+        token = null;
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        window.dispatchEvent(new Event("auth:session_expired"));
+      }
+    }
+  }
+
+  const isPublic = isEndpointPublic(endpoint);
+
+  // If endpoint requires authentication and there is no valid token, prevent doomed request
+  if (!token && !isPublic) {
+    throw new Error("Authentication required: Session expired or not logged in");
   }
 
   const headers: HeadersInit = {
@@ -265,10 +353,10 @@ async function fetchAPI<T>(
     headers,
   });
 
-  // If we get a 401 and have a refresh token, try to refresh and retry
+  // If we get a 401 fallback (e.g. backend revoked token unexpectedly) and have a refresh token, try to refresh and retry
   if (response.status === 401 && typeof window !== "undefined") {
     const refreshToken = localStorage.getItem("refreshToken");
-    if (refreshToken) {
+    if (refreshToken && !isTokenExpired(refreshToken)) {
       const newAccessToken = await refreshAccessToken();
       if (newAccessToken) {
         // Retry with new token
@@ -282,8 +370,13 @@ async function fetchAPI<T>(
           headers: retryHeaders,
         });
       } else {
-        // Refresh token failed/expired; if request was a GET, retry anonymously for public endpoints
-        if (!options?.method || options.method === "GET") {
+        // Refresh token failed/expired; clear tokens and notify auth context
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        window.dispatchEvent(new Event("auth:session_expired"));
+
+        // Only retry anonymously if endpoint is known to be public
+        if (isPublic && (!options?.method || options.method === "GET")) {
           const publicHeaders = { ...(options?.headers as Record<string, string>) };
           delete publicHeaders["Authorization"];
           delete publicHeaders["authorization"];
@@ -294,8 +387,13 @@ async function fetchAPI<T>(
         }
       }
     } else {
-      // No refresh token available; if request was a GET, retry anonymously for public endpoints
-      if (!options?.method || options.method === "GET") {
+      // No refresh token available; notify auth context
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      window.dispatchEvent(new Event("auth:session_expired"));
+
+      // Only retry anonymously if endpoint is known to be public
+      if (isPublic && (!options?.method || options.method === "GET")) {
         const publicHeaders = { ...(options?.headers as Record<string, string>) };
         delete publicHeaders["Authorization"];
         delete publicHeaders["authorization"];

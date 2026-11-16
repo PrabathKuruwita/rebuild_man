@@ -69,12 +69,12 @@ export default function AnalyticsView({
       </div>
       
       {/* Main Trend Chart - Visually Dominant */}
-      <ElevatedCard className="p-8" isDominant={true}>
+      <ElevatedCard className="p-4 sm:p-6 lg:p-8" isDominant={true}>
         <AnalyticsLineChart data={trendData} />
       </ElevatedCard>
 
       {/* Section-wise Analytics */}
-      <ElevatedCard className="p-8">
+      <ElevatedCard className="p-4 sm:p-6 lg:p-8">
         <h3 className="font-heading font-bold text-slate-900 mb-6 text-xl">Fulfillment by Section</h3>
         {sectionMetrics.length === 0 ? (
           <div className="py-12 px-6 flex flex-col items-center justify-center text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">

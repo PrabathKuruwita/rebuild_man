@@ -346,6 +346,7 @@ class Donation(models.Model):
     received_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="received_donations")
     cancellation_reason = models.TextField(blank=True, default='')
     cancelled_at = models.DateTimeField(null=True, blank=True)
+    received_at = models.DateTimeField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if self.donor_type == 'government':

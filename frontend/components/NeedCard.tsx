@@ -9,7 +9,8 @@ import {
   unitLabels,
 } from "@/lib/api";
 import DonateModal from "./DonateModal";
-import { Heart, LogIn } from "lucide-react";
+import NeedDetailsModal from "./NeedDetailsModal";
+import { Heart, LogIn, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import "./NeedCard.css";
 
@@ -33,10 +34,11 @@ export default function NeedCard({
 }: NeedCardProps) {
   const { user } = useAuth();
   const [isDonateModalOpen, setIsDonateModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const progress =
     need.quantity_required > 0
-      ? Math.min((need.quantity_confirmed / need.quantity_required) * 100, 100)
+      ? Math.min(((need.quantity_received || 0) / need.quantity_required) * 100, 100)
       : 0;
 
   const remaining = need.quantity_required - need.quantity_confirmed;
@@ -47,12 +49,23 @@ export default function NeedCard({
 
   return (
     <>
-      <div className="bg-white rounded-none shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <h3 className="font-semibold text-gray-900">{need.name}</h3>
+      <div
+        onClick={() => setIsDetailModalOpen(true)}
+        className="bg-white rounded-none shadow-sm border border-gray-100 p-4 hover:shadow-md hover:border-teal-300 transition-all overflow-hidden cursor-pointer group"
+      >
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex-1 min-w-0">
+            <h3
+              className="font-semibold text-gray-900 group-hover:text-teal-700 transition-colors break-words line-clamp-2 leading-snug"
+              title={need.name}
+            >
+              {need.name}
+            </h3>
             {(organizationName || need.section_detail?.organization_name) && (
-              <p className="text-xs text-gray-700 font-medium mt-0.5">
+              <p
+                className="text-xs text-gray-700 font-medium mt-0.5 truncate"
+                title={`${organizationName || need.section_detail?.organization_name || ""}${(sectionName || need.section_detail?.name) ? ` • ${sectionName || need.section_detail?.name}` : ""}`}
+              >
                 {organizationName || need.section_detail?.organization_name}
                 {(sectionName || need.section_detail?.name) && (
                   <span className="text-gray-500 font-normal">
@@ -62,15 +75,18 @@ export default function NeedCard({
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <span
-              className={`px-2.5 py-1 text-xs font-medium rounded-full border ${priorityColors[need.priority]}`}
+              className={`px-2.5 py-1 text-xs font-medium rounded-full border shrink-0 ${priorityColors[need.priority]}`}
             >
               {priorityLabels[need.priority]}
             </span>
             {onEdit && (
               <button
-                onClick={onEdit}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
                 className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                 title="Edit"
               >
@@ -91,7 +107,10 @@ export default function NeedCard({
             )}
             {onDelete && (
               <button
-                onClick={onDelete}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
                 className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                 title="Delete"
               >
@@ -114,7 +133,10 @@ export default function NeedCard({
         </div>
 
         {need.description && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          <p
+            className="text-sm text-gray-600 mb-3 line-clamp-2 break-words"
+            title={need.description}
+          >
             {need.description}
           </p>
         )}
@@ -122,7 +144,7 @@ export default function NeedCard({
         {/* Progress Bar */}
         <div className="mb-3">
           <div className="flex justify-between text-sm mb-1">
-            <span className="text-gray-600">Progress</span>
+            <span className="text-gray-600">Fulfillment Progress</span>
             <span className="font-medium text-gray-900">
               {progress.toFixed(0)}%
             </span>
@@ -169,28 +191,58 @@ export default function NeedCard({
         {remaining > 0 &&
           user?.role !== "ADMIN" &&
           user?.role !== "ORG_ADMIN" && (
-            <>
+            <div className="space-y-2 mt-4">
               {user ? (
                 <button
-                  onClick={() => setIsDonateModalOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDonateModalOpen(true);
+                  }}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
                 >
                   <Heart size={18} />
                   Donate
                 </button>
               ) : (
-                <Link href="/login">
-                  <button className="w-full px-4 py-2 bg-gray-600 text-white rounded-full hover:bg-gray-700 transition-colors font-medium text-sm flex items-center justify-center gap-2">
+                <Link href="/login" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full px-4 py-2 bg-gray-600 text-white rounded-full hover:bg-gray-700 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                  >
                     <LogIn size={18} />
                     Sign in to Donate
                   </button>
                 </Link>
               )}
-            </>
+              <div className="flex items-center justify-end text-[11px] text-gray-400 group-hover:text-teal-600 font-medium transition-colors pt-1">
+                <span className="inline-flex items-center gap-1">
+                  View full details
+                  <ArrowRight size={13} className="transition-transform duration-200 group-hover:translate-x-1" />
+                </span>
+              </div>
+            </div>
           )}
         {remaining <= 0 && (
-          <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded-full text-center font-medium text-sm">
-            ✓ Requirement Fulfilled
+          <div className="space-y-2 mt-4">
+            <div className="w-full px-4 py-2 bg-green-100 text-green-800 rounded-full text-center font-medium text-sm">
+              ✓ Requirement Fulfilled
+            </div>
+            <div className="flex items-center justify-end text-[11px] text-gray-400 group-hover:text-teal-600 font-medium transition-colors pt-1">
+              <span className="inline-flex items-center gap-1">
+                View full details
+                <ArrowRight size={13} className="transition-transform duration-200 group-hover:translate-x-1" />
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Admin view without donate button (e.g. Org Admin / Admin console) */}
+        {(user?.role === "ADMIN" || user?.role === "ORG_ADMIN") && remaining > 0 && (
+          <div className="flex items-center justify-end pt-2 border-t border-gray-50 text-[11px] text-gray-400 group-hover:text-teal-600 font-medium transition-colors mt-2">
+            <span className="inline-flex items-center gap-1">
+              View full details
+              <ArrowRight size={13} className="transition-transform duration-200 group-hover:translate-x-1" />
+            </span>
           </div>
         )}
       </div>
@@ -201,6 +253,17 @@ export default function NeedCard({
         isOpen={isDonateModalOpen}
         onClose={() => setIsDonateModalOpen(false)}
         onSuccess={handleDonationSuccess}
+      />
+
+      {/* Need Details Modal */}
+      <NeedDetailsModal
+        need={need}
+        isOpen={isDetailModalOpen}
+        sectionName={sectionName}
+        organizationName={organizationName}
+        onClose={() => setIsDetailModalOpen(false)}
+        onOpenDonate={() => setIsDonateModalOpen(true)}
+        onEdit={onEdit}
       />
     </>
   );

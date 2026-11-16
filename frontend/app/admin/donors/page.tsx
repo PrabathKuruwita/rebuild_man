@@ -113,8 +113,49 @@ export default function DonorsPage() {
       </div>
 
       <div className="table-wrapper">
-        <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
-          <table className="min-w-full min-w-[1000px] border-separate border-spacing-0">
+        {/* Mobile View: Responsive Cards (< md) */}
+        <div className="grid grid-cols-1 gap-3 md:hidden p-3 sm:p-4">
+          {filteredDonors.length === 0 ? (
+            <div className="py-12 px-4 text-center bg-white rounded-xl border border-dashed border-slate-200">
+              <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-3 shadow-xs mx-auto">
+                <Users size={24} />
+              </div>
+              <p className="font-heading font-bold text-slate-800 text-sm">No Donors Found</p>
+              <p className="font-body text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                {searchQuery.trim()
+                  ? `No donors matching "${searchQuery}". Try adjusting your search term.`
+                  : "No registered donors in the system yet."}
+              </p>
+            </div>
+          ) : (
+            filteredDonors.map((donor) => (
+              <div key={donor.id} className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-col gap-2.5">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-slate-900 text-sm truncate">@{donor.username}</h4>
+                    <p className="text-xs text-slate-500 truncate">
+                      {donor.first_name || donor.last_name
+                        ? `${donor.first_name || ""} ${donor.last_name || ""}`.trim()
+                        : "No display name"}
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
+                    {donor.donations_count} {donor.donations_count === 1 ? 'donation' : 'donations'}
+                  </span>
+                </div>
+                <div className="text-xs text-slate-600 flex flex-col gap-1 border-t border-slate-100 pt-2">
+                  <span className="truncate">📧 {donor.email}</span>
+                  <span>📞 {donor.phone_number || "No contact"}</span>
+                  <span className="text-slate-400">Joined: {new Date(donor.date_joined).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop View: Full Data Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[600px]">
+          <table className="w-full min-w-[900px] border-separate border-spacing-0">
             <thead>
               <tr>
                 <th

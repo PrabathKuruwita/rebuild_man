@@ -131,16 +131,16 @@ export const DonationLetterTemplate = React.forwardRef<
                 {donation.organizationProgram || donation.governmentProgram}
               </p>
               <p className="mb-2">
-                <span className="font-semibold">Officer&apos;s Name:</span>{" "}
+                <span className="font-semibold">Organization&apos;s Contact Number:</span>{" "}
+                {donation.organizationOfficerContact || donation.governmentOfficerContact}
+              </p>
+              <p className="mb-2">
+                <span className="font-semibold">Contact Person&apos;s Full Name:</span>{" "}
                 {donation.organizationOfficerName || donation.governmentOfficerName}
               </p>
               <p className="mb-2">
-                <span className="font-semibold">Designation:</span>{" "}
+                <span className="font-semibold">Contact Person&apos;s Designation:</span>{" "}
                 {donation.organizationOfficerDesignation || donation.governmentOfficerDesignation}
-              </p>
-              <p className="mb-2">
-                <span className="font-semibold">Contact Number:</span>{" "}
-                {donation.organizationOfficerContact || donation.governmentOfficerContact}
               </p>
             </>
           ) : (

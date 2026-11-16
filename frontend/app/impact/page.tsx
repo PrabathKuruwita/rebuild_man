@@ -102,16 +102,16 @@ export default function ImpactPage() {
             { label: "Active Donors", value: donorsOnboarded, icon: <HeartHandshake className="text-rose-500" size={24} /> },
             { label: "Delivery Success", value: deliverySuccess, icon: <TrendingUp className="text-teal-500" size={24} /> },
           ].map((stat, i) => (
-            <div key={i} className="bg-white rounded-none shadow-xl shadow-slate-200/50 p-6 flex flex-col items-center text-center border border-slate-100 transform transition-all hover:-translate-y-1 hover:shadow-2xl">
-              <div className="w-12 h-12 bg-slate-50 rounded-none flex items-center justify-center mb-4">
+            <div key={i} className="bg-white rounded-none shadow-xl shadow-slate-200/50 p-3.5 sm:p-6 flex flex-col items-center text-center border border-slate-100 transform transition-all hover:-translate-y-1 hover:shadow-2xl">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-50 rounded-none flex items-center justify-center mb-3 sm:mb-4">
                 {stat.icon}
               </div>
-              <div className="text-3xl font-black text-slate-800 mb-1">
+              <div className="text-2xl sm:text-3xl font-black text-slate-800 mb-1">
                 <AnimatedStat value={typeof stat.value === 'number' ? stat.value : parseInt(stat.value.toString().replace(/,/g, ''))} />
                 {typeof stat.value === 'string' && stat.value.includes('%') && '%'}
                 {typeof stat.value === 'string' && stat.value.includes('+') && '+'}
               </div>
-              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide">
+              <div className="text-xs sm:text-sm font-semibold text-slate-500 uppercase tracking-wide">
                 {stat.label}
               </div>
             </div>

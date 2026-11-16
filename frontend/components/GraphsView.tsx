@@ -91,15 +91,15 @@ export default function GraphsView({
 
   return (
     <div className="space-y-8 mt-12">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Monthly Donation Trends */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300/80 hover:-translate-y-0.5">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300/80 hover:-translate-y-0.5 min-w-0 overflow-hidden">
           <div className="mb-6">
-            <h3 className="font-heading font-bold text-slate-900 text-lg sm:text-xl whitespace-nowrap">
+            <h3 className="font-heading font-bold text-slate-900 text-lg sm:text-xl">
               Monthly Donation Trends
             </h3>
-            <div className="mt-2.5 flex items-end justify-between gap-4">
-              <div className="flex flex-col items-start gap-1.5">
+            <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+              <div className="flex flex-wrap items-center gap-1.5 sm:flex-col sm:items-start">
                 <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-md border border-indigo-200/60 uppercase tracking-wide">
                   Metric: Requests
                 </span>
@@ -109,18 +109,18 @@ export default function GraphsView({
               </div>
 
               {/* Custom Legend */}
-              <div className="flex items-center gap-3.5 bg-slate-50 px-3.5 py-2 rounded-lg border border-slate-100 shrink-0">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#f59e0b] inline-block shadow-xs"></span>
-                  <span className="font-label text-xs font-bold text-slate-600 uppercase tracking-wider">Pledges</span>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3.5 bg-slate-50 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg border border-slate-100">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#f59e0b] inline-block shadow-xs shrink-0"></span>
+                  <span className="font-label text-[11px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">Pledges</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#10b981] inline-block shadow-xs"></span>
-                  <span className="font-label text-xs font-bold text-slate-600 uppercase tracking-wider">Confirmed</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#10b981] inline-block shadow-xs shrink-0"></span>
+                  <span className="font-label text-[11px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">Confirmed</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#a855f7] inline-block shadow-xs"></span>
-                  <span className="font-label text-xs font-bold text-slate-600 uppercase tracking-wider">Fulfilled</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#a855f7] inline-block shadow-xs shrink-0"></span>
+                  <span className="font-label text-[11px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">Fulfilled</span>
                 </div>
               </div>
             </div>
@@ -230,13 +230,13 @@ export default function GraphsView({
         </div>
 
         {/* Yearly Fulfillment Analysis */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300/80 hover:-translate-y-0.5">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300/80 hover:-translate-y-0.5 min-w-0 overflow-hidden">
           <div className="mb-6">
-            <h3 className="font-heading font-bold text-slate-900 text-lg sm:text-xl whitespace-nowrap">
+            <h3 className="font-heading font-bold text-slate-900 text-lg sm:text-xl">
               Yearly Fulfillment Analysis
             </h3>
-            <div className="mt-2.5 flex items-end justify-between gap-4">
-              <div className="flex flex-col items-start gap-1.5">
+            <div className="mt-3 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+              <div className="flex flex-wrap items-center gap-1.5 sm:flex-col sm:items-start">
                 <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-md border border-indigo-200/60 uppercase tracking-wide">
                   Metric: Requests
                 </span>
@@ -246,18 +246,18 @@ export default function GraphsView({
               </div>
 
               {/* Custom Legend */}
-              <div className="flex items-center gap-3.5 bg-slate-50 px-3.5 py-2 rounded-lg border border-slate-100 shrink-0">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#f59e0b] inline-block shadow-xs"></span>
-                  <span className="font-label text-xs font-bold text-slate-600 uppercase tracking-wider">Pledges</span>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3.5 bg-slate-50 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg border border-slate-100">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#f59e0b] inline-block shadow-xs shrink-0"></span>
+                  <span className="font-label text-[11px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">Pledges</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#10b981] inline-block shadow-xs"></span>
-                  <span className="font-label text-xs font-bold text-slate-600 uppercase tracking-wider">Confirmed</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#10b981] inline-block shadow-xs shrink-0"></span>
+                  <span className="font-label text-[11px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">Confirmed</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#a855f7] inline-block shadow-xs"></span>
-                  <span className="font-label text-xs font-bold text-slate-600 uppercase tracking-wider">Fulfilled</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#a855f7] inline-block shadow-xs shrink-0"></span>
+                  <span className="font-label text-[11px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">Fulfilled</span>
                 </div>
               </div>
             </div>

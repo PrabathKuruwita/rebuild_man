@@ -145,6 +145,8 @@ export default function Navbar() {
                 alt="Parithyaga Logo" 
                 width={50} 
                 height={50}
+                priority
+                loading="eager"
                 className="w-15 h-15 object-contain"
               />
               <div className="flex flex-col">
@@ -195,7 +197,7 @@ export default function Navbar() {
           </div>
 
           {/* Search + Auth Section */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
             {/* Desktop Auth Buttons (Unauthenticated) */}
             {!user ? (
               <>
@@ -215,9 +217,20 @@ export default function Navbar() {
                   </Link>
                   <Link
                     href="/login?tab=register"
-                    className={`text-sm font-semibold px-5 py-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap ${btnPrimaryClass}`}
+                    className="relative group/nav-donor inline-flex items-center justify-center gap-2 text-sm font-bold px-6 py-2.5 rounded-full text-white overflow-hidden transition-all duration-300 transform hover:-translate-y-0.5 hover:scale-105 active:scale-95 shadow-[0_4px_20px_rgba(13,148,136,0.45)] hover:shadow-[0_6px_25px_rgba(16,185,129,0.7)] ring-1 ring-white/20 whitespace-nowrap"
                   >
-                    Become a Donor
+                    {/* Vibrant shifting gradient */}
+                    <span className="absolute inset-0 bg-gradient-to-r from-teal-600 via-emerald-500 to-cyan-500 bg-[length:200%_auto] animate-gradient-shift"></span>
+                    
+                    {/* Ambient soft glow aura */}
+                    <span className="absolute -inset-0.5 rounded-full bg-emerald-400/40 blur-xs group-hover/nav-donor:opacity-100 transition-opacity animate-pulse-slow -z-10"></span>
+
+                    {/* Continuous passing sheen */}
+                    <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/35 to-transparent -skew-x-12 translate-x-[-150%] animate-btn-shimmer pointer-events-none"></span>
+
+                    <span className="relative z-10 flex items-center gap-1.5 drop-shadow-2xs">
+                      Become a Donor
+                    </span>
                   </Link>
                 </div>
 
@@ -225,7 +238,7 @@ export default function Navbar() {
                 <MobileNav isSolid={isSolid} />
               </>
             ) : (
-              <div className="hidden xl:flex items-center gap-2 sm:gap-3">
+              <div className={`${isSidebarLayout ? "hidden lg:flex" : "hidden xl:flex"} items-center gap-2 sm:gap-3`}>
                 {/* Pulsing System Status */}
                 {isSidebarLayout && (
                   <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full animate-fade-in mr-2 shrink-0 select-none">
@@ -329,8 +342,8 @@ export default function Navbar() {
                 <div className="relative flex items-center gap-2" ref={panelRef}>
                   {user.role && (
                     <div className="hidden md:flex flex-col items-end mr-1">
-                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-teal-50 px-2 py-0.5 rounded border border-teal-100">
-                        {user.role === "ADMIN" ? "Admin" : user.role === "ORG_ADMIN" ? "Org Admin" : "Donor"}
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-teal-50 px-2.5 py-1 rounded border border-teal-100">
+                        {user.role === "ADMIN" ? "ADMIN" : user.role === "ORG_ADMIN" ? "ORG ADMIN" : "DONOR"}
                       </span>
                     </div>
                   )}
@@ -401,9 +414,9 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Mobile & Tablet Actions for Logged in Users (< XL: mobile, foldables & tablets like iPad Pro 1032px) */}
+            {/* Mobile Actions for Logged in Users */}
             {user && (
-              <div className="xl:hidden flex items-center gap-1 sm:gap-1.5">
+              <div className={`${isSidebarLayout ? "lg:hidden" : "xl:hidden"} flex items-center gap-1 sm:gap-1.5 ml-auto`}>
                 <Link
                   href="/notifications"
                   title="Notifications"
