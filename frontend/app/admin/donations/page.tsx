@@ -13,9 +13,16 @@ import {
   receiveDonation,
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { CheckCircle2, XCircle, Clock, Gift, Search, Filter } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Gift,
+  Search,
+  Filter,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, Tooltip } from "recharts";
 
 interface DonationDialogState {
   isOpen: boolean;
@@ -42,7 +49,8 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
       <div className="bg-slate-950 text-white px-3 py-2 rounded-xl shadow-md border border-slate-800 text-xs">
         <p className="font-semibold text-[11px]">{data.name}</p>
         <p className="mt-1 text-[11px]">
-          Value: <span className="font-bold">{data.value.toLocaleString()}</span>
+          Value:{" "}
+          <span className="font-bold">{data.value.toLocaleString()}</span>
         </p>
         <p className="text-[11px]">
           Share: <span className="font-bold">{data.percentage}%</span>
@@ -90,8 +98,12 @@ function DonationsContent() {
   const [cancelReason, setCancelReason] = useState("");
   const [cancelReasonOption, setCancelReasonOption] = useState("");
   const [isReasonStep, setIsReasonStep] = useState(false);
-  const [confirmOption, setConfirmOption] = useState<"remaining" | "full">("remaining");
-  const [chartSectionFilter, setChartSectionFilter] = useState<string | number>("ALL");
+  const [confirmOption, setConfirmOption] = useState<"remaining" | "full">(
+    "remaining",
+  );
+  const [chartSectionFilter, setChartSectionFilter] = useState<string | number>(
+    "ALL",
+  );
   const [donorTypeFilter, setDonorTypeFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
@@ -195,7 +207,9 @@ function DonationsContent() {
 
     const donation = confirmDialog.donationDetails;
     const need = needsMap.get(donation.need_item);
-    const remainingNeeded = need ? Math.max(0, need.quantity_required - need.quantity_confirmed) : 0;
+    const remainingNeeded = need
+      ? Math.max(0, need.quantity_required - need.quantity_confirmed)
+      : 0;
 
     let confirmedQty = donation.quantity;
     if (donation.quantity > remainingNeeded && confirmOption === "remaining") {
@@ -284,7 +298,9 @@ function DonationsContent() {
       await fetchDonations();
     } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message : "Failed to mark donation as received",
+        err instanceof Error
+          ? err.message
+          : "Failed to mark donation as received",
       );
     } finally {
       setReceiving(null);
@@ -334,7 +350,6 @@ function DonationsContent() {
     );
   };
 
-
   const sectionFilteredDonations = (() => {
     if (sectionFilter === "ALL") return donations;
     return donations.filter((d) => {
@@ -374,8 +389,16 @@ function DonationsContent() {
           : "";
 
         // 3. Donor Info (Name, Email)
-        const donorName = (d.donor_type === "private" ? d.donor_name : (d.organization_name || d.government_department || "")).toLowerCase();
-        const donorEmail = (d.donor_type === "private" ? d.donor_email : (d.organization_email || d.government_email || "")).toLowerCase();
+        const donorName = (
+          d.donor_type === "private"
+            ? d.donor_name
+            : d.organization_name || d.government_department || ""
+        ).toLowerCase();
+        const donorEmail = (
+          d.donor_type === "private"
+            ? d.donor_email
+            : d.organization_email || d.government_email || ""
+        ).toLowerCase();
 
         // 4. Requested Date (donation created_at)
         const requestedDateStr = d.created_at
@@ -400,9 +423,13 @@ function DonationsContent() {
     if (filter === "ALL") {
       result = searchAndTypeFilteredDonations;
     } else if (filter === "CONFIRMED") {
-      result = searchAndTypeFilteredDonations.filter((d) => d.status === "CONFIRMED");
+      result = searchAndTypeFilteredDonations.filter(
+        (d) => d.status === "CONFIRMED",
+      );
     } else {
-      result = searchAndTypeFilteredDonations.filter((d) => d.status === filter);
+      result = searchAndTypeFilteredDonations.filter(
+        (d) => d.status === filter,
+      );
     }
 
     if (filter === "CANCELLED") {
@@ -424,9 +451,7 @@ function DonationsContent() {
 
   // For FULFILLED filter, group by need item
   const groupedFulfilledDonations: Record<number, Donation[]> =
-    filter === "FULFILLED"
-      ? groupDonationsByNeedItem(searchedDonations)
-      : {};
+    filter === "FULFILLED" ? groupDonationsByNeedItem(searchedDonations) : {};
 
   if (authLoading || isLoading) {
     return (
@@ -460,9 +485,7 @@ function DonationsContent() {
       <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex flex-col items-center justify-start overflow-y-auto p-4 sm:p-10 z-[1100] w-screen h-screen">
         <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] animate-in my-auto shrink-0 flex flex-col overflow-hidden">
           <div className="flex justify-between items-center p-4 sm:p-6 border-b shrink-0">
-            <h3 className="text-xl font-bold text-gray-900">
-              Pledge Details
-            </h3>
+            <h3 className="text-xl font-bold text-gray-900">Pledge Details</h3>
             <button
               onClick={handleCloseViewDialog}
               className="text-slate-400 hover:text-red-600 text-sm font-semibold transition-colors duration-150 cursor-pointer"
@@ -473,13 +496,19 @@ function DonationsContent() {
 
           <div className="p-4 sm:p-6 space-y-4 text-sm overflow-y-auto flex-1">
             <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-              <span className="text-gray-500 font-medium text-xs sm:text-sm">Need Item</span>
-              <span className="sm:col-span-2 text-gray-900 text-sm break-words">{needName}</span>
+              <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                Need Item
+              </span>
+              <span className="sm:col-span-2 text-gray-900 text-sm break-words">
+                {needName}
+              </span>
             </div>
 
             {needsMap.get(donation.need_item)?.section_detail?.name && (
               <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                <span className="text-gray-500 font-medium text-xs sm:text-sm">Section</span>
+                <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                  Section
+                </span>
                 <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                   {needsMap.get(donation.need_item)?.section_detail?.name}
                 </span>
@@ -487,41 +516,55 @@ function DonationsContent() {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-              <span className="text-gray-500 font-medium text-xs sm:text-sm">Quantity</span>
+              <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                Quantity
+              </span>
               <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                 {donation.quantity} {donation.need_item_detail?.unit || "UNIT"}
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-              <span className="text-gray-500 font-medium text-xs sm:text-sm">Status</span>
+              <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                Status
+              </span>
               <div className="sm:col-span-2 flex items-center">
                 <span
                   className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusBadge(
-                    donation.status
+                    donation.status,
                   )}`}
                 >
-                  {donation.status === "CONFIRMED" && <CheckCircle2 size={13} className="text-green-700" />}
-                  {donation.status === "CANCELLED" && <XCircle size={13} className="text-red-700" />}
-                  {donation.status === "FULFILLED" && <Gift size={13} className="text-purple-700" />}
-                  {(!donation.status || donation.status === "PENDING") && <Clock size={13} className="text-yellow-700" />}
+                  {donation.status === "CONFIRMED" && (
+                    <CheckCircle2 size={13} className="text-green-700" />
+                  )}
+                  {donation.status === "CANCELLED" && (
+                    <XCircle size={13} className="text-red-700" />
+                  )}
+                  {donation.status === "FULFILLED" && (
+                    <Gift size={13} className="text-purple-700" />
+                  )}
+                  {(!donation.status || donation.status === "PENDING") && (
+                    <Clock size={13} className="text-yellow-700" />
+                  )}
                   <span>
                     {donation.status === "PENDING"
                       ? "Pending"
                       : donation.status === "CONFIRMED"
-                      ? "Confirmed"
-                      : donation.status === "FULFILLED"
-                      ? "Fulfilled"
-                      : donation.status === "CANCELLED"
-                      ? "Cancelled"
-                      : donation.status}
+                        ? "Confirmed"
+                        : donation.status === "FULFILLED"
+                          ? "Fulfilled"
+                          : donation.status === "CANCELLED"
+                            ? "Cancelled"
+                            : donation.status}
                   </span>
                 </span>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-              <span className="text-gray-500 font-medium text-xs sm:text-sm">Donor Type</span>
+              <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                Donor Type
+              </span>
               <span className="sm:col-span-2 text-gray-900 text-sm break-words capitalize">
                 {donation.donor_type === "private"
                   ? "Private Donor"
@@ -532,7 +575,9 @@ function DonationsContent() {
             {donation.donor_type === "private" ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Full Name</span>
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                    Full Name
+                  </span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.donor_name || "N/A"}
                   </span>
@@ -548,7 +593,9 @@ function DonationsContent() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Email Address</span>
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                    Email Address
+                  </span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.donor_email || "N/A"}
                   </span>
@@ -577,7 +624,9 @@ function DonationsContent() {
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Address</span>
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                    Address
+                  </span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                     {donation.donor_address || "N/A"}
                   </span>
@@ -586,55 +635,77 @@ function DonationsContent() {
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Organization Name</span>
-                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.organization_name || donation.government_department || "N/A"}
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                    Organization Name
                   </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Program Name</span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.organization_program || donation.government_program || "N/A"}
+                    {donation.organization_name ||
+                      donation.government_department ||
+                      "N/A"}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
                   <span className="text-gray-500 font-medium text-xs sm:text-sm">
-                    Organization's Contact Number
+                    Program Name
                   </span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.organization_officer_contact || donation.government_officer_contact || "N/A"}
+                    {donation.organization_program ||
+                      donation.government_program ||
+                      "N/A"}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
                   <span className="text-gray-500 font-medium text-xs sm:text-sm">
-                    Contact Person's Full Name
+                    Organization&apos;s Contact Number
                   </span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.organization_officer_name || donation.government_officer_name || "N/A"}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Contact Person's Designation</span>
-                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.organization_officer_designation || donation.government_officer_designation || "N/A"}
+                    {donation.organization_officer_contact ||
+                      donation.government_officer_contact ||
+                      "N/A"}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                  <span className="text-gray-500 font-medium text-xs sm:text-sm">Organization's Email Address</span>
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                    Contact Person&apos;s Full Name
+                  </span>
                   <span className="sm:col-span-2 text-gray-900 text-sm break-words">
-                    {donation.organization_email || donation.government_email || "N/A"}
+                    {donation.organization_officer_name ||
+                      donation.government_officer_name ||
+                      "N/A"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                    Contact Person&apos;s Designation
+                  </span>
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
+                    {donation.organization_officer_designation ||
+                      donation.government_officer_designation ||
+                      "N/A"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
+                  <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                    Organization&apos;s Email Address
+                  </span>
+                  <span className="sm:col-span-2 text-gray-900 text-sm break-words">
+                    {donation.organization_email ||
+                      donation.government_email ||
+                      "N/A"}
                   </span>
                 </div>
               </>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-              <span className="text-gray-500 font-medium text-xs sm:text-sm">Message</span>
+              <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                Message
+              </span>
               <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                 {donation.message || "N/A"}
               </span>
@@ -647,8 +718,8 @@ function DonationsContent() {
               <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                 {donation.estimated_delivery_date
                   ? new Date(
-                    donation.estimated_delivery_date,
-                  ).toLocaleDateString()
+                      donation.estimated_delivery_date,
+                    ).toLocaleDateString()
                   : "N/A"}
               </span>
             </div>
@@ -662,7 +733,8 @@ function DonationsContent() {
                   </span>
                   <span className="sm:col-span-2 text-gray-900 font-semibold text-green-700 text-sm break-words">
                     {donation.confirmed_by_name}
-                    {donation.confirmed_by_role && ` (${donation.confirmed_by_role.replace("_", " ")})`}
+                    {donation.confirmed_by_role &&
+                      ` (${donation.confirmed_by_role.replace("_", " ")})`}
                   </span>
                 </div>
               )}
@@ -674,7 +746,8 @@ function DonationsContent() {
                 </span>
                 <span className="sm:col-span-2 text-gray-900 font-semibold text-purple-700 text-sm break-words">
                   {donation.received_by_name || "N/A"}
-                  {donation.received_by_role && ` (${donation.received_by_role.replace("_", " ")})`}
+                  {donation.received_by_role &&
+                    ` (${donation.received_by_role.replace("_", " ")})`}
                 </span>
               </div>
             )}
@@ -694,17 +767,22 @@ function DonationsContent() {
 
             {donation.status === "CANCELLED" && donation.cancelled_by_name && (
               <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                <span className="text-gray-500 font-medium text-xs sm:text-sm">Cancelled By</span>
+                <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                  Cancelled By
+                </span>
                 <span className="sm:col-span-2 text-gray-900 font-semibold text-red-700 text-sm break-words">
                   {donation.cancelled_by_name}
-                  {donation.cancelled_by_role && ` (${donation.cancelled_by_role.replace("_", " ")})`}
+                  {donation.cancelled_by_role &&
+                    ` (${donation.cancelled_by_role.replace("_", " ")})`}
                 </span>
               </div>
             )}
 
             {donation.status === "CANCELLED" && (
               <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-gray-100 pb-2 gap-1 sm:gap-4">
-                <span className="text-gray-500 font-medium text-xs sm:text-sm">Reason</span>
+                <span className="text-gray-500 font-medium text-xs sm:text-sm">
+                  Reason
+                </span>
                 <span className="sm:col-span-2 text-gray-900 text-sm break-words">
                   {donation.cancellation_reason || "No reason provided"}
                 </span>
@@ -723,7 +801,9 @@ function DonationsContent() {
     const donation = confirmDialog.donationDetails;
     const isConfirm = confirmDialog.type === "confirm";
     const need = needsMap.get(donation.need_item);
-    const remainingNeeded = need ? Math.max(0, need.quantity_required - need.quantity_confirmed) : 0;
+    const remainingNeeded = need
+      ? Math.max(0, need.quantity_required - need.quantity_confirmed)
+      : 0;
     const hasOverAllocation = isConfirm && donation.quantity > remainingNeeded;
 
     if (isReasonStep && !isConfirm) {
@@ -745,7 +825,10 @@ function DonationsContent() {
             </p>
 
             <div className="mb-4">
-              <label htmlFor="admin-cancel-reason" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+              <label
+                htmlFor="admin-cancel-reason"
+                className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+              >
                 Cancellation Reason
               </label>
               <select
@@ -763,18 +846,31 @@ function DonationsContent() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white text-gray-900 font-medium transition"
                 required
               >
-                <option value="" disabled>Select a reason...</option>
-                <option value="Organization has already received enough supply of this item">Organization has already received enough supply</option>
-                <option value="Pledged items do not match required medical specifications/standards">Pledged items do not match medical specifications/standards</option>
-                <option value="Donor is unresponsive or unable to deliver after multiple contact attempts">Donor is unresponsive or unable to deliver</option>
-                <option value="Duplicate or incorrect pledge entry">Duplicate or incorrect pledge entry</option>
+                <option value="" disabled>
+                  Select a reason...
+                </option>
+                <option value="Organization has already received enough supply of this item">
+                  Organization has already received enough supply
+                </option>
+                <option value="Pledged items do not match required medical specifications/standards">
+                  Pledged items do not match medical specifications/standards
+                </option>
+                <option value="Donor is unresponsive or unable to deliver after multiple contact attempts">
+                  Donor is unresponsive or unable to deliver
+                </option>
+                <option value="Duplicate or incorrect pledge entry">
+                  Duplicate or incorrect pledge entry
+                </option>
                 <option value="Other">Other</option>
               </select>
             </div>
 
             {cancelReasonOption === "Other" && (
               <div className="mb-6 animate-fade-in">
-                <label htmlFor="admin-cancel-other" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                <label
+                  htmlFor="admin-cancel-other"
+                  className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+                >
                   Please specify
                 </label>
                 <textarea
@@ -799,7 +895,11 @@ function DonationsContent() {
               <button
                 onClick={handleCancelApprove}
                 className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg font-medium transition"
-                disabled={cancelling !== null || !cancelReasonOption || (cancelReasonOption === "Other" && !cancelReason.trim())}
+                disabled={
+                  cancelling !== null ||
+                  !cancelReasonOption ||
+                  (cancelReasonOption === "Other" && !cancelReason.trim())
+                }
               >
                 {cancelling !== null ? "Cancelling..." : "Submit"}
               </button>
@@ -816,8 +916,13 @@ function DonationsContent() {
         <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-in">
           <div className="flex items-center justify-center mb-4">
             <div
-              className={`w-12 h-12 rounded-full flex items-center justify-center ${isConfirm ? "bg-green-100" : isReceive ? "bg-purple-100" : "bg-red-100"
-                }`}
+              className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                isConfirm
+                  ? "bg-green-100"
+                  : isReceive
+                    ? "bg-purple-100"
+                    : "bg-red-100"
+              }`}
             >
               {isConfirm ? (
                 <CheckCircle2 className="text-green-600" size={24} />
@@ -830,7 +935,11 @@ function DonationsContent() {
           </div>
 
           <h3 className="text-xl font-bold text-center text-gray-900 mb-2">
-            {isConfirm ? "Confirm Donation?" : isReceive ? "Mark Donation Received?" : "Cancel Donation?"}
+            {isConfirm
+              ? "Confirm Donation?"
+              : isReceive
+                ? "Mark Donation Received?"
+                : "Cancel Donation?"}
           </h3>
 
           <p className="text-gray-600 text-center mb-4 text-sm leading-relaxed">
@@ -860,7 +969,8 @@ function DonationsContent() {
               <span className="text-gray-900 font-medium">
                 {donation.donor_type === "private"
                   ? donation.donor_name
-                  : (donation.organization_name || donation.government_department)}
+                  : donation.organization_name ||
+                    donation.government_department}
               </span>
             </div>
           </div>
@@ -874,7 +984,17 @@ function DonationsContent() {
               {remainingNeeded > 0 ? (
                 <div className="space-y-3">
                   <p className="text-amber-700 leading-relaxed">
-                    This request (<strong>{donation.quantity} {donation.need_item_detail?.unit || "units"}</strong>) exceeds the remaining needed quantity of <strong>{remainingNeeded} {donation.need_item_detail?.unit || "units"}</strong>. How would you like to handle this?
+                    This request (
+                    <strong>
+                      {donation.quantity}{" "}
+                      {donation.need_item_detail?.unit || "units"}
+                    </strong>
+                    ) exceeds the remaining needed quantity of{" "}
+                    <strong>
+                      {remainingNeeded}{" "}
+                      {donation.need_item_detail?.unit || "units"}
+                    </strong>
+                    . How would you like to handle this?
                   </p>
                   <div className="space-y-2.5 pt-1">
                     <label className="flex items-start gap-3 cursor-pointer group">
@@ -887,9 +1007,19 @@ function DonationsContent() {
                         className="mt-1 accent-amber-600 cursor-pointer"
                       />
                       <span className="text-gray-700 group-hover:text-gray-900 transition text-[13px]">
-                        Confirm remaining needed only (<strong>{remainingNeeded} {donation.need_item_detail?.unit || "units"}</strong>)
+                        Confirm remaining needed only (
+                        <strong>
+                          {remainingNeeded}{" "}
+                          {donation.need_item_detail?.unit || "units"}
+                        </strong>
+                        )
                         <span className="block text-xs text-gray-500 mt-0.5">
-                          Split and auto-cancel the surplus of <strong>{donation.quantity - remainingNeeded} {donation.need_item_detail?.unit || "units"}</strong>.
+                          Split and auto-cancel the surplus of{" "}
+                          <strong>
+                            {donation.quantity - remainingNeeded}{" "}
+                            {donation.need_item_detail?.unit || "units"}
+                          </strong>
+                          .
                         </span>
                       </span>
                     </label>
@@ -903,7 +1033,12 @@ function DonationsContent() {
                         className="mt-1 accent-amber-600 cursor-pointer"
                       />
                       <span className="text-gray-700 group-hover:text-gray-900 transition text-[13px]">
-                        Confirm full amount (<strong>{donation.quantity} {donation.need_item_detail?.unit || "units"}</strong>)
+                        Confirm full amount (
+                        <strong>
+                          {donation.quantity}{" "}
+                          {donation.need_item_detail?.unit || "units"}
+                        </strong>
+                        )
                         <span className="block text-xs text-gray-500 mt-0.5">
                           Accept full pledge and allow over-allocation.
                         </span>
@@ -913,7 +1048,13 @@ function DonationsContent() {
                 </div>
               ) : (
                 <p className="text-amber-700 leading-relaxed">
-                  The required need for this item has already been fully met. Confirming this request will accept the full pledge of <strong>{donation.quantity} {donation.need_item_detail?.unit || "units"}</strong> and result in over-allocation.
+                  The required need for this item has already been fully met.
+                  Confirming this request will accept the full pledge of{" "}
+                  <strong>
+                    {donation.quantity}{" "}
+                    {donation.need_item_detail?.unit || "units"}
+                  </strong>{" "}
+                  and result in over-allocation.
                 </p>
               )}
             </div>
@@ -930,19 +1071,30 @@ function DonationsContent() {
                 })
               }
               className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition"
-              disabled={confirming !== null || cancelling !== null || receiving !== null}
+              disabled={
+                confirming !== null || cancelling !== null || receiving !== null
+              }
             >
               Back
             </button>
             <button
-              onClick={isConfirm ? handleConfirmApprove : isReceive ? handleReceiveApprove : () => setIsReasonStep(true)}
-              className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition ${isConfirm
-                ? "bg-green-600 hover:bg-green-700 disabled:bg-green-400"
-                : isReceive
-                  ? "bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400"
-                  : "bg-red-600 hover:bg-red-700 disabled:bg-red-400"
-                }`}
-              disabled={confirming !== null || cancelling !== null || receiving !== null}
+              onClick={
+                isConfirm
+                  ? handleConfirmApprove
+                  : isReceive
+                    ? handleReceiveApprove
+                    : () => setIsReasonStep(true)
+              }
+              className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition ${
+                isConfirm
+                  ? "bg-green-600 hover:bg-green-700 disabled:bg-green-400"
+                  : isReceive
+                    ? "bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400"
+                    : "bg-red-600 hover:bg-red-700 disabled:bg-red-400"
+              }`}
+              disabled={
+                confirming !== null || cancelling !== null || receiving !== null
+              }
             >
               {confirming !== null || cancelling !== null || receiving !== null
                 ? confirming !== null
@@ -962,9 +1114,11 @@ function DonationsContent() {
     );
   })();
 
-  const activeChartSectionName = chartSectionFilter === "ALL"
-    ? "All Sections"
-    : sections.find((s) => s.id === chartSectionFilter)?.name || "Unknown Section";
+  const activeChartSectionName =
+    chartSectionFilter === "ALL"
+      ? "All Sections"
+      : sections.find((s) => s.id === chartSectionFilter)?.name ||
+        "Unknown Section";
 
   // Calculations for Pie Chart 1: Needs Fulfillment Status
   const chartFilteredNeeds = Array.from(needsMap.values()).filter((need) => {
@@ -972,10 +1126,10 @@ function DonationsContent() {
     return need.section === chartSectionFilter;
   });
 
-
   const totalNeedsCount = chartFilteredNeeds.length;
   const fullyReceivedNeedsCount = chartFilteredNeeds.filter(
-    (n) => n.quantity_received >= n.quantity_required && n.quantity_required > 0
+    (n) =>
+      n.quantity_received >= n.quantity_required && n.quantity_required > 0,
   ).length;
   const pendingNeedsCount = totalNeedsCount - fullyReceivedNeedsCount;
 
@@ -983,33 +1137,59 @@ function DonationsContent() {
     {
       name: "100% Received Needs",
       value: fullyReceivedNeedsCount,
-      percentage: totalNeedsCount > 0 ? ((fullyReceivedNeedsCount / totalNeedsCount) * 100).toFixed(1) : "0.0",
+      percentage:
+        totalNeedsCount > 0
+          ? ((fullyReceivedNeedsCount / totalNeedsCount) * 100).toFixed(1)
+          : "0.0",
     },
     {
       name: "Pending/Partial Needs",
       value: pendingNeedsCount,
-      percentage: totalNeedsCount > 0 ? ((pendingNeedsCount / totalNeedsCount) * 100).toFixed(1) : "0.0",
+      percentage:
+        totalNeedsCount > 0
+          ? ((pendingNeedsCount / totalNeedsCount) * 100).toFixed(1)
+          : "0.0",
     },
   ];
 
   const CHART1_COLORS = ["#10B981", "#F59E0B"];
 
   // Calculations for Pie Chart 2: Quantity Fulfillment Status
-  const totalRequiredQuantity = chartFilteredNeeds.reduce((sum, n) => sum + n.quantity_required, 0);
-  const baseReceivedQuantity = chartFilteredNeeds.reduce((sum, n) => sum + Math.min(n.quantity_received, n.quantity_required), 0);
-  const remainingQuantityRequired = chartFilteredNeeds.reduce((sum, n) => sum + Math.max(0, n.quantity_required - n.quantity_received), 0);
-  const overAllocatedQuantity = chartFilteredNeeds.reduce((sum, n) => sum + Math.max(0, n.quantity_received - n.quantity_required), 0);
+  const totalRequiredQuantity = chartFilteredNeeds.reduce(
+    (sum, n) => sum + n.quantity_required,
+    0,
+  );
+  const baseReceivedQuantity = chartFilteredNeeds.reduce(
+    (sum, n) => sum + Math.min(n.quantity_received, n.quantity_required),
+    0,
+  );
+  const remainingQuantityRequired = chartFilteredNeeds.reduce(
+    (sum, n) => sum + Math.max(0, n.quantity_required - n.quantity_received),
+    0,
+  );
+  const overAllocatedQuantity = chartFilteredNeeds.reduce(
+    (sum, n) => sum + Math.max(0, n.quantity_received - n.quantity_required),
+    0,
+  );
 
   const chart2Data = [
     {
       name: "Physically Received Quantity",
       value: baseReceivedQuantity,
-      percentage: totalRequiredQuantity > 0 ? ((baseReceivedQuantity / totalRequiredQuantity) * 100).toFixed(1) : "0.0",
+      percentage:
+        totalRequiredQuantity > 0
+          ? ((baseReceivedQuantity / totalRequiredQuantity) * 100).toFixed(1)
+          : "0.0",
     },
     {
       name: "Remaining Quantity Required",
       value: remainingQuantityRequired,
-      percentage: totalRequiredQuantity > 0 ? ((remainingQuantityRequired / totalRequiredQuantity) * 100).toFixed(1) : "0.0",
+      percentage:
+        totalRequiredQuantity > 0
+          ? ((remainingQuantityRequired / totalRequiredQuantity) * 100).toFixed(
+              1,
+            )
+          : "0.0",
     },
   ];
 
@@ -1017,208 +1197,198 @@ function DonationsContent() {
     chart2Data.push({
       name: "Over Allocated Quantity",
       value: overAllocatedQuantity,
-      percentage: totalRequiredQuantity > 0 ? ((overAllocatedQuantity / totalRequiredQuantity) * 100).toFixed(1) : "0.0",
+      percentage:
+        totalRequiredQuantity > 0
+          ? ((overAllocatedQuantity / totalRequiredQuantity) * 100).toFixed(1)
+          : "0.0",
     });
   }
 
   const CHART2_COLORS = ["#6366F1", "#94A3B8", "#F43F5E"];
 
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="page-header-container">
-        <h1 className="page-title">
-          Donation Management
-        </h1>
+        <h1 className="page-title">Donation Management</h1>
         <p className="page-subtitle">
           Review and confirm donations from donors
         </p>
       </div>
 
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center justify-between">
+          {error}
+          <button
+            onClick={() => setError("")}
+            className="text-red-600 hover:text-red-800"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
+      <div className="mb-6 border-b border-gray-200">
+        <div className="flex gap-2 overflow-x-auto">
+          {["PENDING", "CONFIRMED", "FULFILLED", "CANCELLED", "ALL"].map(
+            (status) => {
+              let count = 0;
+              if (status === "ALL") {
+                count = searchAndTypeFilteredDonations.length;
+              } else if (status === "CONFIRMED") {
+                count = searchAndTypeFilteredDonations.filter(
+                  (d) => d.status === "CONFIRMED",
+                ).length;
+              } else if (status === "FULFILLED") {
+                // Count actual fulfilled requests (donations)
+                count = searchAndTypeFilteredDonations.filter(
+                  (d) => d.status === "FULFILLED",
+                ).length;
+              } else {
+                count = searchAndTypeFilteredDonations.filter(
+                  (d) => d.status === status,
+                ).length;
+              }
 
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center justify-between">
-            {error}
-            <button
-              onClick={() => setError("")}
-              className="text-red-600 hover:text-red-800"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        <div className="mb-6 border-b border-gray-200">
-          <div className="flex gap-2 overflow-x-auto">
-            {["PENDING", "CONFIRMED", "FULFILLED", "CANCELLED", "ALL"].map(
-              (status) => {
-                let count = 0;
-                if (status === "ALL") {
-                  count = searchAndTypeFilteredDonations.length;
-                } else if (status === "CONFIRMED") {
-                  count = searchAndTypeFilteredDonations.filter(
-                    (d) => d.status === "CONFIRMED",
-                  ).length;
-                } else if (status === "FULFILLED") {
-                  // Count actual fulfilled requests (donations)
-                  count = searchAndTypeFilteredDonations.filter(
-                    (d) => d.status === "FULFILLED",
-                  ).length;
-                } else {
-                  count = searchAndTypeFilteredDonations.filter((d) => d.status === status).length;
-                }
-
-                return (
-                  <button
-                    key={status}
-                    onClick={() => setFilter(status)}
-                    className={`px-4 py-3 font-medium border-b-2 transition whitespace-nowrap ${filter === status
+              return (
+                <button
+                  key={status}
+                  onClick={() => setFilter(status)}
+                  className={`px-4 py-3 font-medium border-b-2 transition whitespace-nowrap ${
+                    filter === status
                       ? "text-blue-600 border-blue-600"
                       : "text-gray-600 border-transparent hover:text-gray-900"
-                      }`}
-                  >
-                    {status}
-                    <span className="ml-2 text-sm">({count})</span>
-                  </button>
+                  }`}
+                >
+                  {status}
+                  <span className="ml-2 text-sm">({count})</span>
+                </button>
+              );
+            },
+          )}
+        </div>
+      </div>
+
+      {/* Filter Controls Row: Search bar & dropdown filters */}
+      <div className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+        {/* Search bar */}
+        <div className="search-bar-container max-w-full lg:max-w-md flex-1">
+          <Search className="search-bar-icon" />
+          <input
+            type="text"
+            placeholder="Search by need, donor name/email, date..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-bar-input"
+          />
+        </div>
+
+        {/* Filter dropdowns toolbar */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 shrink-0">
+            <Filter size={14} className="text-slate-400" />
+            <span>Filter by:</span>
+          </div>
+
+          {/* Donor Type Filter */}
+          <div className="flex-1 sm:flex-initial min-w-[150px]">
+            <label htmlFor="donor-type-filter" className="sr-only">
+              Filter Table by Donor Type
+            </label>
+            <select
+              id="donor-type-filter"
+              value={donorTypeFilter}
+              onChange={(e) => setDonorTypeFilter(e.target.value)}
+              className="form-select w-full px-3 py-2 text-xs sm:text-sm font-medium bg-white border border-slate-200 rounded-xl text-slate-800 shadow-2xs hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
+            >
+              <option value="ALL">All Donor Types</option>
+              <option value="private">Private Donor</option>
+              <option value="organization">Organization</option>
+            </select>
+          </div>
+
+          {/* Section Filter */}
+          <div className="flex-1 sm:flex-initial min-w-[150px]">
+            <label htmlFor="section-filter" className="sr-only">
+              Filter Table by Section
+            </label>
+            <select
+              id="section-filter"
+              value={sectionFilter}
+              onChange={(e) => {
+                const val = e.target.value;
+                const params = new URLSearchParams(searchParams.toString());
+                if (val === "ALL") {
+                  params.delete("section");
+                } else {
+                  params.set("section", val);
+                }
+                const newSearch = params.toString();
+                router.push(
+                  `/admin/donations${newSearch ? `?${newSearch}` : ""}`,
                 );
-              },
-            )}
+              }}
+              className="form-select w-full px-3 py-2 text-xs sm:text-sm font-medium bg-white border border-slate-200 rounded-xl text-slate-800 shadow-2xs hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
+            >
+              <option value="ALL">All Sections</option>
+              {sections.map((sec) => (
+                <option key={sec.id} value={sec.id}>
+                  {sec.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
+      </div>
 
-        {/* Filter Controls Row: Search bar & dropdown filters */}
-        <div className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
-          {/* Search bar */}
-          <div className="search-bar-container max-w-full lg:max-w-md flex-1">
-            <Search className="search-bar-icon" />
-            <input
-              type="text"
-              placeholder="Search by need, donor name/email, date..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-bar-input"
-            />
+      <div className="table-wrapper overflow-x-auto w-full max-w-full">
+        {filteredDonations.length === 0 ? (
+          <div className="py-16 px-6 text-center flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200 m-4">
+            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-3 shadow-xs">
+              <Gift size={24} />
+            </div>
+            <h4 className="font-heading font-bold text-slate-800 text-base mb-1">
+              No Donations Found
+            </h4>
+            <p className="font-body text-xs sm:text-sm text-slate-500 max-w-sm">
+              There are no donations matching your active tab ({filter}) or
+              selected filters.
+            </p>
           </div>
-
-          {/* Filter dropdowns toolbar */}
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
-            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 shrink-0">
-              <Filter size={14} className="text-slate-400" />
-              <span>Filter by:</span>
-            </div>
-
-            {/* Donor Type Filter */}
-            <div className="flex-1 sm:flex-initial min-w-[150px]">
-              <label htmlFor="donor-type-filter" className="sr-only">
-                Filter Table by Donor Type
-              </label>
-              <select
-                id="donor-type-filter"
-                value={donorTypeFilter}
-                onChange={(e) => setDonorTypeFilter(e.target.value)}
-                className="form-select w-full px-3 py-2 text-xs sm:text-sm font-medium bg-white border border-slate-200 rounded-xl text-slate-800 shadow-2xs hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
-              >
-                <option value="ALL">All Donor Types</option>
-                <option value="private">Private Donor</option>
-                <option value="organization">Organization</option>
-              </select>
-            </div>
-
-            {/* Section Filter */}
-            <div className="flex-1 sm:flex-initial min-w-[150px]">
-              <label htmlFor="section-filter" className="sr-only">
-                Filter Table by Section
-              </label>
-              <select
-                id="section-filter"
-                value={sectionFilter}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const params = new URLSearchParams(searchParams.toString());
-                  if (val === "ALL") {
-                    params.delete("section");
-                  } else {
-                    params.set("section", val);
-                  }
-                  const newSearch = params.toString();
-                  router.push(`/admin/donations${newSearch ? `?${newSearch}` : ""}`);
-                }}
-                className="form-select w-full px-3 py-2 text-xs sm:text-sm font-medium bg-white border border-slate-200 rounded-xl text-slate-800 shadow-2xs hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
-              >
-                <option value="ALL">All Sections</option>
-                {sections.map((sec) => (
-                  <option key={sec.id} value={sec.id}>
-                    {sec.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="table-wrapper overflow-x-auto w-full max-w-full">
-          {filteredDonations.length === 0 ? (
-            <div className="py-16 px-6 text-center flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200 m-4">
-              <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-3 shadow-xs">
-                <Gift size={24} />
-              </div>
-              <h4 className="font-heading font-bold text-slate-800 text-base mb-1">
-                No Donations Found
-              </h4>
-              <p className="font-body text-xs sm:text-sm text-slate-500 max-w-sm">
-                There are no donations matching your active tab ({filter}) or selected filters.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto overflow-y-auto max-h-[600px] w-full max-w-full">
-              <table className="w-full min-w-[1300px] border-separate border-spacing-0">
-                <thead>
-                  <tr>
-                    <th className="table-th sticky top-0 z-10">
-                      Status
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Need Item
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Need Posted Date
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Section
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Required Quantity
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Received Quantity
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Confirmed Quantity
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Needed Quantity
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Requested Quantity
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Donor Type
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Donor Info
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Pledged Date
-                    </th>
-                    <th className="table-th sticky top-0 z-10">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filter === "FULFILLED"
-                    ? // For FULFILLED donations, group by need item using rowSpan so each donor row aligns straight across all columns
+        ) : (
+          <div className="overflow-x-auto overflow-y-auto max-h-[600px] w-full max-w-full">
+            <table className="w-full min-w-[1300px] border-separate border-spacing-0">
+              <thead>
+                <tr>
+                  <th className="table-th sticky top-0 z-10">Status</th>
+                  <th className="table-th sticky top-0 z-10">Need Item</th>
+                  <th className="table-th sticky top-0 z-10">
+                    Need Posted Date
+                  </th>
+                  <th className="table-th sticky top-0 z-10">Section</th>
+                  <th className="table-th sticky top-0 z-10">
+                    Required Quantity
+                  </th>
+                  <th className="table-th sticky top-0 z-10">
+                    Received Quantity
+                  </th>
+                  <th className="table-th sticky top-0 z-10">
+                    Confirmed Quantity
+                  </th>
+                  <th className="table-th sticky top-0 z-10">
+                    Needed Quantity
+                  </th>
+                  <th className="table-th sticky top-0 z-10">
+                    Requested Quantity
+                  </th>
+                  <th className="table-th sticky top-0 z-10">Donor Type</th>
+                  <th className="table-th sticky top-0 z-10">Donor Info</th>
+                  <th className="table-th sticky top-0 z-10">Pledged Date</th>
+                  <th className="table-th sticky top-0 z-10">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filter === "FULFILLED"
+                  ? // For FULFILLED donations, group by need item using rowSpan so each donor row aligns straight across all columns
                     Object.entries(groupedFulfilledDonations)
                       .sort(
                         ([, a], [, b]) =>
@@ -1271,7 +1441,9 @@ function DonationsContent() {
                                     className="px-6 py-4 text-sm text-gray-600 align-middle bg-white border-b border-slate-200"
                                   >
                                     {needItem?.created_at
-                                      ? new Date(needItem.created_at).toLocaleDateString()
+                                      ? new Date(
+                                          needItem.created_at,
+                                        ).toLocaleDateString()
                                       : "-"}
                                   </td>
                                   <td
@@ -1304,10 +1476,15 @@ function DonationsContent() {
                                   </td>
                                   <td
                                     rowSpan={rowSpan}
-                                    className={`px-6 py-4 text-sm font-medium align-middle bg-white border-b border-slate-200 ${Math.max(0, (needItem?.quantity_required || 0) - (needItem?.quantity_confirmed || 0)) > 0
-                                      ? "text-red-600"
-                                      : "text-green-600"
-                                      }`}
+                                    className={`px-6 py-4 text-sm font-medium align-middle bg-white border-b border-slate-200 ${
+                                      Math.max(
+                                        0,
+                                        (needItem?.quantity_required || 0) -
+                                          (needItem?.quantity_confirmed || 0),
+                                      ) > 0
+                                        ? "text-red-600"
+                                        : "text-green-600"
+                                    }`}
                                   >
                                     {needItem
                                       ? `${Math.max(0, (needItem.quantity_required || 0) - (needItem.quantity_confirmed || 0))} ${needItem.unit || "UNIT"}`
@@ -1334,17 +1511,20 @@ function DonationsContent() {
                                 <div className="text-gray-900 font-medium">
                                   {donation.donor_type === "private"
                                     ? donation.donor_name
-                                    : (donation.organization_name || donation.government_department)}
+                                    : donation.organization_name ||
+                                      donation.government_department}
                                 </div>
                                 {(donation.donor_type === "private"
                                   ? donation.donor_email
-                                  : (donation.organization_email || donation.government_email)) && (
-                                    <div className="text-gray-500 text-xs mt-0.5">
-                                      {donation.donor_type === "private"
-                                        ? donation.donor_email
-                                        : (donation.organization_email || donation.government_email)}
-                                    </div>
-                                  )}
+                                  : donation.organization_email ||
+                                    donation.government_email) && (
+                                  <div className="text-gray-500 text-xs mt-0.5">
+                                    {donation.donor_type === "private"
+                                      ? donation.donor_email
+                                      : donation.organization_email ||
+                                        donation.government_email}
+                                  </div>
+                                )}
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-900 font-medium align-middle border-b border-slate-200">
                                 <div>
@@ -1365,17 +1545,12 @@ function DonationsContent() {
                           );
                         });
                       })
-                    : // For other statuses, show one row per donation
+                  : // For other statuses, show one row per donation
                     searchedDonations.map((donation) => {
                       const displayStatus =
-                        filter === "CONFIRMED"
-                          ? "CONFIRMED"
-                          : donation.status;
+                        filter === "CONFIRMED" ? "CONFIRMED" : donation.status;
                       return (
-                        <tr
-                          key={donation.id}
-                          className="table-tr-hover"
-                        >
+                        <tr key={donation.id} className="table-tr-hover">
                           <td className="table-td align-middle border-b border-slate-200">
                             <div className="flex items-center gap-2">
                               {getStatusIcon(displayStatus)}
@@ -1394,7 +1569,9 @@ function DonationsContent() {
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600 align-middle border-b border-slate-200">
                             {needsMap.get(donation.need_item)?.created_at
-                              ? new Date(needsMap.get(donation.need_item)!.created_at).toLocaleDateString()
+                              ? new Date(
+                                  needsMap.get(donation.need_item)!.created_at,
+                                ).toLocaleDateString()
                               : "-"}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600 align-middle border-b border-slate-200">
@@ -1402,8 +1579,7 @@ function DonationsContent() {
                               ?.name || "-"}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium align-middle border-b border-slate-200">
-                            {needsMap.get(donation.need_item)
-                              ?.quantity_required
+                            {needsMap.get(donation.need_item)?.quantity_required
                               ? `${needsMap.get(donation.need_item)?.quantity_required} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
                               : "-"}
                           </td>
@@ -1419,10 +1595,19 @@ function DonationsContent() {
                               ? `${needsMap.get(donation.need_item)?.quantity_confirmed} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
                               : "-"}
                           </td>
-                          <td className={`px-6 py-4 text-sm font-medium align-middle border-b border-slate-200 ${Math.max(0, (needsMap.get(donation.need_item)?.quantity_required || 0) - (needsMap.get(donation.need_item)?.quantity_confirmed || 0)) > 0
-                            ? "text-red-600"
-                            : "text-green-600"
-                            }`}>
+                          <td
+                            className={`px-6 py-4 text-sm font-medium align-middle border-b border-slate-200 ${
+                              Math.max(
+                                0,
+                                (needsMap.get(donation.need_item)
+                                  ?.quantity_required || 0) -
+                                  (needsMap.get(donation.need_item)
+                                    ?.quantity_confirmed || 0),
+                              ) > 0
+                                ? "text-red-600"
+                                : "text-green-600"
+                            }`}
+                          >
                             {needsMap.get(donation.need_item)
                               ? `${Math.max(0, (needsMap.get(donation.need_item)?.quantity_required || 0) - (needsMap.get(donation.need_item)?.quantity_confirmed || 0))} ${needsMap.get(donation.need_item)?.unit || "UNIT"}`
                               : "-"}
@@ -1446,17 +1631,20 @@ function DonationsContent() {
                             <div className="text-gray-900 font-medium">
                               {donation.donor_type === "private"
                                 ? donation.donor_name
-                                : (donation.organization_name || donation.government_department)}
+                                : donation.organization_name ||
+                                  donation.government_department}
                             </div>
                             {(donation.donor_type === "private"
                               ? donation.donor_email
-                              : (donation.organization_email || donation.government_email)) && (
-                                <div className="text-gray-500 text-xs mt-0.5">
-                                  {donation.donor_type === "private"
-                                    ? donation.donor_email
-                                    : (donation.organization_email || donation.government_email)}
-                                </div>
-                              )}
+                              : donation.organization_email ||
+                                donation.government_email) && (
+                              <div className="text-gray-500 text-xs mt-0.5">
+                                {donation.donor_type === "private"
+                                  ? donation.donor_email
+                                  : donation.organization_email ||
+                                    donation.government_email}
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium align-middle border-b border-slate-200">
                             <div>
@@ -1523,263 +1711,302 @@ function DonationsContent() {
                         </tr>
                       );
                     })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
-          {["PENDING", "CONFIRMED", "FULFILLED", "CANCELLED"].map((status) => {
-            let count = 0;
-            let totalQuantity = 0;
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
+        {["PENDING", "CONFIRMED", "FULFILLED", "CANCELLED"].map((status) => {
+          let count = 0;
+          let totalQuantity = 0;
 
-            if (status === "CONFIRMED") {
-              const confirmedDonations = searchAndTypeFilteredDonations.filter(
-                (d) => d.status === "CONFIRMED",
-              );
-              count = confirmedDonations.length;
-              totalQuantity = confirmedDonations.reduce(
-                (sum, d) => sum + d.quantity,
-                0,
-              );
-            } else if (status === "FULFILLED") {
-              const fulfilledDonations = searchAndTypeFilteredDonations.filter(
-                (d) => d.status === "FULFILLED",
-              );
-              count = fulfilledDonations.length;
-              totalQuantity = fulfilledDonations.reduce(
-                (sum, d) => sum + d.quantity,
-                0,
-              );
-            } else {
-              const standardDonations = searchAndTypeFilteredDonations.filter(
-                (d) => d.status === status,
-              );
-              count = standardDonations.length;
-              totalQuantity = standardDonations.reduce(
-                (sum, d) => sum + d.quantity,
-                0,
-              );
-            }
-
-            const bgColors: Record<string, string> = {
-              PENDING: "bg-amber-50 border-amber-200",
-              CONFIRMED: "bg-emerald-50 border-emerald-200",
-              FULFILLED: "bg-purple-50 border-purple-200",
-              CANCELLED: "bg-rose-50 border-rose-200",
-            };
-            const titleColors: Record<string, string> = {
-              PENDING: "text-amber-800",
-              CONFIRMED: "text-emerald-800",
-              FULFILLED: "text-purple-800",
-              CANCELLED: "text-rose-800",
-            };
-            const numColors: Record<string, string> = {
-              PENDING: "text-amber-950",
-              CONFIRMED: "text-emerald-950",
-              FULFILLED: "text-purple-950",
-              CANCELLED: "text-rose-950",
-            };
-
-            return (
-              <div
-                key={status}
-                className={`rounded-xl border shadow-sm p-6 ${bgColors[status]}`}
-              >
-                <div className={`text-sm font-bold ${titleColors[status]}`}>
-                  {status}
-                  <span className="block text-xs font-medium opacity-80 mt-0.5">
-                    Requests
-                  </span>
-                </div>
-                <div
-                  className={`text-3xl font-black mt-2 ${numColors[status]}`}
-                >
-                  {count}
-                </div>
-                <div
-                  className={`text-sm mt-2 font-medium opacity-80 ${titleColors[status]}`}
-                >
-                  Total: {totalQuantity} units
-                </div>
-              </div>
+          if (status === "CONFIRMED") {
+            const confirmedDonations = searchAndTypeFilteredDonations.filter(
+              (d) => d.status === "CONFIRMED",
             );
-          })}
-        </div>
+            count = confirmedDonations.length;
+            totalQuantity = confirmedDonations.reduce(
+              (sum, d) => sum + d.quantity,
+              0,
+            );
+          } else if (status === "FULFILLED") {
+            const fulfilledDonations = searchAndTypeFilteredDonations.filter(
+              (d) => d.status === "FULFILLED",
+            );
+            count = fulfilledDonations.length;
+            totalQuantity = fulfilledDonations.reduce(
+              (sum, d) => sum + d.quantity,
+              0,
+            );
+          } else {
+            const standardDonations = searchAndTypeFilteredDonations.filter(
+              (d) => d.status === status,
+            );
+            count = standardDonations.length;
+            totalQuantity = standardDonations.reduce(
+              (sum, d) => sum + d.quantity,
+              0,
+            );
+          }
 
-        {/* Visual Analytics Section */}
-        <div className="mt-12 bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-4 sm:p-6 lg:p-8 shadow-sm animate-in fade-in duration-500">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-6">
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900">
-                Visual Analytics Overview
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                Visualizing needs and quantity fulfillment metrics
-              </p>
-            </div>
+          const bgColors: Record<string, string> = {
+            PENDING: "bg-amber-50 border-amber-200",
+            CONFIRMED: "bg-emerald-50 border-emerald-200",
+            FULFILLED: "bg-purple-50 border-purple-200",
+            CANCELLED: "bg-rose-50 border-rose-200",
+          };
+          const titleColors: Record<string, string> = {
+            PENDING: "text-amber-800",
+            CONFIRMED: "text-emerald-800",
+            FULFILLED: "text-purple-800",
+            CANCELLED: "text-rose-800",
+          };
+          const numColors: Record<string, string> = {
+            PENDING: "text-amber-950",
+            CONFIRMED: "text-emerald-950",
+            FULFILLED: "text-purple-950",
+            CANCELLED: "text-rose-950",
+          };
 
-            {/* Separate Dropdown Filter for both charts */}
-            <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-              <label htmlFor="chart-section-filter" className="text-xs sm:text-sm text-gray-600 font-medium whitespace-nowrap">
-                Filter Charts by:
-              </label>
-              <select
-                id="chart-section-filter"
-                value={chartSectionFilter}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setChartSectionFilter(val === "ALL" ? "ALL" : Number(val));
-                }}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium transition"
+          return (
+            <div
+              key={status}
+              className={`rounded-xl border shadow-sm p-6 ${bgColors[status]}`}
+            >
+              <div className={`text-sm font-bold ${titleColors[status]}`}>
+                {status}
+                <span className="block text-xs font-medium opacity-80 mt-0.5">
+                  Requests
+                </span>
+              </div>
+              <div className={`text-3xl font-black mt-2 ${numColors[status]}`}>
+                {count}
+              </div>
+              <div
+                className={`text-sm mt-2 font-medium opacity-80 ${titleColors[status]}`}
               >
-                <option value="ALL">All Sections</option>
-                {sections.map((sec) => (
-                  <option key={sec.id} value={sec.id}>
-                    {sec.name}
-                  </option>
-                ))}
-              </select>
+                Total: {totalQuantity} units
+              </div>
             </div>
+          );
+        })}
+      </div>
+
+      {/* Visual Analytics Section */}
+      <div className="mt-12 bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-4 sm:p-6 lg:p-8 shadow-sm animate-in fade-in duration-500">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-6">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+              Visual Analytics Overview
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Visualizing needs and quantity fulfillment metrics
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
-            {/* Chart 1: Needs Fulfillment Status */}
-            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-4 sm:p-6 flex flex-col justify-between min-h-[360px] sm:min-h-[320px] h-full min-w-0 overflow-hidden">
-              <div className="flex flex-col items-start gap-1.5">
-                <h3 className="text-sm sm:text-base font-bold text-slate-800">Needs Fulfillment Overview</h3>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
-                    Metric: Needs
-                  </span>
-                  <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
-                    {activeChartSectionName}
-                  </span>
-                </div>
+          {/* Separate Dropdown Filter for both charts */}
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            <label
+              htmlFor="chart-section-filter"
+              className="text-xs sm:text-sm text-gray-600 font-medium whitespace-nowrap"
+            >
+              Filter Charts by:
+            </label>
+            <select
+              id="chart-section-filter"
+              value={chartSectionFilter}
+              onChange={(e) => {
+                const val = e.target.value;
+                setChartSectionFilter(val === "ALL" ? "ALL" : Number(val));
+              }}
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 font-medium transition"
+            >
+              <option value="ALL">All Sections</option>
+              {sections.map((sec) => (
+                <option key={sec.id} value={sec.id}>
+                  {sec.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
+          {/* Chart 1: Needs Fulfillment Status */}
+          <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-4 sm:p-6 flex flex-col justify-between min-h-[360px] sm:min-h-[320px] h-full min-w-0 overflow-hidden">
+            <div className="flex flex-col items-start gap-1.5">
+              <h3 className="text-sm sm:text-base font-bold text-slate-800">
+                Needs Fulfillment Overview
+              </h3>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
+                  Metric: Needs
+                </span>
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
+                  {activeChartSectionName}
+                </span>
               </div>
-
-              {totalNeedsCount > 0 ? (
-                <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between flex-1 mt-4 gap-4 sm:gap-6 min-w-0">
-                  <div className="w-[170px] h-[170px] shrink-0 mx-auto sm:mx-0 flex items-center justify-center">
-                    {isMounted && (
-                      <PieChart width={170} height={170}>
-                        <Pie
-                          data={chart1Data}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={52}
-                          outerRadius={74}
-                          paddingAngle={3}
-                          dataKey="value"
-                        >
-                          {chart1Data.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={CHART1_COLORS[index]} />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<CustomTooltip />} />
-                      </PieChart>
-                    )}
-                  </div>
-
-                  {/* Custom Legend */}
-                  <div className="w-full sm:flex-1 min-w-0 flex flex-col justify-center space-y-2.5">
-                    {chart1Data.map((entry, index) => (
-                      <div key={index} className="flex items-start gap-2.5 bg-white/80 p-2.5 rounded-xl border border-slate-100/80 shadow-2xs">
-                        <span className="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style={{ backgroundColor: CHART1_COLORS[index] }} />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-slate-700 leading-tight">{entry.name}</p>
-                          <p className="text-[11px] text-slate-500 font-bold mt-0.5">
-                            {entry.value} {entry.value === 1 ? 'need' : 'needs'} ({entry.percentage}%)
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="pt-2 px-1 border-t border-slate-200/60 flex items-center justify-between">
-                      <span className="text-[11px] text-slate-500 font-medium">Total Created Needs</span>
-                      <span className="text-xs font-bold text-slate-800">{totalNeedsCount}</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-white/60 rounded-xl border border-dashed border-slate-200 mt-4">
-                  <p className="font-heading font-semibold text-slate-700 text-xs sm:text-sm mb-1">
-                    No Needs Data Available
-                  </p>
-                  <p className="text-slate-400 text-xs">
-                    No requirements recorded under {activeChartSectionName.toLowerCase()} yet.
-                  </p>
-                </div>
-              )}
             </div>
 
-            {/* Chart 2: Quantity Fulfillment Status */}
-            <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-4 sm:p-6 flex flex-col justify-between min-h-[360px] sm:min-h-[320px] h-full min-w-0 overflow-hidden">
-              <div className="flex flex-col items-start gap-1.5">
-                <h3 className="text-sm sm:text-base font-bold text-slate-800">Quantity Fulfillment Overview</h3>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
-                    Metric: Units
-                  </span>
-                  <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
-                    {activeChartSectionName}
-                  </span>
+            {totalNeedsCount > 0 ? (
+              <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between flex-1 mt-4 gap-4 sm:gap-6 min-w-0">
+                <div className="w-[170px] h-[170px] shrink-0 mx-auto sm:mx-0 flex items-center justify-center">
+                  {isMounted && (
+                    <PieChart width={170} height={170}>
+                      <Pie
+                        data={chart1Data}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={52}
+                        outerRadius={74}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {chart1Data.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={CHART1_COLORS[index]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  )}
+                </div>
+
+                {/* Custom Legend */}
+                <div className="w-full sm:flex-1 min-w-0 flex flex-col justify-center space-y-2.5">
+                  {chart1Data.map((entry, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start gap-2.5 bg-white/80 p-2.5 rounded-xl border border-slate-100/80 shadow-2xs"
+                    >
+                      <span
+                        className="w-2.5 h-2.5 rounded-full mt-1 shrink-0"
+                        style={{ backgroundColor: CHART1_COLORS[index] }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-slate-700 leading-tight">
+                          {entry.name}
+                        </p>
+                        <p className="text-[11px] text-slate-500 font-bold mt-0.5">
+                          {entry.value} {entry.value === 1 ? "need" : "needs"} (
+                          {entry.percentage}%)
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="pt-2 px-1 border-t border-slate-200/60 flex items-center justify-between">
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      Total Created Needs
+                    </span>
+                    <span className="text-xs font-bold text-slate-800">
+                      {totalNeedsCount}
+                    </span>
+                  </div>
                 </div>
               </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-white/60 rounded-xl border border-dashed border-slate-200 mt-4">
+                <p className="font-heading font-semibold text-slate-700 text-xs sm:text-sm mb-1">
+                  No Needs Data Available
+                </p>
+                <p className="text-slate-400 text-xs">
+                  No requirements recorded under{" "}
+                  {activeChartSectionName.toLowerCase()} yet.
+                </p>
+              </div>
+            )}
+          </div>
 
-              {totalRequiredQuantity > 0 ? (
-                <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between flex-1 mt-4 gap-4 sm:gap-6 min-w-0">
-                  <div className="w-[170px] h-[170px] shrink-0 mx-auto sm:mx-0 flex items-center justify-center">
-                    {isMounted && (
-                      <PieChart width={170} height={170}>
-                        <Pie
-                          data={chart2Data}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={52}
-                          outerRadius={74}
-                          paddingAngle={3}
-                          dataKey="value"
-                        >
-                          {chart2Data.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={CHART2_COLORS[index]} />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<CustomTooltip />} />
-                      </PieChart>
-                    )}
-                  </div>
-
-                  {/* Custom Legend */}
-                  <div className="w-full sm:flex-1 min-w-0 flex flex-col justify-center space-y-2.5">
-                    {chart2Data.map((entry, index) => (
-                      <div key={index} className="flex items-start gap-2.5 bg-white/80 p-2.5 rounded-xl border border-slate-100/80 shadow-2xs">
-                        <span className="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style={{ backgroundColor: CHART2_COLORS[index] }} />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-slate-700 leading-tight">{entry.name}</p>
-                          <p className="text-[11px] text-slate-500 font-bold mt-0.5">
-                            {entry.value.toLocaleString()} units ({entry.percentage}%)
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="pt-2 px-1 border-t border-slate-200/60 flex items-center justify-between">
-                      <span className="text-[11px] text-slate-500 font-medium">Total Required Qty</span>
-                      <span className="text-xs font-bold text-slate-800">{totalRequiredQuantity.toLocaleString()} units</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-white/60 rounded-xl border border-dashed border-slate-200 mt-4">
-                  <p className="font-heading font-semibold text-slate-700 text-xs sm:text-sm mb-1">
-                    No Quantity Data Available
-                  </p>
-                  <p className="text-slate-400 text-xs">
-                    No required units recorded under {activeChartSectionName.toLowerCase()} yet.
-                  </p>
-                </div>
-              )}
+          {/* Chart 2: Quantity Fulfillment Status */}
+          <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-4 sm:p-6 flex flex-col justify-between min-h-[360px] sm:min-h-[320px] h-full min-w-0 overflow-hidden">
+            <div className="flex flex-col items-start gap-1.5">
+              <h3 className="text-sm sm:text-base font-bold text-slate-800">
+                Quantity Fulfillment Overview
+              </h3>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-200/60 tracking-wide">
+                  Metric: Units
+                </span>
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded uppercase tracking-wider">
+                  {activeChartSectionName}
+                </span>
+              </div>
             </div>
+
+            {totalRequiredQuantity > 0 ? (
+              <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between flex-1 mt-4 gap-4 sm:gap-6 min-w-0">
+                <div className="w-[170px] h-[170px] shrink-0 mx-auto sm:mx-0 flex items-center justify-center">
+                  {isMounted && (
+                    <PieChart width={170} height={170}>
+                      <Pie
+                        data={chart2Data}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={52}
+                        outerRadius={74}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {chart2Data.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={CHART2_COLORS[index]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  )}
+                </div>
+
+                {/* Custom Legend */}
+                <div className="w-full sm:flex-1 min-w-0 flex flex-col justify-center space-y-2.5">
+                  {chart2Data.map((entry, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start gap-2.5 bg-white/80 p-2.5 rounded-xl border border-slate-100/80 shadow-2xs"
+                    >
+                      <span
+                        className="w-2.5 h-2.5 rounded-full mt-1 shrink-0"
+                        style={{ backgroundColor: CHART2_COLORS[index] }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-slate-700 leading-tight">
+                          {entry.name}
+                        </p>
+                        <p className="text-[11px] text-slate-500 font-bold mt-0.5">
+                          {entry.value.toLocaleString()} units (
+                          {entry.percentage}%)
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="pt-2 px-1 border-t border-slate-200/60 flex items-center justify-between">
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      Total Required Qty
+                    </span>
+                    <span className="text-xs font-bold text-slate-800">
+                      {totalRequiredQuantity.toLocaleString()} units
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-white/60 rounded-xl border border-dashed border-slate-200 mt-4">
+                <p className="font-heading font-semibold text-slate-700 text-xs sm:text-sm mb-1">
+                  No Quantity Data Available
+                </p>
+                <p className="text-slate-400 text-xs">
+                  No required units recorded under{" "}
+                  {activeChartSectionName.toLowerCase()} yet.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1791,11 +2018,13 @@ function DonationsContent() {
 
 export default function DonationsPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <LoadingSpinner />
+        </div>
+      }
+    >
       <DonationsContent />
     </Suspense>
   );

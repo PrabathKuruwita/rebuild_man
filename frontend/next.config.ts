@@ -4,12 +4,20 @@ const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 
 // Validate BACKEND_URL
 if (BACKEND_URL && !BACKEND_URL.match(/^https?:\/\//)) {
-  throw new Error(`Invalid BACKEND_URL: "${BACKEND_URL}". Must start with http:// or https://`);
+  throw new Error(
+    `Invalid BACKEND_URL: "${BACKEND_URL}". Must start with http:// or https://`,
+  );
 }
 
 // Warn if using HTTP in production
-if (process.env.NODE_ENV === "production" && BACKEND_URL.startsWith("http://")) {
-  console.warn("⚠️  WARNING: BACKEND_URL uses HTTP in production. Use HTTPS for security.");
+if (
+  process.env.NODE_ENV === "production" &&
+  BACKEND_URL.startsWith("http://") &&
+  !BACKEND_URL.startsWith("http://backend:")
+) {
+  console.warn(
+    "⚠️  WARNING: BACKEND_URL uses HTTP in production. Use HTTPS for security.",
+  );
 }
 
 const nextConfig: NextConfig = {

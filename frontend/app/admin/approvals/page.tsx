@@ -11,7 +11,16 @@ import {
   getRejectedOrgAdmins,
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { Check, X, ChevronDown, ChevronUp, Search, Filter, CheckCircle2, XCircle, ShieldCheck } from "lucide-react";
+import {
+  Check,
+  X,
+  ChevronDown,
+  Search,
+  Filter,
+  CheckCircle2,
+  XCircle,
+  ShieldCheck,
+} from "lucide-react";
 
 interface ConfirmationDialog {
   isOpen: boolean;
@@ -67,20 +76,23 @@ export default function ApprovalsPage() {
 
   const filterRequests = (requests: ApprovalRequest[]) => {
     return requests.filter((req) => {
-      const fullName = `${req.first_name || ""} ${req.last_name || ""}`.toLowerCase();
+      const fullName =
+        `${req.first_name || ""} ${req.last_name || ""}`.toLowerCase();
       const username = (req.username || "").toLowerCase();
       const orgName = (req.organization_name || "").toLowerCase();
       const query = searchQuery.toLowerCase();
-      
+
       const matchesSearch =
         fullName.includes(query) ||
         username.includes(query) ||
         orgName.includes(query);
-        
+
       const matchesOrgType =
         selectedOrgType === "ALL" ||
-        (req.organization_type || "").toUpperCase().includes(selectedOrgType.toUpperCase());
-        
+        (req.organization_type || "")
+          .toUpperCase()
+          .includes(selectedOrgType.toUpperCase());
+
       return matchesSearch && matchesOrgType;
     });
   };
@@ -321,7 +333,7 @@ export default function ApprovalsPage() {
                   </button>
                 )}
               </div>
-              
+
               <div className="relative w-full md:w-64">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <Filter size={18} />
@@ -351,16 +363,26 @@ export default function ApprovalsPage() {
                     <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-3">
                       <CheckCircle2 size={24} />
                     </div>
-                    <p className="text-base font-bold text-slate-800">No Pending Approval Requests</p>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">All organization administrator applications have been processed.</p>
+                    <p className="text-base font-bold text-slate-800">
+                      No Pending Approval Requests
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">
+                      All organization administrator applications have been
+                      processed.
+                    </p>
                   </div>
                 ) : filteredPending.length === 0 ? (
                   <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center p-6 shadow-xs">
                     <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
                       <Search size={24} />
                     </div>
-                    <p className="text-base font-bold text-slate-800">No Matching Pending Requests</p>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">Try changing your search query or organization type filter.</p>
+                    <p className="text-base font-bold text-slate-800">
+                      No Matching Pending Requests
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">
+                      Try changing your search query or organization type
+                      filter.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -400,16 +422,26 @@ export default function ApprovalsPage() {
                     <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
                       <ShieldCheck size={24} />
                     </div>
-                    <p className="text-base font-bold text-slate-800">No Approved Requests</p>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">Approved organization administrator accounts will appear here.</p>
+                    <p className="text-base font-bold text-slate-800">
+                      No Approved Requests
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">
+                      Approved organization administrator accounts will appear
+                      here.
+                    </p>
                   </div>
                 ) : filteredApproved.length === 0 ? (
                   <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center p-6 shadow-xs">
                     <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
                       <Search size={24} />
                     </div>
-                    <p className="text-base font-bold text-slate-800">No Matching Approved Requests</p>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">Try changing your search query or organization type filter.</p>
+                    <p className="text-base font-bold text-slate-800">
+                      No Matching Approved Requests
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">
+                      Try changing your search query or organization type
+                      filter.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -439,16 +471,25 @@ export default function ApprovalsPage() {
                     <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
                       <XCircle size={24} />
                     </div>
-                    <p className="text-base font-bold text-slate-800">No Rejected Requests</p>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">No organization registration requests have been rejected.</p>
+                    <p className="text-base font-bold text-slate-800">
+                      No Rejected Requests
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">
+                      No organization registration requests have been rejected.
+                    </p>
                   </div>
                 ) : filteredRejected.length === 0 ? (
                   <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center p-6 shadow-xs">
                     <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
                       <Search size={24} />
                     </div>
-                    <p className="text-base font-bold text-slate-800">No Matching Rejected Requests</p>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">Try changing your search query or organization type filter.</p>
+                    <p className="text-base font-bold text-slate-800">
+                      No Matching Rejected Requests
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm">
+                      Try changing your search query or organization type
+                      filter.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -553,10 +594,16 @@ function RequestCard({
     <div className="card-container overflow-hidden">
       <div className="flex items-start justify-between mb-4 gap-2.5 sm:gap-4">
         <div className="flex-1 min-w-0">
-          <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate" title={`${req.first_name} ${req.last_name}`}>
+          <h3
+            className="text-base sm:text-lg font-bold text-gray-900 truncate"
+            title={`${req.first_name} ${req.last_name}`}
+          >
             {req.first_name} {req.last_name}
           </h3>
-          <p className="text-xs sm:text-sm text-gray-600 truncate mt-0.5" title={req.email}>
+          <p
+            className="text-xs sm:text-sm text-gray-600 truncate mt-0.5"
+            title={req.email}
+          >
             {req.email}
           </p>
           <p className="text-xs text-gray-400 mt-0.5 truncate font-medium">
@@ -595,15 +642,11 @@ function RequestCard({
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-200">
             <div>
-              <label className="form-label mb-1">
-                Organization Name
-              </label>
+              <label className="form-label mb-1">Organization Name</label>
               <p className="text-gray-900">{req.organization_name}</p>
             </div>
             <div>
-              <label className="form-label mb-1">
-                Organization Type
-              </label>
+              <label className="form-label mb-1">Organization Type</label>
               <p className="text-gray-900">{req.organization_type}</p>
             </div>
             <div>
@@ -612,9 +655,7 @@ function RequestCard({
             </div>
             {req.approval_requested_at && (
               <div>
-                <label className="form-label mb-1">
-                  Requested On
-                </label>
+                <label className="form-label mb-1">Requested On</label>
                 <p className="text-gray-900">
                   {new Date(req.approval_requested_at).toLocaleDateString(
                     "en-US",
@@ -631,9 +672,7 @@ function RequestCard({
             )}
             {req.approval_decided_at && (
               <div>
-                <label className="form-label mb-1">
-                  Decided On
-                </label>
+                <label className="form-label mb-1">Decided On</label>
                 <p className="text-gray-900">
                   {new Date(req.approval_decided_at).toLocaleDateString(
                     "en-US",
@@ -650,11 +689,10 @@ function RequestCard({
             )}
             {req.approval_decided_by_username && (
               <div>
-                <label className="form-label mb-1">
-                  Decided By
-                </label>
+                <label className="form-label mb-1">Decided By</label>
                 <p className="text-gray-900">
-                  {req.approval_decided_by_username === "admin" || req.approval_decided_by_username === "system_admin"
+                  {req.approval_decided_by_username === "admin" ||
+                  req.approval_decided_by_username === "system_admin"
                     ? "System Admin"
                     : req.approval_decided_by_username}
                 </p>

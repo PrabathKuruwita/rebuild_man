@@ -3,14 +3,39 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Organization, getOrganizations, NeedItem, getNeeds, SystemStats, getSystemStats, getPublicRecentDonations, PublicDonation } from "@/lib/api";
+import {
+  Organization,
+  getOrganizations,
+  NeedItem,
+  getNeeds,
+  SystemStats,
+  getSystemStats,
+  getPublicRecentDonations,
+  PublicDonation,
+} from "@/lib/api";
 import { PageLoading } from "@/components/LoadingSpinner";
 import AdvancedSriLankaMap from "@/components/AdvancedSriLankaMap";
 import { useAuth } from "@/lib/AuthContext";
 import DonorDashboard from "@/components/DonorDashboard";
 import AnimatedStat from "@/components/AnimatedStat";
 import AnalyticsLineChart from "@/components/AnalyticsLineChart";
-import { ShieldCheck, Eye, Activity, Heart, Building, CheckCircle2, HandHeart, CheckCircle, Navigation, ArrowRight, Shield, ChevronLeft, ChevronRight, Sparkles, Pause } from "lucide-react";
+import {
+  ShieldCheck,
+  Eye,
+  Activity,
+  Heart,
+  Building,
+  CheckCircle2,
+  HandHeart,
+  CheckCircle,
+  Navigation,
+  ArrowRight,
+  Shield,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Pause,
+} from "lucide-react";
 import { FaFacebook, FaTwitter, FaLinkedin, FaInstagram } from "react-icons/fa";
 
 interface SuccessStory {
@@ -38,7 +63,8 @@ interface TestimonialItem {
 const testimonials: TestimonialItem[] = [
   {
     id: 1,
-    quote: "Parithyaga has completely transformed how we receive supplies. The transparency gives donors confidence, and we get exactly what we need, when we need it most.",
+    quote:
+      "Parithyaga has completely transformed how we receive supplies. The transparency gives donors confidence, and we get exactly what we need, when we need it most.",
     name: "Dr. Samarakoon",
     designation: "Director",
     organization: "Regional Hospital",
@@ -48,7 +74,8 @@ const testimonials: TestimonialItem[] = [
   },
   {
     id: 2,
-    quote: "Directly linking our surgical department's inventory deficits with verified donors has eliminated critical equipment shortages during emergency operations.",
+    quote:
+      "Directly linking our surgical department's inventory deficits with verified donors has eliminated critical equipment shortages during emergency operations.",
     name: "Dr. Priyantha Senanayake",
     designation: "Head of Surgery",
     organization: "Colombo South Teaching Hospital",
@@ -58,7 +85,8 @@ const testimonials: TestimonialItem[] = [
   },
   {
     id: 3,
-    quote: "Receiving essential textbooks and scientific laboratory equipment directly through this platform empowered our students with modern learning resources transparently and rapidly.",
+    quote:
+      "Receiving essential textbooks and scientific laboratory equipment directly through this platform empowered our students with modern learning resources transparently and rapidly.",
     name: "Mrs. Kanthi Jayawardena",
     designation: "Principal",
     organization: "Bandaranaike National College",
@@ -68,7 +96,8 @@ const testimonials: TestimonialItem[] = [
   },
   {
     id: 4,
-    quote: "Seeing community contributions deliver specialized neonatal care monitors within days of posting an urgent need has saved precious young lives in our pediatric ward.",
+    quote:
+      "Seeing community contributions deliver specialized neonatal care monitors within days of posting an urgent need has saved precious young lives in our pediatric ward.",
     name: "Dr. Nirmala Wickramasinghe",
     designation: "Consultant Pediatrician",
     organization: "Karapitiya National Hospital",
@@ -78,7 +107,8 @@ const testimonials: TestimonialItem[] = [
   },
   {
     id: 5,
-    quote: "The real-time tracking provides complete accountability from donor pledge to warehouse arrival, establishing unprecedented public trust across all relief operations.",
+    quote:
+      "The real-time tracking provides complete accountability from donor pledge to warehouse arrival, establishing unprecedented public trust across all relief operations.",
     name: "Mr. Roshan Perera",
     designation: "Logistics Coordinator",
     organization: "Disaster Relief Foundation",
@@ -110,7 +140,8 @@ export default function Home() {
   const [isTestimonialTouching, setIsTestimonialTouching] = useState(false);
   const [isTestimonialClicked, setIsTestimonialClicked] = useState(false);
 
-  const isTestimonialPaused = isTestimonialHovered || isTestimonialTouching || isTestimonialClicked;
+  const isTestimonialPaused =
+    isTestimonialHovered || isTestimonialTouching || isTestimonialClicked;
   const [carouselPage, setCarouselPage] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const [cardsPerPage, setCardsPerPage] = useState(3);
@@ -131,7 +162,11 @@ export default function Home() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const totalCarouselPages = Math.max(1, Math.ceil(stories.length / cardsPerPage));
+  const totalCarouselPages = Math.max(
+    1,
+    Math.ceil(stories.length / cardsPerPage),
+  );
+  const visibleCarouselPage = Math.min(carouselPage, totalCarouselPages - 1);
 
   // Auto advance carousel every 4.5 seconds if not paused
   useEffect(() => {
@@ -144,15 +179,10 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [stories.length, cardsPerPage, isCarouselPaused, totalCarouselPages]);
 
-  // Clamp current page when cardsPerPage changes
-  useEffect(() => {
-    if (carouselPage >= totalCarouselPages) {
-      setCarouselPage(0);
-    }
-  }, [totalCarouselPages, carouselPage]);
-
   const handlePrevSlide = () => {
-    setCarouselPage((prev) => (prev - 1 + totalCarouselPages) % totalCarouselPages);
+    setCarouselPage(
+      (prev) => (prev - 1 + totalCarouselPages) % totalCarouselPages,
+    );
   };
 
   const handleNextSlide = () => {
@@ -175,7 +205,7 @@ export default function Home() {
             }
           }
         },
-        { threshold: 0.15 }
+        { threshold: 0.15 },
       );
       observer.observe(node);
       return () => observer.disconnect();
@@ -208,11 +238,11 @@ export default function Home() {
             }
           }
         },
-        { 
+        {
           // Trigger directly when cards container enters viewport
           threshold: 0.2,
-          rootMargin: "0px 0px -40px 0px"
-        }
+          rootMargin: "0px 0px -40px 0px",
+        },
       );
       observer.observe(node);
       return () => observer.disconnect();
@@ -245,7 +275,7 @@ export default function Home() {
             }
           }
         },
-        { threshold: 0.25, rootMargin: "0px 0px -40px 0px" }
+        { threshold: 0.25, rootMargin: "0px 0px -40px 0px" },
       );
       observer.observe(node);
       return () => observer.disconnect();
@@ -279,7 +309,7 @@ export default function Home() {
             }
           }
         },
-        { threshold: 0.2, rootMargin: "0px 0px -40px 0px" }
+        { threshold: 0.2, rootMargin: "0px 0px -40px 0px" },
       );
       observer.observe(node);
       return () => observer.disconnect();
@@ -308,39 +338,45 @@ export default function Home() {
   }, [testimonialVisible, isTestimonialPaused]);
 
   const handlePrevTestimonial = () => {
-    setActiveTestimonialIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+    setActiveTestimonialIndex(
+      (prev) => (prev - 1 + testimonials.length) % testimonials.length,
+    );
   };
 
   const handleNextTestimonial = () => {
     setActiveTestimonialIndex((prev) => (prev + 1) % testimonials.length);
   };
-  
+
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
   const heroContents = [
     {
       prefix: "The trusted platform to donate directly to ",
       highlight: "Organizations",
       suffix: " that need it most.",
-      subtext: "Parithyaga connects generous donors with verified organizations across Sri Lanka. Browse real, urgent needs, and contribute in minutes."
+      subtext:
+        "Parithyaga connects generous donors with verified organizations across Sri Lanka. Browse real, urgent needs, and contribute in minutes.",
     },
     {
       prefix: "Empowering verified ",
       highlight: "Organizations",
       suffix: " to reach generous donors.",
-      subtext: "We ensure transparency at every step. See exactly where your contributions go and the direct impact they make in communities."
+      subtext:
+        "We ensure transparency at every step. See exactly where your contributions go and the direct impact they make in communities.",
     },
     {
       prefix: "Join a community making ",
       highlight: "real impact",
       suffix: " where it matters most.",
-      subtext: "From critical needs supplies to community rebuilding, your donations provide immediate relief to those who desperately need it."
+      subtext:
+        "From critical needs supplies to community rebuilding, your donations provide immediate relief to those who desperately need it.",
     },
     {
       prefix: "Transforming urgent community needs into ",
       highlight: "fulfilled promises",
       suffix: ", together.",
-      subtext: "Our verified network guarantees that your help reaches the right hands. Start your journey of giving and transform lives today."
-    }
+      subtext:
+        "Our verified network guarantees that your help reaches the right hands. Start your journey of giving and transform lives today.",
+    },
   ];
 
   useEffect(() => {
@@ -352,17 +388,20 @@ export default function Home() {
 
   const fetchData = useCallback(async (isBackground = false) => {
     try {
-      const [orgsRes, needsRes, statsRes, donationsRes] = await Promise.allSettled([
-        getOrganizations(true),
-        getNeeds(undefined, undefined, true),
-        getSystemStats(),
-        getPublicRecentDonations(),
-      ]);
+      const [orgsRes, needsRes, statsRes, donationsRes] =
+        await Promise.allSettled([
+          getOrganizations(true),
+          getNeeds(undefined, undefined, true),
+          getSystemStats(),
+          getPublicRecentDonations(),
+        ]);
 
       const orgs = orgsRes.status === "fulfilled" ? orgsRes.value : [];
       const allNeeds = needsRes.status === "fulfilled" ? needsRes.value : [];
-      const systemStats = statsRes.status === "fulfilled" ? statsRes.value : null;
-      const donations = donationsRes.status === "fulfilled" ? donationsRes.value : [];
+      const systemStats =
+        statsRes.status === "fulfilled" ? statsRes.value : null;
+      const donations =
+        donationsRes.status === "fulfilled" ? donationsRes.value : [];
 
       if (orgsRes.status === "fulfilled") {
         setOrganizations(orgs);
@@ -402,15 +441,23 @@ export default function Home() {
       if (needsRes.status === "fulfilled" && allNeeds.length > 0) {
         // Filter for active, unfulfilled critical needs across all registered organizations
         const urgentNeeds = allNeeds.filter(
-          (n) => n.priority === "CRITICAL" && n.quantity_confirmed < n.quantity_required
+          (n) =>
+            n.priority === "CRITICAL" &&
+            n.quantity_confirmed < n.quantity_required,
         );
 
         if (urgentNeeds.length > 0) {
           // Rank by least fulfilled (lowest fulfillment ratio) and newest (most recently created)
           const sortedNeeds = urgentNeeds.sort((a, b) => {
             // 1. Least fulfilled ratio first (e.g. 0% fulfilled before 30% fulfilled)
-            const ratioA = a.quantity_required > 0 ? a.quantity_confirmed / a.quantity_required : 0;
-            const ratioB = b.quantity_required > 0 ? b.quantity_confirmed / b.quantity_required : 0;
+            const ratioA =
+              a.quantity_required > 0
+                ? a.quantity_confirmed / a.quantity_required
+                : 0;
+            const ratioB =
+              b.quantity_required > 0
+                ? b.quantity_confirmed / b.quantity_required
+                : 0;
 
             // If there is a noticeable difference in fulfillment ratio, prioritize least fulfilled
             if (Math.abs(ratioA - ratioB) > 0.05) {
@@ -434,13 +481,19 @@ export default function Home() {
           // If no unfulfilled critical need, find newest critical need or newest registered need
           const anyCritical = allNeeds
             .filter((n) => n.priority === "CRITICAL")
-            .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+            .sort(
+              (a, b) =>
+                new Date(b.created_at || 0).getTime() -
+                new Date(a.created_at || 0).getTime(),
+            );
 
           if (anyCritical.length > 0) {
             setUrgentNeed(anyCritical[0]);
           } else {
             const sortedAll = [...allNeeds].sort(
-              (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+              (a, b) =>
+                new Date(b.created_at || 0).getTime() -
+                new Date(a.created_at || 0).getTime(),
             );
             setUrgentNeed(sortedAll[0] || null);
           }
@@ -449,12 +502,17 @@ export default function Home() {
         // Compute top 6 success story needs across all organizations with fair diversity
         // Strictly only show needs where required quantity === received quantity (no surplus, fully fulfilled)
         const eligibleNeeds = allNeeds
-          .filter((n) => n.quantity_required > 0 && n.quantity_received === n.quantity_required)
+          .filter(
+            (n) =>
+              n.quantity_required > 0 &&
+              n.quantity_received === n.quantity_required,
+          )
           .map((n) => {
             return {
               id: n.id,
               name: n.name,
-              orgName: n.section_detail?.organization_name || "Verified Facility",
+              orgName:
+                n.section_detail?.organization_name || "Verified Facility",
               progress: 100,
               quantityReceived: n.quantity_received,
               quantityRequired: n.quantity_required,
@@ -493,8 +551,16 @@ export default function Home() {
         }
 
         // Fill remaining slots up to 6 if needed from remaining eligible items
-        if (selectedStories.length < 6 && eligibleNeeds.length > selectedStories.length) {
-          const selectedKeys = new Set(selectedStories.map((s) => `${s.name.toLowerCase().trim()}_${s.orgName.toLowerCase().trim()}`));
+        if (
+          selectedStories.length < 6 &&
+          eligibleNeeds.length > selectedStories.length
+        ) {
+          const selectedKeys = new Set(
+            selectedStories.map(
+              (s) =>
+                `${s.name.toLowerCase().trim()}_${s.orgName.toLowerCase().trim()}`,
+            ),
+          );
           for (const item of eligibleNeeds) {
             const key = `${item.name.toLowerCase().trim()}_${item.orgName.toLowerCase().trim()}`;
             if (!selectedKeys.has(key) && selectedStories.length < 6) {
@@ -504,16 +570,18 @@ export default function Home() {
           }
         }
 
-        const storiesList: SuccessStory[] = selectedStories.map((item, index) => ({
-          id: item.id,
-          title: `Success Story ${index + 1}`,
-          name: item.name,
-          orgName: item.orgName,
-          progress: item.progress,
-          quantityReceived: item.quantityReceived,
-          quantityRequired: item.quantityRequired,
-          unit: item.unit,
-        }));
+        const storiesList: SuccessStory[] = selectedStories.map(
+          (item, index) => ({
+            id: item.id,
+            title: `Success Story ${index + 1}`,
+            name: item.name,
+            orgName: item.orgName,
+            progress: item.progress,
+            quantityReceived: item.quantityReceived,
+            quantityRequired: item.quantityRequired,
+            unit: item.unit,
+          }),
+        );
 
         setStories(storiesList);
       }
@@ -566,16 +634,22 @@ export default function Home() {
   }
 
   // Real-time backend stats with graceful zero defaults
-  const provinces = stats?.provinces_covered ?? (organizations.length > 0 ? new Set(organizations.map((o) => o.district).filter(Boolean)).size : 0);
+  const provinces =
+    stats?.provinces_covered ??
+    (organizations.length > 0
+      ? new Set(organizations.map((o) => o.district).filter(Boolean)).size
+      : 0);
   const totalOrgs = stats?.verified_hospitals ?? organizations.length;
   const donorsOnboarded = stats?.donors_onboarded ?? 0;
   const deliverySuccessRate = stats?.delivery_success_rate ?? 0;
 
-
   return (
     <div className="min-h-screen bg-white font-sans">
       {/* Hero Section */}
-      <section id="hero-section" className="relative bg-[#030B1C] overflow-hidden flex flex-col justify-center min-h-[680px] lg:min-h-screen pt-24 sm:pt-28 pb-24 sm:pb-28 lg:pt-20 lg:pb-24">
+      <section
+        id="hero-section"
+        className="relative bg-[#030B1C] overflow-hidden flex flex-col justify-center min-h-[680px] lg:min-h-screen pt-24 sm:pt-28 pb-24 sm:pb-28 lg:pt-20 lg:pb-24"
+      >
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -595,13 +669,21 @@ export default function Home() {
             <div className="flex-1 overflow-hidden relative">
               {recentDonations.length > 0 ? (
                 <div className="whitespace-nowrap inline-flex animate-marquee hover:[animation-play-state:paused] items-center">
-                  {[...recentDonations, ...recentDonations].map((donation, i) => (
-                    <span key={i} className="text-white text-sm sm:text-base md:text-lg lg:text-xl font-sans font-normal tracking-wide mr-8 sm:mr-14 shrink-0 flex items-center gap-2 sm:gap-3">
-                      {donation.donor_name}
-                      <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-slate-400 mt-0.5">DONATED {donation.quantity} {donation.need_item_name} TO</span>
-                      {donation.organization_name}
-                    </span>
-                  ))}
+                  {[...recentDonations, ...recentDonations].map(
+                    (donation, i) => (
+                      <span
+                        key={i}
+                        className="text-white text-sm sm:text-base md:text-lg lg:text-xl font-sans font-normal tracking-wide mr-8 sm:mr-14 shrink-0 flex items-center gap-2 sm:gap-3"
+                      >
+                        {donation.donor_name}
+                        <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-slate-400 mt-0.5">
+                          DONATED {donation.quantity} {donation.need_item_name}{" "}
+                          TO
+                        </span>
+                        {donation.organization_name}
+                      </span>
+                    ),
+                  )}
                 </div>
               ) : (
                 <div className="text-slate-400 text-xs sm:text-sm md:text-base font-medium animate-pulse px-4 sm:px-6">
@@ -622,8 +704,11 @@ export default function Home() {
                   Live across Sri Lanka
                 </span>
               </div>
-              
-              <div key={currentContentIndex} className="animate-fade-in space-y-4 sm:space-y-6 xl:space-y-8 w-full min-h-[180px] sm:min-h-[200px] md:min-h-[220px] lg:min-h-[200px] xl:min-h-[250px]">
+
+              <div
+                key={currentContentIndex}
+                className="animate-fade-in space-y-4 sm:space-y-6 xl:space-y-8 w-full min-h-[180px] sm:min-h-[200px] md:min-h-[220px] lg:min-h-[200px] xl:min-h-[250px]"
+              >
                 <h1 className="text-left font-heading text-2xl sm:text-3xl md:text-4xl lg:text-3xl xl:text-5xl font-bold leading-tight tracking-tight text-white max-w-3xl uppercase">
                   {heroContents[currentContentIndex].prefix}
                   <span className="text-primary">
@@ -631,14 +716,17 @@ export default function Home() {
                   </span>
                   {heroContents[currentContentIndex].suffix}
                 </h1>
-                
+
                 <p className="text-left font-label text-sm sm:text-base text-slate-300 font-medium leading-relaxed max-w-xl">
                   {heroContents[currentContentIndex].subtext}
                 </p>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row gap-4 pt-1 pb-3 lg:pb-0 w-full justify-start items-start">
-                <Link href="/needs" className="px-6 sm:px-8 py-3.5 sm:py-4 bg-primary hover:bg-teal-700 text-white text-sm sm:text-base font-bold rounded-full shadow-lg shadow-teal-900/20 transition-all flex items-center justify-center gap-2">
+                <Link
+                  href="/needs"
+                  className="px-6 sm:px-8 py-3.5 sm:py-4 bg-primary hover:bg-teal-700 text-white text-sm sm:text-base font-bold rounded-full shadow-lg shadow-teal-900/20 transition-all flex items-center justify-center gap-2"
+                >
                   <Heart className="w-5 h-5" />
                   Donate Now
                 </Link>
@@ -646,26 +734,43 @@ export default function Home() {
             </div>
 
             {/* Right Column: Most Urgent Need Widget */}
-            <div className="lg:col-span-5 relative animate-fade-in-up w-full" style={{ animationDelay: '0.2s' }}>
+            <div
+              className="lg:col-span-5 relative animate-fade-in-up w-full"
+              style={{ animationDelay: "0.2s" }}
+            >
               <div className="bg-white/5 backdrop-blur-1xl border border-white/10 rounded-none p-5 sm:p-6 md:p-8 lg:p-6 xl:p-8 shadow-2xl relative overflow-hidden group">
                 <div className="absolute -inset-20 bg-red-700/15 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-800 to-red-600"></div>
                 <div className="flex items-center justify-between mb-4 sm:mb-6 relative z-10">
                   <div className="flex items-center gap-2">
                     <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 animate-pulse" />
-                    <span className="font-label text-xs font-bold text-red-500 uppercase tracking-widest">Most Urgent Need</span>
+                    <span className="font-label text-xs font-bold text-red-500 uppercase tracking-widest">
+                      Most Urgent Need
+                    </span>
                   </div>
                 </div>
                 {urgentNeed ? (
                   <div className="space-y-5 sm:space-y-6 xl:space-y-8 relative z-10">
                     <div>
-                      <h3 className="font-heading text-xl sm:text-2xl lg:text-xl xl:text-2xl font-bold text-white mb-1.5 sm:mb-2 leading-tight">{urgentNeed.name}</h3>
+                      <h3 className="font-heading text-xl sm:text-2xl lg:text-xl xl:text-2xl font-bold text-white mb-1.5 sm:mb-2 leading-tight">
+                        {urgentNeed.name}
+                      </h3>
                       <p className="font-body text-slate-300 font-medium flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
                         <Building className="w-4 h-4 text-red-500 shrink-0" />
                         <span className="truncate">
-                          {urgentNeed.section_detail?.organization_name || 
-                           organizations.find((o) => o.id === urgentNeed.section_detail?.organization || o.id === (urgentNeed as unknown as { organization?: number }).organization)?.name || 
-                           "Verified Healthcare Facility"}
+                          {urgentNeed.section_detail?.organization_name ||
+                            organizations.find(
+                              (o) =>
+                                o.id ===
+                                  urgentNeed.section_detail?.organization ||
+                                o.id ===
+                                  (
+                                    urgentNeed as unknown as {
+                                      organization?: number;
+                                    }
+                                  ).organization,
+                            )?.name ||
+                            "Verified Healthcare Facility"}
                         </span>
                       </p>
                     </div>
@@ -674,24 +779,42 @@ export default function Home() {
                         <span className="text-slate-300">
                           <AnimatedStat
                             value={urgentNeed.quantity_received || 0}
-                            suffix={urgentNeed.unit ? ` ${urgentNeed.unit} fulfilled` : " fulfilled"}
+                            suffix={
+                              urgentNeed.unit
+                                ? ` ${urgentNeed.unit} fulfilled`
+                                : " fulfilled"
+                            }
                           />
                         </span>
-                        <span className="text-red-500">Target: {urgentNeed.quantity_required} {urgentNeed.unit}</span>
+                        <span className="text-red-500">
+                          Target: {urgentNeed.quantity_required}{" "}
+                          {urgentNeed.unit}
+                        </span>
                       </div>
                       <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden shadow-inner">
-                        <div className="h-full bg-gradient-to-r from-red-800 to-red-600 rounded-full transition-all duration-1000 relative" style={{ width: `${Math.min(100, Math.round(((urgentNeed.quantity_received || 0) / urgentNeed.quantity_required) * 100))}%` }}>
-                           <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                        <div
+                          className="h-full bg-gradient-to-r from-red-800 to-red-600 rounded-full transition-all duration-1000 relative"
+                          style={{
+                            width: `${Math.min(100, Math.round(((urgentNeed.quantity_received || 0) / urgentNeed.quantity_required) * 100))}%`,
+                          }}
+                        >
+                          <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                         </div>
                       </div>
                     </div>
-                    <Link href={`/needs`} className="w-full flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-red-700 hover:bg-red-800 text-white text-sm sm:text-base font-bold rounded-full transition-all shadow-lg transform hover:-translate-y-1">
-                      Fulfill this need <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <Link
+                      href={`/needs`}
+                      className="w-full flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-red-700 hover:bg-red-800 text-white text-sm sm:text-base font-bold rounded-full transition-all shadow-lg transform hover:-translate-y-1"
+                    >
+                      Fulfill this need{" "}
+                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                     </Link>
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-slate-300 mb-4">Finding critical needs...</p>
+                    <p className="text-slate-300 mb-4">
+                      Finding critical needs...
+                    </p>
                     <div className="animate-spin w-8 h-8 border-4 border-white/20 border-t-white rounded-full mx-auto"></div>
                   </div>
                 )}
@@ -701,15 +824,20 @@ export default function Home() {
         </div>
       </section>
 
-
       {/* How it Works (Timeline) */}
-      <section id="how-it-works" ref={howItWorksSectionRef} className="py-24 bg-slate-50 relative overflow-hidden">
+      <section
+        id="how-it-works"
+        ref={howItWorksSectionRef}
+        className="py-24 bg-slate-50 relative overflow-hidden"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div 
+          <div
             className="text-center space-y-4 mb-20 transition-all duration-700 ease-out"
             style={{
               opacity: howItWorksVisible ? 1 : 0,
-              transform: howItWorksVisible ? "translateY(0)" : "translateY(20px)",
+              transform: howItWorksVisible
+                ? "translateY(0)"
+                : "translateY(20px)",
             }}
           >
             <div className="inline-block px-4 py-1.5 bg-primary/10 rounded-full font-label text-sm font-bold tracking-[0.2em] uppercase text-cyan-500">
@@ -728,10 +856,12 @@ export default function Home() {
               <div className="absolute inset-0 border-t-2 border-dashed border-slate-300"></div>
 
               {/* Continuously coloring teal dashed line */}
-              <div 
+              <div
                 className="absolute inset-0 border-t-2 border-dashed border-primary transition-[clip-path] ease-linear"
                 style={{
-                  clipPath: howItWorksVisible ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
+                  clipPath: howItWorksVisible
+                    ? "inset(0 0% 0 0)"
+                    : "inset(0 100% 0 0)",
                   transitionDuration: howItWorksVisible ? "850ms" : "0ms",
                   transitionDelay: howItWorksVisible ? "700ms" : "0ms",
                 }}
@@ -739,10 +869,11 @@ export default function Home() {
 
               {/* Glowing traveling spark head */}
               {howItWorksVisible && (
-                <div 
+                <div
                   className="absolute top-1/2 -mt-[1px] w-3 h-3 rounded-full bg-primary shadow-[0_0_12px_#0d9488]"
                   style={{
-                    animation: "lineTravel 850ms cubic-bezier(0.4, 0, 0.2, 1) 700ms forwards",
+                    animation:
+                      "lineTravel 850ms cubic-bezier(0.4, 0, 0.2, 1) 700ms forwards",
                     opacity: 0,
                   }}
                 />
@@ -755,10 +886,12 @@ export default function Home() {
               <div className="absolute inset-0 border-t-2 border-dashed border-slate-300"></div>
 
               {/* Continuously coloring green dashed line */}
-              <div 
+              <div
                 className="absolute inset-0 border-t-2 border-dashed border-green-600 transition-[clip-path] ease-linear"
                 style={{
-                  clipPath: howItWorksVisible ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
+                  clipPath: howItWorksVisible
+                    ? "inset(0 0% 0 0)"
+                    : "inset(0 100% 0 0)",
                   transitionDuration: howItWorksVisible ? "850ms" : "0ms",
                   transitionDelay: howItWorksVisible ? "2100ms" : "0ms",
                 }}
@@ -766,36 +899,39 @@ export default function Home() {
 
               {/* Glowing traveling spark head */}
               {howItWorksVisible && (
-                <div 
+                <div
                   className="absolute top-1/2 -mt-[1px] w-3 h-3 rounded-full bg-green-500 shadow-[0_0_12px_#16a34a]"
                   style={{
-                    animation: "lineTravel 850ms cubic-bezier(0.4, 0, 0.2, 1) 2100ms forwards",
+                    animation:
+                      "lineTravel 850ms cubic-bezier(0.4, 0, 0.2, 1) 2100ms forwards",
                     opacity: 0,
                   }}
                 />
               )}
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
               {/* Step 1 */}
-              <div 
+              <div
                 className="flex flex-col items-center text-center transition-all ease-out"
                 style={{
                   opacity: howItWorksVisible ? 1 : 0,
-                  transform: howItWorksVisible ? "translateY(0) scale(1)" : "translateY(28px) scale(0.9)",
+                  transform: howItWorksVisible
+                    ? "translateY(0) scale(1)"
+                    : "translateY(28px) scale(0.9)",
                   transitionDuration: howItWorksVisible ? "700ms" : "0ms",
                   transitionDelay: howItWorksVisible ? "150ms" : "0ms",
                 }}
               >
-                <div 
+                <div
                   className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center border-4 border-white shadow-xl mb-6 relative hover:scale-110 transition-all duration-300"
                   style={{
-                    boxShadow: howItWorksVisible 
-                      ? "0 20px 25px -5px rgba(13, 148, 136, 0.2), 0 8px 10px -6px rgba(13, 148, 136, 0.1)" 
+                    boxShadow: howItWorksVisible
+                      ? "0 20px 25px -5px rgba(13, 148, 136, 0.2), 0 8px 10px -6px rgba(13, 148, 136, 0.1)"
                       : undefined,
                   }}
                 >
-                  <div 
+                  <div
                     className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md transition-all duration-500"
                     style={{
                       transform: howItWorksVisible ? "scale(1)" : "scale(0)",
@@ -804,31 +940,41 @@ export default function Home() {
                   >
                     1
                   </div>
-                  <Eye className="w-[40px] h-[40px] text-primary" strokeWidth={1.5} />
+                  <Eye
+                    className="w-[40px] h-[40px] text-primary"
+                    strokeWidth={1.5}
+                  />
                 </div>
-                <h3 className="font-heading text-xl font-semibold text-slate-900 mb-3">Browse Needs</h3>
-                <p className="font-body text-base text-slate-500 leading-relaxed max-w-xs">Verified organizations post their critical requirements. Browse and find a cause that resonates with you.</p>
+                <h3 className="font-heading text-xl font-semibold text-slate-900 mb-3">
+                  Browse Needs
+                </h3>
+                <p className="font-body text-base text-slate-500 leading-relaxed max-w-xs">
+                  Verified organizations post their critical requirements.
+                  Browse and find a cause that resonates with you.
+                </p>
               </div>
 
               {/* Step 2 */}
-              <div 
+              <div
                 className="flex flex-col items-center text-center transition-all ease-out"
                 style={{
                   opacity: howItWorksVisible ? 1 : 0,
-                  transform: howItWorksVisible ? "translateY(0) scale(1)" : "translateY(28px) scale(0.9)",
+                  transform: howItWorksVisible
+                    ? "translateY(0) scale(1)"
+                    : "translateY(28px) scale(0.9)",
                   transitionDuration: howItWorksVisible ? "700ms" : "0ms",
                   transitionDelay: howItWorksVisible ? "1550ms" : "0ms",
                 }}
               >
-                <div 
+                <div
                   className="w-24 h-24 rounded-full bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center border-4 border-white shadow-xl mb-6 relative hover:scale-110 transition-all duration-300"
                   style={{
-                    boxShadow: howItWorksVisible 
-                      ? "0 20px 25px -5px rgba(22, 163, 74, 0.2), 0 8px 10px -6px rgba(22, 163, 74, 0.1)" 
+                    boxShadow: howItWorksVisible
+                      ? "0 20px 25px -5px rgba(22, 163, 74, 0.2), 0 8px 10px -6px rgba(22, 163, 74, 0.1)"
                       : undefined,
                   }}
                 >
-                  <div 
+                  <div
                     className="absolute -top-2 -right-2 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md transition-all duration-500"
                     style={{
                       transform: howItWorksVisible ? "scale(1)" : "scale(0)",
@@ -837,31 +983,41 @@ export default function Home() {
                   >
                     2
                   </div>
-                  <HandHeart className="w-[40px] h-[40px] text-green-600" strokeWidth={1.5} />
+                  <HandHeart
+                    className="w-[40px] h-[40px] text-green-600"
+                    strokeWidth={1.5}
+                  />
                 </div>
-                <h3 className="font-heading text-xl font-semibold text-slate-900 mb-3">Donate Securely</h3>
-                <p className="font-body text-base text-slate-500 leading-relaxed max-w-xs">Commit to fulfilling a need entirely or partially. Every contribution moves the progress bar forward.</p>
+                <h3 className="font-heading text-xl font-semibold text-slate-900 mb-3">
+                  Donate Securely
+                </h3>
+                <p className="font-body text-base text-slate-500 leading-relaxed max-w-xs">
+                  Commit to fulfilling a need entirely or partially. Every
+                  contribution moves the progress bar forward.
+                </p>
               </div>
 
               {/* Step 3 */}
-              <div 
+              <div
                 className="flex flex-col items-center text-center transition-all ease-out"
                 style={{
                   opacity: howItWorksVisible ? 1 : 0,
-                  transform: howItWorksVisible ? "translateY(0) scale(1)" : "translateY(28px) scale(0.9)",
+                  transform: howItWorksVisible
+                    ? "translateY(0) scale(1)"
+                    : "translateY(28px) scale(0.9)",
                   transitionDuration: howItWorksVisible ? "700ms" : "0ms",
                   transitionDelay: howItWorksVisible ? "2950ms" : "0ms",
                 }}
               >
-                <div 
+                <div
                   className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-50 to-cyan-100 flex items-center justify-center border-4 border-white shadow-xl mb-6 relative hover:scale-110 transition-all duration-300"
                   style={{
-                    boxShadow: howItWorksVisible 
-                      ? "0 20px 25px -5px rgba(0, 180, 216, 0.2), 0 8px 10px -6px rgba(0, 180, 216, 0.1)" 
+                    boxShadow: howItWorksVisible
+                      ? "0 20px 25px -5px rgba(0, 180, 216, 0.2), 0 8px 10px -6px rgba(0, 180, 216, 0.1)"
                       : undefined,
                   }}
                 >
-                  <div 
+                  <div
                     className="absolute -top-2 -right-2 w-8 h-8 bg-accent text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md transition-all duration-500"
                     style={{
                       transform: howItWorksVisible ? "scale(1)" : "scale(0)",
@@ -870,10 +1026,18 @@ export default function Home() {
                   >
                     3
                   </div>
-                  <CheckCircle className="w-[40px] h-[40px] text-accent" strokeWidth={1.5} />
+                  <CheckCircle
+                    className="w-[40px] h-[40px] text-accent"
+                    strokeWidth={1.5}
+                  />
                 </div>
-                <h3 className="font-heading text-xl font-semibold text-slate-900 mb-3">Track Impact</h3>
-                <p className="font-body text-base text-slate-500 leading-relaxed max-w-xs">Follow your donation end-to-end. Get notified when your items are received by the organization.</p>
+                <h3 className="font-heading text-xl font-semibold text-slate-900 mb-3">
+                  Track Impact
+                </h3>
+                <p className="font-body text-base text-slate-500 leading-relaxed max-w-xs">
+                  Follow your donation end-to-end. Get notified when your items
+                  are received by the organization.
+                </p>
               </div>
             </div>
           </div>
@@ -881,23 +1045,30 @@ export default function Home() {
       </section>
 
       {/* Stats Impact Banner */}
-      <section id="stats-banner" ref={statsSectionRef} className="bg-slate-950 py-6 sm:py-8 border-y border-white/5 relative z-20">
+      <section
+        id="stats-banner"
+        ref={statsSectionRef}
+        className="bg-slate-950 py-6 sm:py-8 border-y border-white/5 relative z-20"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 md:divide-x divide-white/10">
             {/* Stat 1: Provinces Covered */}
-            <div 
+            <div
               style={{ transitionDelay: statsVisible ? "0ms" : "0ms" }}
               className={`group text-center px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 ease-out cursor-default hover:scale-105 hover:bg-white/[0.03] ${
-                statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+                statsVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-6"
               }`}
             >
               <div className="flex justify-center mb-2 sm:mb-3">
-                <Navigation 
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-cyan-400 group-hover:-translate-y-1 group-hover:translate-x-0.5 group-hover:-rotate-12 group-hover:scale-115 group-hover:drop-shadow-[0_0_10px_rgba(34,211,238,0.75)]" 
-                />
+                <Navigation className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-cyan-400 group-hover:-translate-y-1 group-hover:translate-x-0.5 group-hover:-rotate-12 group-hover:scale-115 group-hover:drop-shadow-[0_0_10px_rgba(34,211,238,0.75)]" />
               </div>
               <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1 transition-all duration-300 group-hover:text-cyan-300 group-hover:drop-shadow-[0_0_12px_rgba(34,211,238,0.4)]">
-                <AnimatedStat value={statsVisible ? provinces : 0} duration={1200} />
+                <AnimatedStat
+                  value={statsVisible ? provinces : 0}
+                  duration={1200}
+                />
               </div>
               <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1 transition-colors duration-300 group-hover:text-slate-200">
                 Provinces Covered
@@ -905,19 +1076,22 @@ export default function Home() {
             </div>
 
             {/* Stat 2: Verified Organizations */}
-            <div 
+            <div
               style={{ transitionDelay: statsVisible ? "120ms" : "0ms" }}
               className={`group text-center px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 ease-out cursor-default hover:scale-105 hover:bg-white/[0.03] ${
-                statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+                statsVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-6"
               }`}
             >
               <div className="flex justify-center mb-2 sm:mb-3">
-                <ShieldCheck 
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-emerald-400 group-hover:scale-120 group-hover:-translate-y-0.5 group-hover:drop-shadow-[0_0_10px_rgba(52,211,153,0.75)]" 
-                />
+                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-emerald-400 group-hover:scale-120 group-hover:-translate-y-0.5 group-hover:drop-shadow-[0_0_10px_rgba(52,211,153,0.75)]" />
               </div>
               <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1 transition-all duration-300 group-hover:text-emerald-300 group-hover:drop-shadow-[0_0_12px_rgba(52,211,153,0.4)]">
-                <AnimatedStat value={statsVisible ? totalOrgs : 0} duration={1200} />
+                <AnimatedStat
+                  value={statsVisible ? totalOrgs : 0}
+                  duration={1200}
+                />
               </div>
               <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1 transition-colors duration-300 group-hover:text-slate-200">
                 Verified Organizations
@@ -925,19 +1099,22 @@ export default function Home() {
             </div>
 
             {/* Stat 3: Donors Onboarded */}
-            <div 
+            <div
               style={{ transitionDelay: statsVisible ? "240ms" : "0ms" }}
               className={`group text-center px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 ease-out cursor-default hover:scale-105 hover:bg-white/[0.03] ${
-                statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+                statsVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-6"
               }`}
             >
               <div className="flex justify-center mb-2 sm:mb-3">
-                <Heart 
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-rose-400 group-hover:scale-125 group-hover:-translate-y-0.5 group-hover:drop-shadow-[0_0_10px_rgba(251,113,133,0.75)] group-hover:fill-rose-500/20" 
-                />
+                <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-rose-400 group-hover:scale-125 group-hover:-translate-y-0.5 group-hover:drop-shadow-[0_0_10px_rgba(251,113,133,0.75)] group-hover:fill-rose-500/20" />
               </div>
               <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1 transition-all duration-300 group-hover:text-rose-300 group-hover:drop-shadow-[0_0_12px_rgba(251,113,133,0.4)]">
-                <AnimatedStat value={statsVisible ? donorsOnboarded : 0} duration={1200} />
+                <AnimatedStat
+                  value={statsVisible ? donorsOnboarded : 0}
+                  duration={1200}
+                />
               </div>
               <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1 transition-colors duration-300 group-hover:text-slate-200">
                 Donors Onboarded
@@ -945,19 +1122,23 @@ export default function Home() {
             </div>
 
             {/* Stat 4: Delivery Success Rate */}
-            <div 
+            <div
               style={{ transitionDelay: statsVisible ? "360ms" : "0ms" }}
               className={`group text-center px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 ease-out cursor-default hover:scale-105 hover:bg-white/[0.03] ${
-                statsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+                statsVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-6"
               }`}
             >
               <div className="flex justify-center mb-2 sm:mb-3">
-                <CheckCircle2 
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-teal-300 group-hover:scale-120 group-hover:-translate-y-0.5 group-hover:drop-shadow-[0_0_10px_rgba(45,212,191,0.75)]" 
-                />
+                <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 transition-all duration-300 group-hover:text-teal-300 group-hover:scale-120 group-hover:-translate-y-0.5 group-hover:drop-shadow-[0_0_10px_rgba(45,212,191,0.75)]" />
               </div>
               <div className="font-body text-3xl sm:text-4xl md:text-5xl font-black text-cyan-400 tabular-nums mb-1 transition-all duration-300 group-hover:text-teal-200 group-hover:drop-shadow-[0_0_12px_rgba(45,212,191,0.4)]">
-                <AnimatedStat value={statsVisible ? deliverySuccessRate : 0} suffix="%" duration={1200} />
+                <AnimatedStat
+                  value={statsVisible ? deliverySuccessRate : 0}
+                  suffix="%"
+                  duration={1200}
+                />
               </div>
               <div className="font-label text-[10px] sm:text-xs font-semibold tracking-wider sm:tracking-widest uppercase text-slate-400 mt-1 transition-colors duration-300 group-hover:text-slate-200">
                 Delivery Success Rate
@@ -968,8 +1149,8 @@ export default function Home() {
       </section>
 
       {/* Success Stories Carousel */}
-      <section 
-        ref={storiesSectionRef} 
+      <section
+        ref={storiesSectionRef}
         className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-white via-slate-50/60 to-white relative overflow-hidden"
         onMouseEnter={() => setIsCarouselPaused(true)}
         onMouseLeave={() => setIsCarouselPaused(false)}
@@ -986,7 +1167,8 @@ export default function Home() {
                 Recent Successes
               </h2>
               <p className="text-slate-500 max-w-2xl text-sm sm:text-base">
-                Discover the top verified needs fulfilled through generous donor contributions across diverse Sri Lankan institutions.
+                Discover the top verified needs fulfilled through generous donor
+                contributions across diverse Sri Lankan institutions.
               </p>
             </div>
 
@@ -1001,7 +1183,10 @@ export default function Home() {
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <div className="text-xs font-semibold text-slate-400 px-1 font-label">
-                  <span className="text-slate-800 font-bold">{carouselPage + 1}</span> / {totalCarouselPages}
+                  <span className="text-slate-800 font-bold">
+                    {visibleCarouselPage + 1}
+                  </span>{" "}
+                  / {totalCarouselPages}
                 </div>
                 <button
                   onClick={handleNextSlide}
@@ -1018,104 +1203,129 @@ export default function Home() {
             <div ref={cardsTrackRef} className="relative">
               {/* Sliding Carousel Track */}
               <div className="overflow-hidden rounded-2xl py-2">
-                <div 
+                <div
                   className="flex transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
-                  style={{ transform: `translateX(-${carouselPage * 100}%)` }}
+                  style={{
+                    transform: `translateX(-${visibleCarouselPage * 100}%)`,
+                  }}
                 >
-                  {Array.from({ length: totalCarouselPages }).map((_, pageIdx) => {
-                    const pageStories = stories.slice(pageIdx * cardsPerPage, (pageIdx + 1) * cardsPerPage);
-                    return (
-                      <div 
-                        key={pageIdx} 
-                        className="w-full shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 px-1"
-                      >
-                        {pageStories.map((story, i) => (
-                          <div 
-                            key={story.id || `${pageIdx}-${i}`} 
-                            className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col justify-between relative overflow-hidden transform hover:-translate-y-1.5"
-                          >
-                            {/* Top Accent Gradient Bar */}
-                            <div className={`absolute top-0 left-0 right-0 h-1.5 ${
-                              story.progress >= 100 
-                                ? "bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" 
-                                : "bg-gradient-to-r from-amber-500 via-orange-400 to-emerald-500"
-                            }`} />
+                  {Array.from({ length: totalCarouselPages }).map(
+                    (_, pageIdx) => {
+                      const pageStories = stories.slice(
+                        pageIdx * cardsPerPage,
+                        (pageIdx + 1) * cardsPerPage,
+                      );
+                      return (
+                        <div
+                          key={pageIdx}
+                          className="w-full shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 px-1"
+                        >
+                          {pageStories.map((story, i) => (
+                            <div
+                              key={story.id || `${pageIdx}-${i}`}
+                              className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col justify-between relative overflow-hidden transform hover:-translate-y-1.5"
+                            >
+                              {/* Top Accent Gradient Bar */}
+                              <div
+                                className={`absolute top-0 left-0 right-0 h-1.5 ${
+                                  story.progress >= 100
+                                    ? "bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600"
+                                    : "bg-gradient-to-r from-amber-500 via-orange-400 to-emerald-500"
+                                }`}
+                              />
 
-                            <div>
-                              {/* Header Badges */}
-                              <div className="flex items-center justify-between gap-2 mb-4">
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200/80 rounded-full font-label text-[11px] font-semibold tracking-wider uppercase text-slate-600">
-                                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                                  Verified
-                                </span>
-                                {story.progress >= 100 ? (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full">
-                                    <Sparkles className="w-3 h-3 text-emerald-500" />
-                                    100% Fulfilled
+                              <div>
+                                {/* Header Badges */}
+                                <div className="flex items-center justify-between gap-2 mb-4">
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200/80 rounded-full font-label text-[11px] font-semibold tracking-wider uppercase text-slate-600">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                    Verified
                                   </span>
-                                ) : (
-                                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
-                                    {story.progress}% Reached
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Title */}
-                              <h3 className="font-heading text-lg sm:text-xl font-bold text-slate-900 group-hover:text-primary transition-colors leading-snug mb-1.5 line-clamp-2">
-                                {story.name}
-                              </h3>
-
-                              {/* Facility / Organization */}
-                              <p className="text-xs sm:text-sm text-slate-500 font-medium flex items-center gap-2 mb-6">
-                                <Building className="w-4 h-4 text-slate-400 shrink-0" />
-                                <span className="truncate">{story.orgName}</span>
-                              </p>
-                            </div>
-
-                            {/* Progress & Metrics */}
-                            <div className="space-y-2.5 pt-4 border-t border-slate-100">
-                              <div className="flex justify-between items-center text-xs sm:text-sm">
-                                <span className="font-label text-xs font-semibold tracking-wider uppercase text-slate-400">
-                                  Fulfillment Progress
-                                </span>
-                                <span className="font-body text-xs sm:text-sm font-bold text-slate-800 tabular-nums">
-                                  {story.quantityReceived !== undefined && story.quantityRequired !== undefined ? (
-                                    <span>
-                                      <strong className="text-emerald-600">{story.quantityReceived}</strong> / {story.quantityRequired} {story.unit || "Units"}
+                                  {story.progress >= 100 ? (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full">
+                                      <Sparkles className="w-3 h-3 text-emerald-500" />
+                                      100% Fulfilled
                                     </span>
                                   ) : (
-                                    <AnimatedStat value={storiesVisible ? story.progress : 0} suffix="%" />
-                                  )}
-                                </span>
-                              </div>
-
-                              {/* Animated Progress Bar */}
-                              <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden p-0.5 relative shadow-inner">
-                                <div 
-                                  className="h-full rounded-full transition-all duration-[2200ms] ease-[cubic-bezier(0.16,1,0.3,1)] bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 relative shadow-sm"
-                                  style={{ 
-                                    width: storiesVisible ? "100%" : "0%",
-                                    transitionDelay: `${(i % cardsPerPage) * 120}ms`,
-                                  }}
-                                >
-                                  {storiesVisible && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent animate-pulse" />
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+                                      {story.progress}% Reached
+                                    </span>
                                   )}
                                 </div>
+
+                                {/* Title */}
+                                <h3 className="font-heading text-lg sm:text-xl font-bold text-slate-900 group-hover:text-primary transition-colors leading-snug mb-1.5 line-clamp-2">
+                                  {story.name}
+                                </h3>
+
+                                {/* Facility / Organization */}
+                                <p className="text-xs sm:text-sm text-slate-500 font-medium flex items-center gap-2 mb-6">
+                                  <Building className="w-4 h-4 text-slate-400 shrink-0" />
+                                  <span className="truncate">
+                                    {story.orgName}
+                                  </span>
+                                </p>
                               </div>
 
-                              <div className="flex items-center justify-between pt-1 text-[11px] text-slate-400 font-medium">
-                                <span>Fulfilled by donors</span>
-                                <span className="font-bold text-emerald-600 tabular-nums">
-                                  <AnimatedStat value={storiesVisible ? 100 : 0} suffix="%" duration={2200} />
-                                </span>
+                              {/* Progress & Metrics */}
+                              <div className="space-y-2.5 pt-4 border-t border-slate-100">
+                                <div className="flex justify-between items-center text-xs sm:text-sm">
+                                  <span className="font-label text-xs font-semibold tracking-wider uppercase text-slate-400">
+                                    Fulfillment Progress
+                                  </span>
+                                  <span className="font-body text-xs sm:text-sm font-bold text-slate-800 tabular-nums">
+                                    {story.quantityReceived !== undefined &&
+                                    story.quantityRequired !== undefined ? (
+                                      <span>
+                                        <strong className="text-emerald-600">
+                                          {story.quantityReceived}
+                                        </strong>{" "}
+                                        / {story.quantityRequired}{" "}
+                                        {story.unit || "Units"}
+                                      </span>
+                                    ) : (
+                                      <AnimatedStat
+                                        value={
+                                          storiesVisible ? story.progress : 0
+                                        }
+                                        suffix="%"
+                                      />
+                                    )}
+                                  </span>
+                                </div>
+
+                                {/* Animated Progress Bar */}
+                                <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden p-0.5 relative shadow-inner">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-[2200ms] ease-[cubic-bezier(0.16,1,0.3,1)] bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 relative shadow-sm"
+                                    style={{
+                                      width: storiesVisible ? "100%" : "0%",
+                                      transitionDelay: `${(i % cardsPerPage) * 120}ms`,
+                                    }}
+                                  >
+                                    {storiesVisible && (
+                                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent animate-pulse" />
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-1 text-[11px] text-slate-400 font-medium">
+                                  <span>Fulfilled by donors</span>
+                                  <span className="font-bold text-emerald-600 tabular-nums">
+                                    <AnimatedStat
+                                      value={storiesVisible ? 100 : 0}
+                                      suffix="%"
+                                      duration={2200}
+                                    />
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
+                          ))}
+                        </div>
+                      );
+                    },
+                  )}
                 </div>
               </div>
 
@@ -1128,8 +1338,8 @@ export default function Home() {
                       onClick={() => setCarouselPage(idx)}
                       aria-label={`Go to slide ${idx + 1}`}
                       className={`h-2.5 rounded-full transition-all duration-300 ${
-                        carouselPage === idx 
-                          ? "w-8 bg-emerald-600" 
+                        visibleCarouselPage === idx
+                          ? "w-8 bg-emerald-600"
                           : "w-2.5 bg-slate-200 hover:bg-slate-300"
                       }`}
                     />
@@ -1140,15 +1350,23 @@ export default function Home() {
           ) : (
             <div className="py-16 px-6 text-center flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-slate-200">
               <ShieldCheck className="w-10 h-10 text-slate-300 mb-3" />
-              <h3 className="font-heading font-bold text-slate-800 text-base mb-1">No Success Stories Published</h3>
-              <p className="font-body text-xs sm:text-sm text-slate-500 max-w-sm">Impact milestones and successful fulfillment records will appear here as ongoing hospital needs are met.</p>
+              <h3 className="font-heading font-bold text-slate-800 text-base mb-1">
+                No Success Stories Published
+              </h3>
+              <p className="font-body text-xs sm:text-sm text-slate-500 max-w-sm">
+                Impact milestones and successful fulfillment records will appear
+                here as ongoing hospital needs are met.
+              </p>
             </div>
           )}
         </div>
       </section>
 
       {/* Donation Trends / Impact Analytics */}
-      <section id="impact" className="py-12 sm:py-16 md:py-20 bg-slate-50 border-t border-slate-100 relative">
+      <section
+        id="impact"
+        className="py-12 sm:py-16 md:py-20 bg-slate-50 border-t border-slate-100 relative"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-3 mb-8 sm:mb-12 animate-fade-in-up">
             <div className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-primary/10 rounded-full font-label text-xs sm:text-sm font-bold tracking-[0.2em] uppercase text-cyan-600">
@@ -1158,7 +1376,8 @@ export default function Home() {
               Donation Volume Trends
             </h2>
             <p className="font-body text-slate-500 max-w-2xl mx-auto text-sm sm:text-base px-2">
-              Real-time monthly metrics tracking count of pledge donations vs verified fulfilled donations across all registered donors.
+              Real-time monthly metrics tracking count of pledge donations vs
+              verified fulfilled donations across all registered donors.
             </p>
           </div>
 
@@ -1174,17 +1393,23 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-10 animate-fade-in-up">
               <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                Built on transparency <br/>and accountability.
+                Built on transparency <br />
+                and accountability.
               </h2>
-              
+
               <div className="space-y-8">
                 <div className="flex gap-5">
                   <div className="shrink-0 pt-1 text-secondary">
                     <Eye className="w-10 h-10" strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold text-slate-900 mb-1">100% Transparent</h4>
-                    <p className="text-slate-600 leading-relaxed text-sm">Every need, donation, and fulfillment status is publicly visible on the platform.</p>
+                    <h4 className="text-lg font-bold text-slate-900 mb-1">
+                      100% Transparent
+                    </h4>
+                    <p className="text-slate-600 leading-relaxed text-sm">
+                      Every need, donation, and fulfillment status is publicly
+                      visible on the platform.
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-5">
@@ -1192,8 +1417,13 @@ export default function Home() {
                     <Shield className="w-10 h-10" strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold text-slate-900 mb-1">Super Admin Verified</h4>
-                    <p className="text-slate-600 leading-relaxed text-sm">Organizations undergo strict vetting before they can publish requirements.</p>
+                    <h4 className="text-lg font-bold text-slate-900 mb-1">
+                      Super Admin Verified
+                    </h4>
+                    <p className="text-slate-600 leading-relaxed text-sm">
+                      Organizations undergo strict vetting before they can
+                      publish requirements.
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-5">
@@ -1201,17 +1431,22 @@ export default function Home() {
                     <Activity className="w-10 h-10" strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold text-slate-900 mb-1">Real-time Tracking</h4>
-                    <p className="text-slate-600 leading-relaxed text-sm">Follow your contribution from the moment you pledge until it reaches the destination.</p>
+                    <h4 className="text-lg font-bold text-slate-900 mb-1">
+                      Real-time Tracking
+                    </h4>
+                    <p className="text-slate-600 leading-relaxed text-sm">
+                      Follow your contribution from the moment you pledge until
+                      it reaches the destination.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             <div ref={testimonialRef} className="relative group">
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/25 to-teal-400/20 rounded-2xl transform rotate-2 scale-105 blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-              
-              <div 
+
+              <div
                 className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100/90 relative z-10 overflow-hidden transition-all duration-300"
                 onMouseEnter={() => setIsTestimonialHovered(true)}
                 onMouseLeave={() => {
@@ -1222,17 +1457,23 @@ export default function Home() {
                 onTouchEnd={() => setIsTestimonialTouching(false)}
                 onTouchCancel={() => setIsTestimonialTouching(false)}
                 onClick={() => setIsTestimonialClicked((prev) => !prev)}
-                title={isTestimonialPaused ? "Click or leave to resume auto-rotation" : "Click or hover to pause and read"}
+                title={
+                  isTestimonialPaused
+                    ? "Click or leave to resume auto-rotation"
+                    : "Click or hover to pause and read"
+                }
               >
                 {/* Header row: Double quote icon + Reading Mode / Auto-advancing Badge */}
                 <div className="p-8 pb-0 md:p-11 md:pb-0 flex items-center justify-between">
-                  <svg 
-                    className="w-12 h-12 text-teal-200/90 transition-all duration-700 ease-out" 
+                  <svg
+                    className="w-12 h-12 text-teal-200/90 transition-all duration-700 ease-out"
                     style={{
                       opacity: testimonialVisible ? 1 : 0,
-                      transform: testimonialVisible ? "scale(1) rotate(0deg)" : "scale(0.7) rotate(-10deg)",
+                      transform: testimonialVisible
+                        ? "scale(1) rotate(0deg)"
+                        : "scale(0.7) rotate(-10deg)",
                     }}
-                    fill="currentColor" 
+                    fill="currentColor"
                     viewBox="0 0 24 24"
                   >
                     <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
@@ -1240,7 +1481,7 @@ export default function Home() {
 
                   {/* Reading mode / auto-advancing pill */}
                   {isTestimonialPaused ? (
-                    <div 
+                    <div
                       className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-semibold border border-amber-200/80 shadow-2xs transition-all duration-300"
                       title="Paused to give you time to read. Move mouse away or click to continue."
                     >
@@ -1248,7 +1489,7 @@ export default function Home() {
                       <span>Reading mode • Paused</span>
                     </div>
                   ) : (
-                    <div 
+                    <div
                       className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50/90 text-teal-700 text-xs font-medium border border-teal-100 transition-all duration-300"
                       title="Auto-advancing through verified testimonials. Hover, touch, or click to pause."
                     >
@@ -1256,30 +1497,37 @@ export default function Home() {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
                       </span>
-                      <span>Auto-advancing ({activeTestimonialIndex + 1}/{testimonials.length})</span>
+                      <span>
+                        Auto-advancing ({activeTestimonialIndex + 1}/
+                        {testimonials.length})
+                      </span>
                     </div>
                   )}
                 </div>
 
                 {/* Sliding Card Carousel Track */}
                 <div className="overflow-hidden">
-                  <div 
+                  <div
                     className="flex transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
-                    style={{ transform: `translateX(-${activeTestimonialIndex * 100}%)` }}
+                    style={{
+                      transform: `translateX(-${activeTestimonialIndex * 100}%)`,
+                    }}
                   >
                     {testimonials.map((item, cardIdx) => {
                       const words = item.quote.split(" ");
                       const isActive = activeTestimonialIndex === cardIdx;
                       return (
-                        <div 
-                          key={item.id} 
+                        <div
+                          key={item.id}
                           className="w-full shrink-0 p-8 pt-4 pb-6 md:p-11 md:pt-6 md:pb-6 flex flex-col justify-between"
                         >
                           {/* Quote sentence with live staggered streaming words */}
                           <p className="text-lg md:text-xl text-slate-700 italic font-medium leading-relaxed mb-8 min-h-[110px] md:min-h-[96px]">
-                            <span 
+                            <span
                               className="text-primary font-bold text-2xl mr-1 select-none transition-opacity duration-500"
-                              style={{ opacity: testimonialVisible && isActive ? 1 : 0 }}
+                              style={{
+                                opacity: testimonialVisible && isActive ? 1 : 0,
+                              }}
                             >
                               &ldquo;
                             </span>
@@ -1288,20 +1536,31 @@ export default function Home() {
                                 key={wIdx}
                                 className="inline-block transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
                                 style={{
-                                  opacity: testimonialVisible && isActive ? 1 : 0,
-                                  transform: testimonialVisible && isActive ? "translateY(0)" : "translateY(8px)",
-                                  filter: testimonialVisible && isActive ? "blur(0px)" : "blur(4px)",
-                                  transitionDelay: isActive ? `${100 + wIdx * 35}ms` : "0ms",
+                                  opacity:
+                                    testimonialVisible && isActive ? 1 : 0,
+                                  transform:
+                                    testimonialVisible && isActive
+                                      ? "translateY(0)"
+                                      : "translateY(8px)",
+                                  filter:
+                                    testimonialVisible && isActive
+                                      ? "blur(0px)"
+                                      : "blur(4px)",
+                                  transitionDelay: isActive
+                                    ? `${100 + wIdx * 35}ms`
+                                    : "0ms",
                                 }}
                               >
                                 {word}&nbsp;
                               </span>
                             ))}
-                            <span 
+                            <span
                               className="text-primary font-bold text-2xl ml-0.5 select-none transition-opacity duration-500"
-                              style={{ 
+                              style={{
                                 opacity: testimonialVisible && isActive ? 1 : 0,
-                                transitionDelay: isActive ? `${100 + words.length * 35}ms` : "0ms",
+                                transitionDelay: isActive
+                                  ? `${100 + words.length * 35}ms`
+                                  : "0ms",
                               }}
                             >
                               &rdquo;
@@ -1309,20 +1568,31 @@ export default function Home() {
                           </p>
 
                           {/* Author info & avatar */}
-                          <div 
+                          <div
                             className="flex items-center gap-4 transition-all duration-700 ease-out"
                             style={{
                               opacity: testimonialVisible && isActive ? 1 : 0,
-                              transform: testimonialVisible && isActive ? "translateY(0)" : "translateY(12px)",
-                              transitionDelay: isActive ? `${100 + words.length * 35 + 80}ms` : "0ms",
+                              transform:
+                                testimonialVisible && isActive
+                                  ? "translateY(0)"
+                                  : "translateY(12px)",
+                              transitionDelay: isActive
+                                ? `${100 + words.length * 35 + 80}ms`
+                                : "0ms",
                             }}
                           >
-                            <div className={`w-12 h-12 ${item.avatarBg} ${item.avatarTextColor} rounded-full flex items-center justify-center font-bold text-sm tracking-wide shrink-0 border border-slate-200/80 ring-2 ring-teal-50 shadow-sm`}>
+                            <div
+                              className={`w-12 h-12 ${item.avatarBg} ${item.avatarTextColor} rounded-full flex items-center justify-center font-bold text-sm tracking-wide shrink-0 border border-slate-200/80 ring-2 ring-teal-50 shadow-sm`}
+                            >
                               {item.initials}
                             </div>
                             <div>
-                              <div className="font-bold text-slate-900 leading-tight">{item.name}</div>
-                              <div className="text-sm text-slate-500 font-medium">{item.designation}, {item.organization}</div>
+                              <div className="font-bold text-slate-900 leading-tight">
+                                {item.name}
+                              </div>
+                              <div className="text-sm text-slate-500 font-medium">
+                                {item.designation}, {item.organization}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1334,7 +1604,11 @@ export default function Home() {
                 {/* Bottom Navigation Toolbar */}
                 <div className="px-8 pb-5 pt-3 md:px-11 md:pb-6 border-t border-slate-100 flex items-center justify-between gap-4 bg-slate-50/40">
                   {/* Interactive Pagination Dots */}
-                  <div className="flex items-center gap-2" role="tablist" aria-label="Testimonials">
+                  <div
+                    className="flex items-center gap-2"
+                    role="tablist"
+                    aria-label="Testimonials"
+                  >
                     {testimonials.map((_, dotIdx) => (
                       <button
                         key={dotIdx}
@@ -1344,8 +1618,8 @@ export default function Home() {
                           setActiveTestimonialIndex(dotIdx);
                         }}
                         className={`h-2 rounded-full transition-all duration-300 ${
-                          activeTestimonialIndex === dotIdx 
-                            ? "w-7 bg-primary" 
+                          activeTestimonialIndex === dotIdx
+                            ? "w-7 bg-primary"
                             : "w-2 bg-slate-200 hover:bg-slate-300"
                         }`}
                         aria-label={`Go to testimonial ${dotIdx + 1}`}
@@ -1386,7 +1660,9 @@ export default function Home() {
                     key={`progress-${activeTestimonialIndex}`}
                     className="h-full bg-gradient-to-r from-teal-400 to-primary"
                     style={{
-                      animation: !isTestimonialPaused ? "testimonialTimer 6500ms linear forwards" : "none",
+                      animation: !isTestimonialPaused
+                        ? "testimonialTimer 6500ms linear forwards"
+                        : "none",
                       width: isTestimonialPaused ? "100%" : undefined,
                       opacity: isTestimonialPaused ? 0.35 : 1,
                       transition: "opacity 0.2s ease",
@@ -1409,12 +1685,15 @@ export default function Home() {
               <div className="relative z-10 flex flex-col h-full justify-between items-start space-y-10">
                 <Heart className="w-12 h-12 text-primary mb-4" />
                 <div>
-                  <h2 className="font-heading text-2xl font-bold text-white mb-4 tracking-tight">I want to donate</h2>
+                  <h2 className="font-heading text-2xl font-bold text-white mb-4 tracking-tight">
+                    I want to donate
+                  </h2>
                   <p className="font-body text-sm text-slate-300 leading-relaxed mt-2 mb-8 max-w-sm">
-                    Create a free account and start contributing directly to verified organizational needs today.
+                    Create a free account and start contributing directly to
+                    verified organizational needs today.
                   </p>
-                  <Link 
-                    href="/login?tab=register" 
+                  <Link
+                    href="/login?tab=register"
                     className="relative group/donor-btn inline-flex items-center gap-3 px-9 py-4 rounded-full font-heading text-base font-bold text-white transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 active:scale-95 overflow-hidden shadow-[0_10px_35px_-5px_rgba(13,148,136,0.65)] hover:shadow-[0_15px_45px_-5px_rgba(16,185,129,0.85)] ring-2 ring-emerald-400/40 hover:ring-emerald-300/70"
                   >
                     {/* Animated radiant gradient backdrop */}
@@ -1428,7 +1707,7 @@ export default function Home() {
 
                     {/* Button text & icon with micro-interaction */}
                     <span className="relative z-10 flex items-center gap-2.5 tracking-wide drop-shadow-sm font-bold">
-                      Become a Donor 
+                      Become a Donor
                       <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover/donor-btn:translate-x-1.5" />
                     </span>
                   </Link>
@@ -1442,12 +1721,19 @@ export default function Home() {
               <div className="bg-white rounded-[2px] p-10 md:p-14 h-full relative z-10 flex flex-col justify-between items-start space-y-10">
                 <Building className="w-12 h-12 text-primary mb-4" />
                 <div>
-                  <h2 className="font-heading text-2xl font-bold text-slate-900 mb-4 tracking-tight">We&apos;re an organization</h2>
+                  <h2 className="font-heading text-2xl font-bold text-slate-900 mb-4 tracking-tight">
+                    We&apos;re an organization
+                  </h2>
                   <p className="font-body text-sm text-slate-500 leading-relaxed mt-2 mb-8 max-w-sm">
-                    Join Parithyaga to publish your requirements, manage donations, and reach donors nationwide.
+                    Join Parithyaga to publish your requirements, manage
+                    donations, and reach donors nationwide.
                   </p>
-                  <Link href="/login?tab=org-admin" className="inline-flex items-center gap-2 px-8 py-4 bg-white border border-slate-200 hover:border-primary hover:bg-primary/5 text-slate-900 rounded-full transition-all shadow-sm font-body text-sm font-semibold">
-                    Register Organization <ArrowRight className="w-5 h-5 text-primary" />
+                  <Link
+                    href="/login?tab=org-admin"
+                    className="inline-flex items-center gap-2 px-8 py-4 bg-white border border-slate-200 hover:border-primary hover:bg-primary/5 text-slate-900 rounded-full transition-all shadow-sm font-body text-sm font-semibold"
+                  >
+                    Register Organization{" "}
+                    <ArrowRight className="w-5 h-5 text-primary" />
                   </Link>
                 </div>
               </div>
@@ -1463,7 +1749,10 @@ export default function Home() {
             <h2 className="font-heading text-3xl font-bold text-slate-900 tracking-tight">
               Live Network Map
             </h2>
-            <p className="font-body text-base text-blue-600 leading-relaxed mt-2 max-w-2xl mx-auto">Explore verified organizations and current active needs across Sri Lanka.</p>
+            <p className="font-body text-base text-blue-600 leading-relaxed mt-2 max-w-2xl mx-auto">
+              Explore verified organizations and current active needs across Sri
+              Lanka.
+            </p>
           </div>
         </div>
         <div className="relative h-[480px] sm:h-[560px] md:h-[650px] w-full animate-scale-up z-10 border-y border-slate-200">
@@ -1479,40 +1768,111 @@ export default function Home() {
             <div className="md:col-span-5 space-y-6">
               <Link href="/" className="flex items-center gap-3 inline-block">
                 <div className="w-10 h-10 rounded-none flex items-center justify-center shrink-0 overflow-hidden">
-                  <Image src="/images/Parithyaga_Logo.png" alt="Parithyaga Logo" width={40} height={40} className="w-full h-full object-contain" />
+                  <Image
+                    src="/images/Parithyaga_Logo.png"
+                    alt="Parithyaga Logo"
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-heading text-lg font-semibold text-white">Parithyaga</span>
-                  <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Donation Platform</span>
+                  <span className="font-heading text-lg font-semibold text-white">
+                    Parithyaga
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                    Donation Platform
+                  </span>
                 </div>
               </Link>
               <p className="text-sm leading-relaxed max-w-sm mt-4">
-                A transparent, secure platform connecting verified organizations with willing donors to fulfill critical needs across Sri Lanka.
+                A transparent, secure platform connecting verified organizations
+                with willing donors to fulfill critical needs across Sri Lanka.
               </p>
               <div className="flex items-center gap-4 pt-2">
-                <a href="#" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-white transition-colors hover:border-primary"><FaFacebook size={18} /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-white transition-colors hover:border-primary"><FaTwitter size={18} /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-white transition-colors hover:border-primary"><FaLinkedin size={18} /></a>
-                <a href="#" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-white transition-colors hover:border-primary"><FaInstagram size={18} /></a>
+                <a
+                  href="#"
+                  className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-white transition-colors hover:border-primary"
+                >
+                  <FaFacebook size={18} />
+                </a>
+                <a
+                  href="#"
+                  className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-white transition-colors hover:border-primary"
+                >
+                  <FaTwitter size={18} />
+                </a>
+                <a
+                  href="#"
+                  className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-white transition-colors hover:border-primary"
+                >
+                  <FaLinkedin size={18} />
+                </a>
+                <a
+                  href="#"
+                  className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-white transition-colors hover:border-primary"
+                >
+                  <FaInstagram size={18} />
+                </a>
               </div>
             </div>
-            
+
             {/* Col 2 */}
             <div className="md:col-span-3 lg:ml-8">
               <h4 className="text-white font-bold mb-6 text-lg">Quick Links</h4>
               <ul className="space-y-3 text-sm font-medium">
-                <li><Link href="/" className="hover:text-primary transition-colors block">Home</Link></li>
-                <li><Link href="/needs" className="hover:text-primary transition-colors block">Current Needs</Link></li>
-                <li><Link href="/about" className="hover:text-primary transition-colors block">About Us</Link></li>
-                <li><Link href="/#impact" className="hover:text-primary transition-colors block">Our Impact</Link></li>
-                <li><Link href="/login?tab=register" className="hover:text-primary transition-colors block">Become a Donor</Link></li>
+                <li>
+                  <Link
+                    href="/"
+                    className="hover:text-primary transition-colors block"
+                  >
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/needs"
+                    className="hover:text-primary transition-colors block"
+                  >
+                    Current Needs
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/about"
+                    className="hover:text-primary transition-colors block"
+                  >
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/#impact"
+                    className="hover:text-primary transition-colors block"
+                  >
+                    Our Impact
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/login?tab=register"
+                    className="hover:text-primary transition-colors block"
+                  >
+                    Become a Donor
+                  </Link>
+                </li>
               </ul>
             </div>
-            
+
             {/* Col 3 */}
             <div className="md:col-span-4 space-y-6">
-              <h4 className="text-white font-bold mb-6 text-lg">Stay Updated</h4>
-              <p className="text-sm leading-relaxed">Subscribe to our newsletter for the latest updates on critical needs and success stories.</p>
+              <h4 className="text-white font-bold mb-6 text-lg">
+                Stay Updated
+              </h4>
+              <p className="text-sm leading-relaxed">
+                Subscribe to our newsletter for the latest updates on critical
+                needs and success stories.
+              </p>
               <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
                 <input
                   id="newsletter-email"
@@ -1523,18 +1883,43 @@ export default function Home() {
                   aria-label="Email address for newsletter"
                   className="bg-slate-800/50 border border-slate-700 rounded-none px-4 py-3 text-sm w-full focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-white transition-all"
                 />
-                <button type="submit" className="bg-primary hover:bg-teal-700 text-white px-6 py-3 rounded-full text-sm font-bold transition-all shadow-lg shadow-primary/20">Subscribe</button>
+                <button
+                  type="submit"
+                  className="bg-primary hover:bg-teal-700 text-white px-6 py-3 rounded-full text-sm font-bold transition-all shadow-lg shadow-primary/20"
+                >
+                  Subscribe
+                </button>
               </form>
-              <p className="text-xs text-slate-500 font-medium">We respect your privacy. No spam.</p>
+              <p className="text-xs text-slate-500 font-medium">
+                We respect your privacy. No spam.
+              </p>
             </div>
           </div>
-          
+
           <div className="pt-8 pb-8 md:pb-0 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6 font-label text-sm text-slate-400">
-            <p className="text-center md:text-left">© {new Date().getFullYear()} Parithyaga Sri Lanka. All rights reserved.</p>
+            <p className="text-center md:text-left">
+              © {new Date().getFullYear()} Parithyaga Sri Lanka. All rights
+              reserved.
+            </p>
             <div className="flex flex-wrap justify-center gap-6">
-              <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
-              <Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link>
+              <Link
+                href="/privacy"
+                className="hover:text-primary transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="/terms"
+                className="hover:text-primary transition-colors"
+              >
+                Terms of Service
+              </Link>
+              <Link
+                href="/contact"
+                className="hover:text-primary transition-colors"
+              >
+                Contact Us
+              </Link>
             </div>
           </div>
         </div>
