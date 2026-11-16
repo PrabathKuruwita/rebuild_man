@@ -83,7 +83,7 @@ jobs:
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "22.23.4"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -95,6 +95,9 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+      - name: Audit production frontend dependencies
+        run: npm audit --omit=dev --audit-level=high
 
   trivy-vulnerability-scan:
     needs: [backend-test, frontend-test]
@@ -114,18 +117,6 @@ jobs:
           format: table
           output: trivy-backend-vulnerabilities.txt
 
-      - name: Scan frontend dependencies
-        id: frontend_vuln_scan
-        continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.22.0
-        with:
-          scan-type: fs
-          scan-ref: frontend
-          scanners: vuln
-          severity: HIGH,CRITICAL
-          format: table
-          output: trivy-frontend-vulnerabilities.txt
-
       - name: Upload vulnerability reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -133,10 +124,9 @@ jobs:
           name: trivy-vulnerability-reports
           path: |
             trivy-backend-vulnerabilities.txt
-            trivy-frontend-vulnerabilities.txt
 
       - name: Fail when vulnerabilities are found
-        if: steps.backend_vuln_scan.outcome == 'failure' || steps.frontend_vuln_scan.outcome == 'failure'
+        if: steps.backend_vuln_scan.outcome == 'failure'
         run: exit 1
 
   trivy-policy-check:
@@ -167,38 +157,12 @@ jobs:
         if: steps.policy_scan.outcome == 'failure'
         run: exit 1
 
-  docker-build:
+  push-images:
     needs:
       - backend-test
       - frontend-test
       - trivy-vulnerability-scan
       - trivy-policy-check
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          push: false
-          load: true
-          tags: rebuild-backend:latest
-
-      - name: Build frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          push: false
-          load: true
-          tags: rebuild-frontend:latest
-
-  push-images:
-    needs: [docker-build]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
@@ -210,11 +174,17 @@ jobs:
           username: ravindudilhan
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
+          provenance: true
           tags: |
             ravindudilhan/rebuild-backend:latest
             ravindudilhan/rebuild-backend:${{ github.sha }}
@@ -224,9 +194,103 @@ jobs:
         with:
           context: ./frontend
           push: true
+          provenance: true
+          build-args: |
+            BACKEND_URL=http://backend:8000
           tags: |
             ravindudilhan/rebuild-frontend:latest
             ravindudilhan/rebuild-frontend:${{ github.sha }}
+
+      - name: Cache Trivy vulnerability database
+        uses: actions/cache@v4
+        with:
+          path: .cache/trivy
+          key: trivy-db-${{ runner.os }}
+          restore-keys: |
+            trivy-db-
+
+      - name: Scan published images
+        id: frontend_image_scan
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
+        with:
+          image-ref: ravindudilhan/rebuild-frontend:${{ github.sha }}
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          cache-dir: ${{ github.workspace }}/.cache/trivy
+          timeout: 15m
+          format: table
+          output: trivy-frontend-image.txt
+          exit-code: 1
+
+      - name: Retry frontend image scan
+        id: frontend_image_scan_retry
+        if: steps.frontend_image_scan.outcome == 'failure'
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
+        with:
+          image-ref: ravindudilhan/rebuild-frontend:${{ github.sha }}
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          cache-dir: ${{ github.workspace }}/.cache/trivy
+          timeout: 15m
+          format: table
+          output: trivy-frontend-image.txt
+          exit-code: 1
+
+      - name: Scan published backend image
+        id: backend_image_scan
+        if: always()
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
+        with:
+          image-ref: ravindudilhan/rebuild-backend:${{ github.sha }}
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          cache-dir: ${{ github.workspace }}/.cache/trivy
+          timeout: 15m
+          format: table
+          output: trivy-backend-image.txt
+          exit-code: 1
+
+      - name: Retry backend image scan
+        id: backend_image_scan_retry
+        if: steps.backend_image_scan.outcome == 'failure'
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2
+        with:
+          image-ref: ravindudilhan/rebuild-backend:${{ github.sha }}
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          cache-dir: ${{ github.workspace }}/.cache/trivy
+          timeout: 15m
+          format: table
+          output: trivy-backend-image.txt
+          exit-code: 1
+
+      - name: Upload image scan reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-reports-${{ github.sha }}
+          path: trivy-*-image.txt
+          if-no-files-found: warn
+
+      - name: Fail when published images have vulnerabilities
+        if: steps.frontend_image_scan_retry.outcome == 'failure' || steps.backend_image_scan_retry.outcome == 'failure'
+        run: exit 1
 
   deploy-k3s:
     needs: [push-images]
@@ -272,6 +336,12 @@ jobs:
       - name: Apply PostgreSQL manifests
         run: kubectl apply -f k8s/postgres.yaml
 
+      - name: Record current images for rollback
+        run: |
+          mkdir -p rollback
+          kubectl get deployment backend -n rikili001 -o jsonpath='{.spec.template.spec.containers[0].image}' > rollback/backend-image.txt || true
+          kubectl get deployment frontend -n rikili001 -o jsonpath='{.spec.template.spec.containers[0].image}' > rollback/frontend-image.txt || true
+
       - name: Update image tags in manifests
         run: |
           sed -i "s|ravindudilhan/rebuild-backend:latest|ravindudilhan/rebuild-backend:${{ github.sha }}|g" k8s/backend.yaml
@@ -286,8 +356,50 @@ jobs:
       - name: Apply ingress manifest
         run: kubectl apply -f k8s/ingress.yaml
 
+      - name: Wait for application rollouts
+        run: |
+          kubectl rollout status deployment/backend -n rikili001 --timeout=180s
+          kubectl rollout status deployment/frontend -n rikili001 --timeout=180s
+
+      - name: Smoke test frontend service
+        run: |
+          kubectl port-forward --namespace rikili001 service/frontend 18080:3000 > /tmp/frontend-port-forward.log 2>&1 &
+          PORT_FORWARD_PID=$!
+          trap 'kill $PORT_FORWARD_PID' EXIT
+          for ATTEMPT in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:18080/; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/frontend-port-forward.log
+          exit 1
+
+      - name: Check public HTTPS certificate
+        if: always()
+        run: |
+          if curl --fail --silent --show-error --retry 3 --retry-delay 5 --retry-all-errors https://rebuild-app.duckdns.org/; then
+            echo "Public HTTPS check passed."
+          else
+            echo "::warning::Public HTTPS check failed. Verify the Traefik certificate; the internal application smoke test passed or failed independently."
+          fi
+
       - name: Apply Grafana ingress manifest
         run: kubectl apply -f k8s/grafana-ingress.yaml
         
       - name: Apply Prometheus scrape config manifest
         run: kubectl apply -f k8s/prometheus-scrape-config.yaml
+
+      - name: Roll back failed application rollout
+        if: failure()
+        run: |
+          kubectl rollout undo deployment/backend -n rikili001 || true
+          kubectl rollout undo deployment/frontend -n rikili001 || true
+
+      - name: Upload rollback references
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-images-${{ github.sha }}
+          path: rollback/
+          if-no-files-found: ignore

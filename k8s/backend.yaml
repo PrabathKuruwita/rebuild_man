@@ -17,8 +17,20 @@ spec:
       containers:
         - name: backend
           image: ravindudilhan/rebuild-backend:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports: [{ containerPort: 8000 }]
+          readinessProbe:
+            tcpSocket: { port: 8000 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket: { port: 8000 }
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
           env:
             - name: DB_NAME
               value: rebuild_db

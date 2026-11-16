@@ -254,6 +254,7 @@ $RECYCLE.BIN/
 
 docker-compose.override.yml
 .dockerignore
+!frontend/.dockerignore
 
 # ============================================================================
 # Logs & Temporary Files
