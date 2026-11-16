@@ -18,7 +18,8 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } =
+    useNotifications();
 
   const isOrgAdminPath =
     pathname.startsWith("/org-admin") ||
@@ -56,7 +57,10 @@ export default function Navbar() {
   // Close notifications panel on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (notificationsRef.current && !notificationsRef.current.contains(e.target as Node)) {
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(e.target as Node)
+      ) {
         setShowNotifications(false);
       }
     }
@@ -87,7 +91,7 @@ export default function Navbar() {
       if (pathname === "/") {
         const heroSection = document.getElementById("hero-section");
         const donorHeader = document.getElementById("donor-header");
-        
+
         if (heroSection) {
           // Stay transparent until we scroll past the hero section
           threshold = heroSection.offsetTop + heroSection.offsetHeight - 80;
@@ -100,11 +104,11 @@ export default function Navbar() {
       }
       setIsScrolled(window.scrollY > threshold);
     };
-    
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     // Initial check on mount
     handleScroll();
-    
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, [pathname]);
 
@@ -123,11 +127,12 @@ export default function Navbar() {
   const textHoverColor = isSolid ? "hover:text-primary" : "hover:text-white";
   const logoTextColor = isSolid ? "text-primary" : "text-white";
 
-  const btnOutlineClass = isSolid 
+  const btnOutlineClass = isSolid
     ? "text-slate-700 border border-slate-300 hover:bg-slate-50 hover:text-slate-900 rounded-full"
     : "text-white border border-white/30 hover:bg-white/10 hover:border-white rounded-full";
-  const btnPrimaryClass = "text-white bg-primary hover:bg-teal-700 rounded-full";
-  const navBg = isSolid ? "bg-white shadow-sm border-slate-200" : "bg-black/10 backdrop-blur-sm border-white/10";
+  const navBg = isSolid
+    ? "bg-white shadow-sm border-slate-200"
+    : "bg-black/10 backdrop-blur-sm border-white/10";
 
   return (
     <nav
@@ -135,32 +140,42 @@ export default function Navbar() {
       onMouseMove={handleNavMouseMove}
       className={`fixed top-0 left-0 right-0 h-16 sm:h-20 z-[1020] transition-all duration-300 ${isSidebarLayout ? "navbar-sidebar-offset" : "w-full"} ${navBg} border-b`}
     >
-      <div className={isSidebarLayout ? "w-full px-4 sm:px-8" : "w-full px-4 sm:px-6 lg:px-8 xl:px-12"}>
+      <div
+        className={
+          isSidebarLayout
+            ? "w-full px-4 sm:px-8"
+            : "w-full px-4 sm:px-6 lg:px-8 xl:px-12"
+        }
+      >
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo - Responsive sizing */}
-          <div className={`shrink-0 flex items-center ${isSidebarLayout ? "lg:hidden" : ""}`}>
+          <div
+            className={`shrink-0 flex items-center ${isSidebarLayout ? "lg:hidden" : ""}`}
+          >
             <Link href="/" className="flex items-center gap-2 sm:gap-3">
-              <Image 
-                src="/images/Parithyaga_Logo.png" 
-                alt="Parithyaga Logo" 
-                width={50} 
+              <Image
+                src="/images/Parithyaga_Logo.png"
+                alt="Parithyaga Logo"
+                width={50}
                 height={50}
                 priority
                 loading="eager"
                 className="w-15 h-15 object-contain"
               />
               <div className="flex flex-col">
-                <span className={`font-black text-lg sm:text-2xl leading-tight tracking-wide transition-colors duration-300 ${logoTextColor}`}>
+                <span
+                  className={`font-black text-lg sm:text-2xl leading-tight tracking-wide transition-colors duration-300 ${logoTextColor}`}
+                >
                   PARITHYAGA
                 </span>
               </div>
             </Link>
           </div>
 
-
           {/* Navigation Links - Hidden below XL, shown on desktop XL */}
           <div className="hidden xl:flex items-center justify-center space-x-6 2xl:space-x-8 flex-1">
-            {(!user || (user.role !== "ADMIN" && user.role !== "ORG_ADMIN")) && (
+            {(!user ||
+              (user.role !== "ADMIN" && user.role !== "ORG_ADMIN")) && (
               <>
                 <Link
                   href="/"
@@ -221,7 +236,7 @@ export default function Navbar() {
                   >
                     {/* Vibrant shifting gradient */}
                     <span className="absolute inset-0 bg-gradient-to-r from-teal-600 via-emerald-500 to-cyan-500 bg-[length:200%_auto] animate-gradient-shift"></span>
-                    
+
                     {/* Ambient soft glow aura */}
                     <span className="absolute -inset-0.5 rounded-full bg-emerald-400/40 blur-xs group-hover/nav-donor:opacity-100 transition-opacity animate-pulse-slow -z-10"></span>
 
@@ -238,7 +253,9 @@ export default function Navbar() {
                 <MobileNav isSolid={isSolid} />
               </>
             ) : (
-              <div className={`${isSidebarLayout ? "hidden lg:flex" : "hidden xl:flex"} items-center gap-2 sm:gap-3`}>
+              <div
+                className={`${isSidebarLayout ? "hidden lg:flex" : "hidden xl:flex"} items-center gap-2 sm:gap-3`}
+              >
                 {/* Pulsing System Status */}
                 {isSidebarLayout && (
                   <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full animate-fade-in mr-2 shrink-0 select-none">
@@ -246,14 +263,16 @@ export default function Navbar() {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider">System Online</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">
+                      System Online
+                    </span>
                   </div>
                 )}
                 {/* Notifications Bell Dropdown */}
                 <div className="relative" ref={notificationsRef}>
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className={`p-2 rounded-lg transition-colors relative touch-manipulation animate-fade-in ${isSolid ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-300 hover:text-white hover:bg-white/10'}`}
+                    className={`p-2 rounded-lg transition-colors relative touch-manipulation animate-fade-in ${isSolid ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100" : "text-slate-300 hover:text-white hover:bg-white/10"}`}
                   >
                     <Bell size={20} />
                     {unreadCount > 0 && (
@@ -264,7 +283,9 @@ export default function Navbar() {
                   {showNotifications && (
                     <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-scale-up">
                       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-slate-50">
-                        <span className="font-bold text-sm text-slate-900">Notifications</span>
+                        <span className="font-bold text-sm text-slate-900">
+                          Notifications
+                        </span>
                         {unreadCount > 0 && (
                           <button
                             onClick={markAllAsRead}
@@ -292,7 +313,7 @@ export default function Navbar() {
                                 router.push(`/notifications?id=${n.id}`);
                               }}
                               className={`p-3.5 flex items-start gap-2.5 cursor-pointer transition-colors hover:bg-slate-50 relative ${
-                                !n.is_read ? 'bg-teal-50/30' : ''
+                                !n.is_read ? "bg-teal-50/30" : ""
                               }`}
                             >
                               <div className="pt-1 shrink-0">
@@ -306,7 +327,9 @@ export default function Navbar() {
                                 <div className="flex justify-between items-baseline gap-2">
                                   <p
                                     className={`text-xs text-slate-900 truncate ${
-                                      !n.is_read ? 'font-semibold' : 'font-medium'
+                                      !n.is_read
+                                        ? "font-semibold"
+                                        : "font-medium"
                                     }`}
                                     title={n.title}
                                   >
@@ -339,17 +362,24 @@ export default function Navbar() {
                 </div>
 
                 {/* Profile Trigger */}
-                <div className="relative flex items-center gap-2" ref={panelRef}>
+                <div
+                  className="relative flex items-center gap-2"
+                  ref={panelRef}
+                >
                   {user.role && (
                     <div className="hidden md:flex flex-col items-end mr-1">
                       <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-teal-50 px-2.5 py-1 rounded border border-teal-100">
-                        {user.role === "ADMIN" ? "ADMIN" : user.role === "ORG_ADMIN" ? "ORG ADMIN" : "DONOR"}
+                        {user.role === "ADMIN"
+                          ? "ADMIN"
+                          : user.role === "ORG_ADMIN"
+                            ? "ORG ADMIN"
+                            : "DONOR"}
                       </span>
                     </div>
                   )}
                   <button
                     onClick={() => setShowProfile(!showProfile)}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border transition-all touch-manipulation focus-visible:outline-none ${isSolid ? 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200' : 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700'}`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border transition-all touch-manipulation focus-visible:outline-none ${isSolid ? "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200" : "bg-slate-800 text-white border-slate-700 hover:bg-slate-700"}`}
                   >
                     {user.username.charAt(0).toUpperCase()}
                   </button>
@@ -416,7 +446,9 @@ export default function Navbar() {
 
             {/* Mobile Actions for Logged in Users */}
             {user && (
-              <div className={`${isSidebarLayout ? "lg:hidden" : "xl:hidden"} flex items-center gap-1 sm:gap-1.5 ml-auto`}>
+              <div
+                className={`${isSidebarLayout ? "lg:hidden" : "xl:hidden"} flex items-center gap-1 sm:gap-1.5 ml-auto`}
+              >
                 <Link
                   href="/notifications"
                   title="Notifications"

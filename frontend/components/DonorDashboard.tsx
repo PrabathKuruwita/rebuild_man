@@ -108,7 +108,9 @@ export default function DonorDashboard() {
   const [editOfficerPhone, setEditOfficerPhone] = useState("");
   const [editOrgEmail, setEditOrgEmail] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
-  const [editConfirmAction, setEditConfirmAction] = useState<"save" | "discard" | null>(null);
+  const [editConfirmAction, setEditConfirmAction] = useState<
+    "save" | "discard" | null
+  >(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -167,22 +169,37 @@ export default function DonorDashboard() {
     return viewingDonation;
   })();
 
-  const isEditOrg = editingDonation ? (editingDonation.donor_type === "organization" || Boolean(editingDonation.organization_name)) : false;
-  const currentNeedItem = editingDonation ? (needsMap.get(editingDonation.need_item) || null) : null;
-  const currentUnit = currentNeedItem?.unit || editingDonation?.need_item_detail?.unit || "UNIT";
-  const realTimeRequired = currentNeedItem ? Math.max(
-    1,
-    (currentNeedItem.quantity_required - (currentNeedItem.quantity_confirmed || 0)) +
-      (editingDonation?.status === "CONFIRMED" ? editingDonation.quantity : 0)
-  ) : (editingDonation?.quantity || 1);
+  const isEditOrg = editingDonation
+    ? editingDonation.donor_type === "organization" ||
+      Boolean(editingDonation.organization_name)
+    : false;
+  const currentNeedItem = editingDonation
+    ? needsMap.get(editingDonation.need_item) || null
+    : null;
+  const currentUnit =
+    currentNeedItem?.unit || editingDonation?.need_item_detail?.unit || "UNIT";
+  const realTimeRequired = currentNeedItem
+    ? Math.max(
+        1,
+        currentNeedItem.quantity_required -
+          (currentNeedItem.quantity_confirmed || 0) +
+          (editingDonation?.status === "CONFIRMED"
+            ? editingDonation.quantity
+            : 0),
+      )
+    : editingDonation?.quantity || 1;
 
   const handleStartEdit = (donation: Donation) => {
     setEditingDonation(donation);
     setEditConfirmAction(null);
     setEditQuantity(donation.quantity);
-    setEditDeliveryDate(donation.estimated_delivery_date ? donation.estimated_delivery_date.split("T")[0] : "");
+    setEditDeliveryDate(
+      donation.estimated_delivery_date
+        ? donation.estimated_delivery_date.split("T")[0]
+        : "",
+    );
     setEditMessage(donation.message || "");
-    
+
     // Private donor fields
     setEditDonorName(donation.donor_name || "");
     setEditDonorPhone(donation.donor_phone || donation.donor_contact || "");
@@ -190,71 +207,122 @@ export default function DonorDashboard() {
     setEditDonorAddress(donation.donor_address || "");
 
     // Organization donor fields
-    setEditOrgName(donation.organization_name || donation.donor_organization || "");
-    setEditOrgProgram(donation.organization_program || donation.government_program || "");
-    setEditOfficerName(donation.organization_officer_name || donation.government_officer_name || donation.donor_name || "");
-    setEditOfficerDesignation(donation.organization_officer_designation || donation.government_officer_designation || "");
-    setEditOfficerPhone(donation.organization_officer_contact || donation.government_officer_contact || donation.donor_phone || "");
-    setEditOrgEmail(donation.organization_email || donation.government_email || donation.donor_email || "");
+    setEditOrgName(
+      donation.organization_name || donation.donor_organization || "",
+    );
+    setEditOrgProgram(
+      donation.organization_program || donation.government_program || "",
+    );
+    setEditOfficerName(
+      donation.organization_officer_name ||
+        donation.government_officer_name ||
+        donation.donor_name ||
+        "",
+    );
+    setEditOfficerDesignation(
+      donation.organization_officer_designation ||
+        donation.government_officer_designation ||
+        "",
+    );
+    setEditOfficerPhone(
+      donation.organization_officer_contact ||
+        donation.government_officer_contact ||
+        donation.donor_phone ||
+        "",
+    );
+    setEditOrgEmail(
+      donation.organization_email ||
+        donation.government_email ||
+        donation.donor_email ||
+        "",
+    );
 
     // Fetch real-time updated organizations and needs
-    getOrganizations().then((orgsData) => {
-      const nMap = new Map<number, NeedItem>();
-      orgsData.forEach((org) => {
-        org.sections?.forEach((section) => {
-          section.needs?.forEach((need) => {
-            nMap.set(need.id, {
-              ...need,
-              section_detail: {
-                id: section.id,
-                name: section.name,
-                organization: org.id,
-                organization_name: org.name,
-              },
+    getOrganizations()
+      .then((orgsData) => {
+        const nMap = new Map<number, NeedItem>();
+        orgsData.forEach((org) => {
+          org.sections?.forEach((section) => {
+            section.needs?.forEach((need) => {
+              nMap.set(need.id, {
+                ...need,
+                section_detail: {
+                  id: section.id,
+                  name: section.name,
+                  organization: org.id,
+                  organization_name: org.name,
+                },
+              });
             });
           });
         });
-      });
-      setNeedsMap(nMap);
-    }).catch(console.error);
+        setNeedsMap(nMap);
+      })
+      .catch(console.error);
   };
 
-  const initialEditValues = editingDonation ? {
-    quantity: editingDonation.quantity,
-    deliveryDate: editingDonation.estimated_delivery_date ? editingDonation.estimated_delivery_date.split("T")[0] : "",
-    message: editingDonation.message || "",
-    donorName: editingDonation.donor_name || "",
-    donorPhone: editingDonation.donor_phone || editingDonation.donor_contact || "",
-    donorEmail: editingDonation.donor_email || "",
-    donorAddress: editingDonation.donor_address || "",
-    orgName: editingDonation.organization_name || editingDonation.donor_organization || "",
-    orgProgram: editingDonation.organization_program || editingDonation.government_program || "",
-    officerName: editingDonation.organization_officer_name || editingDonation.government_officer_name || editingDonation.donor_name || "",
-    officerDesignation: editingDonation.organization_officer_designation || editingDonation.government_officer_designation || "",
-    officerPhone: editingDonation.organization_officer_contact || editingDonation.government_officer_contact || editingDonation.donor_phone || "",
-    orgEmail: editingDonation.organization_email || editingDonation.government_email || editingDonation.donor_email || "",
-  } : null;
+  const initialEditValues = editingDonation
+    ? {
+        quantity: editingDonation.quantity,
+        deliveryDate: editingDonation.estimated_delivery_date
+          ? editingDonation.estimated_delivery_date.split("T")[0]
+          : "",
+        message: editingDonation.message || "",
+        donorName: editingDonation.donor_name || "",
+        donorPhone:
+          editingDonation.donor_phone || editingDonation.donor_contact || "",
+        donorEmail: editingDonation.donor_email || "",
+        donorAddress: editingDonation.donor_address || "",
+        orgName:
+          editingDonation.organization_name ||
+          editingDonation.donor_organization ||
+          "",
+        orgProgram:
+          editingDonation.organization_program ||
+          editingDonation.government_program ||
+          "",
+        officerName:
+          editingDonation.organization_officer_name ||
+          editingDonation.government_officer_name ||
+          editingDonation.donor_name ||
+          "",
+        officerDesignation:
+          editingDonation.organization_officer_designation ||
+          editingDonation.government_officer_designation ||
+          "",
+        officerPhone:
+          editingDonation.organization_officer_contact ||
+          editingDonation.government_officer_contact ||
+          editingDonation.donor_phone ||
+          "",
+        orgEmail:
+          editingDonation.organization_email ||
+          editingDonation.government_email ||
+          editingDonation.donor_email ||
+          "",
+      }
+    : null;
 
-  const parsedEditQty = typeof editQuantity === "number" ? editQuantity : (parseInt(String(editQuantity), 10) || 0);
+  const parsedEditQty =
+    typeof editQuantity === "number"
+      ? editQuantity
+      : parseInt(String(editQuantity), 10) || 0;
   const hasEditChanges = Boolean(
-    initialEditValues && (
-      parsedEditQty !== initialEditValues.quantity ||
+    initialEditValues &&
+    (parsedEditQty !== initialEditValues.quantity ||
       editDeliveryDate !== initialEditValues.deliveryDate ||
       editMessage !== initialEditValues.message ||
-      (isEditOrg ? (
-        editOrgName !== initialEditValues.orgName ||
-        editOrgProgram !== initialEditValues.orgProgram ||
-        editOfficerName !== initialEditValues.officerName ||
-        editOfficerDesignation !== initialEditValues.officerDesignation ||
-        editOfficerPhone !== initialEditValues.officerPhone ||
-        editOrgEmail !== initialEditValues.orgEmail
-      ) : (
-        editDonorName !== initialEditValues.donorName ||
-        editDonorPhone !== initialEditValues.donorPhone ||
-        editDonorEmail !== initialEditValues.donorEmail ||
-        editDonorAddress !== initialEditValues.donorAddress
-      ))
-    )
+      (isEditOrg
+        ? editOrgName !== initialEditValues.orgName ||
+          editOrgProgram !== initialEditValues.orgProgram ||
+          editOfficerName !== initialEditValues.officerName ||
+          editOfficerDesignation !== initialEditValues.officerDesignation ||
+          editOfficerPhone !== initialEditValues.officerPhone ||
+          editOrgEmail !== initialEditValues.orgEmail
+        : editDonorName !== initialEditValues.donorName ||
+          editDonorPhone !== initialEditValues.donorPhone ||
+          editDonorEmail !== initialEditValues.donorEmail ||
+          editDonorAddress !== initialEditValues.donorAddress)),
   );
 
   const handlePromptDiscard = () => {
@@ -270,20 +338,36 @@ export default function DonorDashboard() {
   const handlePromptSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasEditChanges || isSavingEdit) return;
-    const numQty = typeof editQuantity === "number" ? editQuantity : parseInt(String(editQuantity), 10);
+    const numQty =
+      typeof editQuantity === "number"
+        ? editQuantity
+        : parseInt(String(editQuantity), 10);
     if (isNaN(numQty) || numQty < 1) {
       setError("Please enter a valid quantity of 1 or more.");
       return;
     }
-    const validatedQty = realTimeRequired ? Math.min(realTimeRequired, numQty) : numQty;
+    const validatedQty = realTimeRequired
+      ? Math.min(realTimeRequired, numQty)
+      : numQty;
     setEditQuantity(validatedQty);
     if (isEditOrg) {
-      if (!editOrgName.trim() || !editOfficerName.trim() || !editOfficerDesignation.trim() || !editOfficerPhone.trim() || !editOrgEmail.trim()) {
+      if (
+        !editOrgName.trim() ||
+        !editOfficerName.trim() ||
+        !editOfficerDesignation.trim() ||
+        !editOfficerPhone.trim() ||
+        !editOrgEmail.trim()
+      ) {
         setError("Please fill in all required organization contact fields.");
         return;
       }
     } else {
-      if (!editDonorName.trim() || !editDonorPhone.trim() || !editDonorEmail.trim() || !editDonorAddress.trim()) {
+      if (
+        !editDonorName.trim() ||
+        !editDonorPhone.trim() ||
+        !editDonorEmail.trim() ||
+        !editDonorAddress.trim()
+      ) {
         setError("Please fill in all required donor contact fields.");
         return;
       }
@@ -297,7 +381,10 @@ export default function DonorDashboard() {
     setError("");
 
     try {
-      const numQty = typeof editQuantity === "number" ? editQuantity : parseInt(String(editQuantity), 10) || 1;
+      const numQty =
+        typeof editQuantity === "number"
+          ? editQuantity
+          : parseInt(String(editQuantity), 10) || 1;
       const updateData: Partial<Donation> = {
         quantity: numQty,
         estimated_delivery_date: editDeliveryDate || null,
@@ -328,9 +415,7 @@ export default function DonorDashboard() {
       await fetchData();
       setTimeout(() => setMessage(""), 3500);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update pledge.",
-      );
+      setError(err instanceof Error ? err.message : "Failed to update pledge.");
       setEditConfirmAction(null);
     } finally {
       setIsSavingEdit(false);
@@ -356,9 +441,7 @@ export default function DonorDashboard() {
     (d) =>
       d.status === "FULFILLED" ||
       (d.status === "CANCELLED" &&
-        !(d.cancellation_reason || "")
-          .toLowerCase()
-          .includes("surplus")),
+        !(d.cancellation_reason || "").toLowerCase().includes("surplus")),
   );
 
   const deliverySuccessRate =
@@ -387,7 +470,11 @@ export default function DonorDashboard() {
   );
 
   const pieChartData = [
-    { name: "Pending Verification", value: statusCounts.PENDING, color: "#F59E0B" },
+    {
+      name: "Pending Verification",
+      value: statusCounts.PENDING,
+      color: "#F59E0B",
+    },
     { name: "Confirmed", value: statusCounts.CONFIRMED, color: "#10B981" },
     { name: "Delivered", value: statusCounts.FULFILLED, color: "#8B5CF6" },
     { name: "Cancelled", value: statusCounts.CANCELLED, color: "#EF4444" },
@@ -441,10 +528,16 @@ export default function DonorDashboard() {
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const need = needsMap.get(d.need_item);
-        const needName = (d.need_item_detail?.name || `Need ${d.need_item}`).toLowerCase();
-        const orgName = (need?.section_detail?.organization_name || "").toLowerCase();
+        const needName = (
+          d.need_item_detail?.name || `Need ${d.need_item}`
+        ).toLowerCase();
+        const orgName = (
+          need?.section_detail?.organization_name || ""
+        ).toLowerCase();
         const sectionName = (need?.section_detail?.name || "").toLowerCase();
-        const dateStr = new Date(d.created_at).toLocaleDateString().toLowerCase();
+        const dateStr = new Date(d.created_at)
+          .toLocaleDateString()
+          .toLowerCase();
         const donorOrgName = (d.organization_name || "").toLowerCase();
 
         return (
@@ -477,9 +570,7 @@ export default function DonorDashboard() {
       await fetchData();
       setTimeout(() => setMessage(""), 3500);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to cancel pledge.",
-      );
+      setError(err instanceof Error ? err.message : "Failed to cancel pledge.");
     } finally {
       setIsCancelling(false);
     }
@@ -490,7 +581,10 @@ export default function DonorDashboard() {
   return (
     <div className="min-h-screen bg-slate-100 pb-20 font-sans">
       {/* Premium Gradient Header Card */}
-      <div id="donor-header" className="bg-gradient-to-r from-teal-700 via-teal-800 to-emerald-900 text-white pt-28 pb-32">
+      <div
+        id="donor-header"
+        className="bg-gradient-to-r from-teal-700 via-teal-800 to-emerald-900 text-white pt-28 pb-32"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
@@ -576,7 +670,9 @@ export default function DonorDashboard() {
                 <div className="relative cursor-help text-slate-400 hover:text-slate-600 group/info flex items-center">
                   <Info size={13} />
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900 text-white text-[11px] font-medium leading-relaxed p-3 rounded-xl shadow-xl opacity-0 group-hover/info:opacity-100 pointer-events-none transition-opacity z-20">
-                    Calculated as Delivered / Relevant Completed Pledges. System auto-cancellations (due to surplus needs met elsewhere) are excluded so your success rating is not penalized.
+                    Calculated as Delivered / Relevant Completed Pledges. System
+                    auto-cancellations (due to surplus needs met elsewhere) are
+                    excluded so your success rating is not penalized.
                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                   </div>
                 </div>
@@ -629,26 +725,38 @@ export default function DonorDashboard() {
 
                 {pieChartData.length > 0 ? (
                   <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between flex-1 mt-4 gap-4 sm:gap-6">
-                    <div className="w-[160px] sm:w-[180px] h-[160px] sm:h-[180px] shrink-0" style={{ minWidth: 160, minHeight: 160 }}>
+                    <div
+                      className="w-[160px] sm:w-[180px] h-[160px] sm:h-[180px] shrink-0"
+                      style={{ minWidth: 160, minHeight: 160 }}
+                    >
                       {isMounted && (
-                      <ResponsiveContainer width="100%" height="100%" minWidth={160} minHeight={160} debounce={50}>
-                        <PieChart>
-                          <Pie
-                            data={pieChartData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={50}
-                            outerRadius={70}
-                            paddingAngle={3}
-                            dataKey="value"
-                          >
-                            {pieChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
+                        <ResponsiveContainer
+                          width="100%"
+                          height="100%"
+                          minWidth={160}
+                          minHeight={160}
+                          debounce={50}
+                        >
+                          <PieChart>
+                            <Pie
+                              data={pieChartData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={70}
+                              paddingAngle={3}
+                              dataKey="value"
+                            >
+                              {pieChartData.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={entry.color}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
                       )}
                     </div>
                     {/* Legend */}
@@ -664,7 +772,8 @@ export default function DonorDashboard() {
                               {entry.name}
                             </p>
                             <p className="text-[11px] text-slate-400 font-bold mt-0.5">
-                              {entry.value} {entry.value === 1 ? "pledge" : "pledges"}
+                              {entry.value}{" "}
+                              {entry.value === 1 ? "pledge" : "pledges"}
                             </p>
                           </div>
                         </div>
@@ -673,8 +782,12 @@ export default function DonorDashboard() {
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 mt-4">
-                    <p className="text-sm font-semibold text-slate-700">No Chart Data Available</p>
-                    <p className="text-xs text-slate-400 mt-1">Status breakdown will display once pledges are recorded.</p>
+                    <p className="text-sm font-semibold text-slate-700">
+                      No Chart Data Available
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Status breakdown will display once pledges are recorded.
+                    </p>
                   </div>
                 )}
               </div>
@@ -703,19 +816,46 @@ export default function DonorDashboard() {
                 </div>
 
                 {barChartData.length > 0 ? (
-                  <div className="flex-1 mt-6 h-[220px] overflow-x-auto overflow-y-hidden pb-1" style={{ minHeight: 220 }}>
+                  <div
+                    className="flex-1 mt-6 h-[220px] overflow-x-auto overflow-y-hidden pb-1"
+                    style={{ minHeight: 220 }}
+                  >
                     {isMounted && (
                       <div
                         style={{
-                          width: barChartData.length > 5 ? `${Math.max(barChartData.length * 85, 480)}px` : "100%",
+                          width:
+                            barChartData.length > 5
+                              ? `${Math.max(barChartData.length * 85, 480)}px`
+                              : "100%",
                           height: "100%",
-                          minWidth: barChartData.length > 5 ? `${Math.max(barChartData.length * 85, 480)}px` : "100%",
+                          minWidth:
+                            barChartData.length > 5
+                              ? `${Math.max(barChartData.length * 85, 480)}px`
+                              : "100%",
                           minHeight: 200,
                         }}
                       >
-                        <ResponsiveContainer width="100%" height="100%" minWidth={240} minHeight={200} debounce={50}>
-                          <BarChart data={barChartData} margin={{ top: 5, right: 15, left: -20, bottom: 25 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                        <ResponsiveContainer
+                          width="100%"
+                          height="100%"
+                          minWidth={240}
+                          minHeight={200}
+                          debounce={50}
+                        >
+                          <BarChart
+                            data={barChartData}
+                            margin={{
+                              top: 5,
+                              right: 15,
+                              left: -20,
+                              bottom: 25,
+                            }}
+                          >
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              vertical={false}
+                              stroke="#F1F5F9"
+                            />
                             <XAxis
                               dataKey="name"
                               stroke="#94A3B8"
@@ -726,12 +866,22 @@ export default function DonorDashboard() {
                               height={55}
                               interval={0}
                               tickFormatter={(val: string) =>
-                                val && val.length > 16 ? `${val.slice(0, 14)}…` : val
+                                val && val.length > 16
+                                  ? `${val.slice(0, 14)}…`
+                                  : val
                               }
                             />
-                            <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} />
+                            <YAxis
+                              stroke="#94A3B8"
+                              fontSize={11}
+                              tickLine={false}
+                              axisLine={false}
+                            />
                             <Tooltip
-                              formatter={(value) => [`${value} units`, "Total Contributed"]}
+                              formatter={(value) => [
+                                `${value} units`,
+                                "Total Contributed",
+                              ]}
                               labelFormatter={(label) => label}
                             />
                             <Bar
@@ -747,8 +897,13 @@ export default function DonorDashboard() {
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-slate-50/70 rounded-xl border border-dashed border-slate-200 mt-4">
-                    <p className="text-sm font-semibold text-slate-700">No Recipient Data Available</p>
-                    <p className="text-xs text-slate-400 mt-1">Recipient breakdown will display once pledges are confirmed.</p>
+                    <p className="text-sm font-semibold text-slate-700">
+                      No Recipient Data Available
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Recipient breakdown will display once pledges are
+                      confirmed.
+                    </p>
                   </div>
                 )}
               </div>
@@ -758,9 +913,13 @@ export default function DonorDashboard() {
               <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
                 <BarChart3 size={24} />
               </div>
-              <h3 className="text-base font-bold text-slate-800 mb-1">No Donation Analytics Yet</h3>
+              <h3 className="text-base font-bold text-slate-800 mb-1">
+                No Donation Analytics Yet
+              </h3>
               <p className="text-xs sm:text-sm text-slate-500 max-w-md">
-                Your pledge distribution, recipient breakdown, and fulfillment analytics will appear here once you make your first contribution.
+                Your pledge distribution, recipient breakdown, and fulfillment
+                analytics will appear here once you make your first
+                contribution.
               </p>
             </div>
           )}
@@ -777,7 +936,11 @@ export default function DonorDashboard() {
               {activePledges.map((pledge) => {
                 const need = needsMap.get(pledge.need_item);
                 const isCancelled = pledge.status === "CANCELLED";
-                const cancelledAtStep = isCancelled ? (pledge.confirmed_by_name ? 2 : 1) : 0;
+                const cancelledAtStep = isCancelled
+                  ? pledge.confirmed_by_name
+                    ? 2
+                    : 1
+                  : 0;
                 const step = isCancelled
                   ? 0
                   : pledge.status === "PENDING"
@@ -807,7 +970,8 @@ export default function DonorDashboard() {
                             {pledge.need_item_detail?.name}
                           </h4>
                           <p className="text-xs text-slate-500 font-medium mt-0.5">
-                            {need?.section_detail?.organization_name} • {need?.section_detail?.name}
+                            {need?.section_detail?.organization_name} •{" "}
+                            {need?.section_detail?.name}
                           </p>
                         </div>
                         <div
@@ -829,7 +993,7 @@ export default function DonorDashboard() {
                             </button>
                           )}
                           {pledge.status === "FULFILLED" ||
-                            pledge.status === "CANCELLED" ? (
+                          pledge.status === "CANCELLED" ? (
                             <button
                               type="button"
                               onClick={(e) => {
@@ -860,11 +1024,17 @@ export default function DonorDashboard() {
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-slate-400 mt-3 font-semibold">
-                        <span>Quantity: {pledge.quantity} {pledge.need_item_detail?.unit || "units"}</span>
+                        <span>
+                          Quantity: {pledge.quantity}{" "}
+                          {pledge.need_item_detail?.unit || "units"}
+                        </span>
                         {pledge.estimated_delivery_date && (
                           <span className="flex items-center gap-1">
                             <Calendar size={12} />
-                            Est: {new Date(pledge.estimated_delivery_date).toLocaleDateString()}
+                            Est:{" "}
+                            {new Date(
+                              pledge.estimated_delivery_date,
+                            ).toLocaleDateString()}
                           </span>
                         )}
                       </div>
@@ -880,35 +1050,46 @@ export default function DonorDashboard() {
                           style={{
                             width: "50%",
                             background: isCancelled
-                              ? (cancelledAtStep === 2 ? "#EF4444" : "#F1F5F9")
-                              : (step >= 2 ? "#10B981" : "#F1F5F9"),
+                              ? cancelledAtStep === 2
+                                ? "#EF4444"
+                                : "#F1F5F9"
+                              : step >= 2
+                                ? "#10B981"
+                                : "#F1F5F9",
                           }}
                         />
                         <div
                           className="absolute left-1/2 h-1 z-0 rounded-full transition-all"
                           style={{
                             width: "50%",
-                            background: !isCancelled && step === 3 ? "#8B5CF6" : "#F1F5F9",
+                            background:
+                              !isCancelled && step === 3
+                                ? "#8B5CF6"
+                                : "#F1F5F9",
                           }}
                         />
 
                         {/* Step 1: Pledged */}
                         <div className="flex flex-col items-center relative z-10">
                           <div
-                            className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition shadow-sm relative z-10 ring-4 ring-white ${isCancelled
-                              ? (cancelledAtStep === 1
-                                ? "bg-red-500 text-white shadow-md"
-                                : "bg-amber-500 text-white shadow-md")
-                              : "bg-amber-500 text-white shadow-md"
-                              }`}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition shadow-sm relative z-10 ring-4 ring-white ${
+                              isCancelled
+                                ? cancelledAtStep === 1
+                                  ? "bg-red-500 text-white shadow-md"
+                                  : "bg-amber-500 text-white shadow-md"
+                                : "bg-amber-500 text-white shadow-md"
+                            }`}
                           >
                             {isCancelled && cancelledAtStep === 1 ? "✕" : "1"}
                           </div>
                           <span
-                            className={`text-[10px] font-bold mt-1.5 ${isCancelled
-                              ? (cancelledAtStep === 1 ? "text-red-500" : "text-amber-500")
-                              : "text-amber-500"
-                              }`}
+                            className={`text-[10px] font-bold mt-1.5 ${
+                              isCancelled
+                                ? cancelledAtStep === 1
+                                  ? "text-red-500"
+                                  : "text-amber-500"
+                                : "text-amber-500"
+                            }`}
                           >
                             Pledged
                           </span>
@@ -917,22 +1098,28 @@ export default function DonorDashboard() {
                         {/* Step 2: Confirmed by Org */}
                         <div className="flex flex-col items-center relative z-10">
                           <div
-                            className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition shadow-sm relative z-10 ring-4 ring-white ${isCancelled
-                              ? (cancelledAtStep === 2
-                                ? "bg-red-500 text-white shadow-md"
-                                : "bg-slate-200 text-slate-500")
-                              : (step >= 2
-                                ? "bg-emerald-500 text-white shadow-md"
-                                : "bg-slate-200 text-slate-500")
-                              }`}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition shadow-sm relative z-10 ring-4 ring-white ${
+                              isCancelled
+                                ? cancelledAtStep === 2
+                                  ? "bg-red-500 text-white shadow-md"
+                                  : "bg-slate-200 text-slate-500"
+                                : step >= 2
+                                  ? "bg-emerald-500 text-white shadow-md"
+                                  : "bg-slate-200 text-slate-500"
+                            }`}
                           >
                             {isCancelled && cancelledAtStep === 2 ? "✕" : "2"}
                           </div>
                           <span
-                            className={`text-[10px] font-bold mt-1.5 ${isCancelled
-                              ? (cancelledAtStep === 2 ? "text-red-500" : "text-slate-400")
-                              : (step >= 2 ? "text-emerald-500" : "text-slate-400")
-                              }`}
+                            className={`text-[10px] font-bold mt-1.5 ${
+                              isCancelled
+                                ? cancelledAtStep === 2
+                                  ? "text-red-500"
+                                  : "text-slate-400"
+                                : step >= 2
+                                  ? "text-emerald-500"
+                                  : "text-slate-400"
+                            }`}
                           >
                             Confirmed
                           </span>
@@ -941,43 +1128,57 @@ export default function DonorDashboard() {
                         {/* Step 3: Delivered */}
                         <div className="flex flex-col items-center relative z-10">
                           <div
-                            className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition shadow-sm relative z-10 ring-4 ring-white ${!isCancelled && step === 3
-                              ? "bg-purple-600 text-white shadow-md"
-                              : "bg-slate-200 text-slate-500"
-                              }`}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition shadow-sm relative z-10 ring-4 ring-white ${
+                              !isCancelled && step === 3
+                                ? "bg-purple-600 text-white shadow-md"
+                                : "bg-slate-200 text-slate-500"
+                            }`}
                           >
                             3
                           </div>
                           <span
-                            className={`text-[10px] font-bold mt-1.5 ${!isCancelled && step === 3 ? "text-purple-600" : "text-slate-400"
-                              }`}
+                            className={`text-[10px] font-bold mt-1.5 ${
+                              !isCancelled && step === 3
+                                ? "text-purple-600"
+                                : "text-slate-400"
+                            }`}
                           >
                             Delivered
                           </span>
                         </div>
                       </div>
                       <div
-                        className={`flex items-start gap-2 mt-3.5 py-2 px-3 rounded-xl border text-[11px] font-medium ${pledge.status === "CANCELLED"
-                          ? "bg-rose-50 border-rose-100 text-rose-800"
-                          : "bg-slate-50 border-slate-100 text-slate-500"
-                          }`}
+                        className={`flex items-start gap-2 mt-3.5 py-2 px-3 rounded-xl border text-[11px] font-medium ${
+                          pledge.status === "CANCELLED"
+                            ? "bg-rose-50 border-rose-100 text-rose-800"
+                            : "bg-slate-50 border-slate-100 text-slate-500"
+                        }`}
                       >
                         {step === 1 && (
                           <>
                             <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                            <span>Pledge registered. Awaiting verification from hospital.</span>
+                            <span>
+                              Pledge registered. Awaiting verification from
+                              hospital.
+                            </span>
                           </>
                         )}
                         {step === 2 && (
                           <>
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5 animate-pulse" />
-                            <span>Verified! Hospital is expecting delivery. Please deliver items.</span>
+                            <span>
+                              Verified! Hospital is expecting delivery. Please
+                              deliver items.
+                            </span>
                           </>
                         )}
                         {step === 3 && (
                           <>
                             <Gift className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
-                            <span>Fulfilled! Hospital has received your donation. Thank you!</span>
+                            <span>
+                              Fulfilled! Hospital has received your donation.
+                              Thank you!
+                            </span>
                           </>
                         )}
                         {pledge.status === "CANCELLED" && (
@@ -997,7 +1198,8 @@ export default function DonorDashboard() {
                               </span>
                               {pledge.cancellation_reason && (
                                 <p className="text-[10px] text-red-600 mt-1 font-semibold leading-relaxed">
-                                  Reason: &quot;{pledge.cancellation_reason}&quot;
+                                  Reason: &quot;{pledge.cancellation_reason}
+                                  &quot;
                                 </p>
                               )}
                             </div>
@@ -1024,9 +1226,13 @@ export default function DonorDashboard() {
               <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-3">
                 <Clock size={24} />
               </div>
-              <h3 className="text-base font-bold text-slate-800 mb-1">No Active Deliveries</h3>
+              <h3 className="text-base font-bold text-slate-800 mb-1">
+                No Active Deliveries
+              </h3>
               <p className="text-xs sm:text-sm text-slate-500 max-w-md">
-                You have no pending or in-transit delivery pledges at the moment. All previous pledges are completed or you can start a new contribution.
+                You have no pending or in-transit delivery pledges at the
+                moment. All previous pledges are completed or you can start a
+                new contribution.
               </p>
               <Link
                 href="/needs"
@@ -1163,39 +1369,57 @@ export default function DonorDashboard() {
                     const need = needsMap.get(donation.need_item);
                     const isOrg =
                       donation.donor_type === "organization" ||
-                      Boolean(donation.organization_name && donation.organization_name.trim());
+                      Boolean(
+                        donation.organization_name &&
+                        donation.organization_name.trim(),
+                      );
                     return (
-                      <tr key={donation.id} className="hover:bg-slate-50/50 transition">
+                      <tr
+                        key={donation.id}
+                        className="hover:bg-slate-50/50 transition"
+                      >
                         <td className="px-6 py-4">
                           <span
-                            className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${donation.status === "FULFILLED"
-                              ? "bg-purple-100 text-purple-800"
-                              : donation.status === "CONFIRMED"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : donation.status === "CANCELLED"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-amber-100 text-amber-800"
-                              }`}
+                            className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                              donation.status === "FULFILLED"
+                                ? "bg-purple-100 text-purple-800"
+                                : donation.status === "CONFIRMED"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : donation.status === "CANCELLED"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-amber-100 text-amber-800"
+                            }`}
                           >
-                            {donation.status === "FULFILLED" ? "Delivered" : donation.status}
+                            {donation.status === "FULFILLED"
+                              ? "Delivered"
+                              : donation.status}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {isOrg ? (
                             <div className="flex flex-col">
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/70 w-fit">
-                                <Building2 size={12} className="shrink-0 text-indigo-600" />
+                                <Building2
+                                  size={12}
+                                  className="shrink-0 text-indigo-600"
+                                />
                                 Organization
                               </span>
                               {donation.organization_name && (
-                                <span className="text-[11px] text-slate-500 font-medium mt-1 truncate max-w-[140px]" title={donation.organization_name}>
+                                <span
+                                  className="text-[11px] text-slate-500 font-medium mt-1 truncate max-w-[140px]"
+                                  title={donation.organization_name}
+                                >
                                   {donation.organization_name}
                                 </span>
                               )}
                             </div>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/70 w-fit">
-                              <UserIcon size={12} className="shrink-0 text-blue-600" />
+                              <UserIcon
+                                size={12}
+                                className="shrink-0 text-blue-600"
+                              />
                               Private
                             </span>
                           )}
@@ -1204,13 +1428,15 @@ export default function DonorDashboard() {
                           {donation.need_item_detail?.name}
                         </td>
                         <td className="px-6 py-4 text-sm font-medium text-slate-700">
-                          {need?.section_detail?.organization_name || "Verified Organization"}
+                          {need?.section_detail?.organization_name ||
+                            "Verified Organization"}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-500 font-semibold">
                           {need?.section_detail?.name || "-"}
                         </td>
                         <td className="px-6 py-4 text-sm font-bold text-slate-900">
-                          {donation.quantity} {donation.need_item_detail?.unit || "units"}
+                          {donation.quantity}{" "}
+                          {donation.need_item_detail?.unit || "units"}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-500">
                           {new Date(donation.created_at).toLocaleDateString()}
@@ -1235,7 +1461,8 @@ export default function DonorDashboard() {
                                 <Pencil size={15} />
                               </button>
                             )}
-                            {(donation.status === "PENDING" || donation.status === "CONFIRMED") && (
+                            {(donation.status === "PENDING" ||
+                              donation.status === "CONFIRMED") && (
                               <button
                                 onClick={() => setCancelTargetId(donation.id)}
                                 className="p-1.5 text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200/70 rounded-lg transition touch-manipulation shadow-xs active:scale-95"
@@ -1256,7 +1483,9 @@ export default function DonorDashboard() {
           ) : (
             <div className="text-center py-12 bg-slate-50 rounded-2xl">
               <Gift className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-slate-700">No contributions found</p>
+              <p className="text-sm font-semibold text-slate-700">
+                No contributions found
+              </p>
               <p className="text-xs text-slate-400 mt-1">
                 Try adjusting your search criteria or register a new pledge.
               </p>
@@ -1288,13 +1517,18 @@ export default function DonorDashboard() {
                 </div>
 
                 {/* Form wrapping scrollable middle content & sticky footer */}
-                <form onSubmit={handlePromptSave} className="flex flex-col flex-1 overflow-hidden min-h-0">
+                <form
+                  onSubmit={handlePromptSave}
+                  className="flex flex-col flex-1 overflow-hidden min-h-0"
+                >
                   {/* Scrollable Middle Content Row */}
                   <div className="overflow-y-auto px-5 sm:px-8 py-4 sm:py-5 space-y-4 flex-1 overscroll-contain">
                     <div className="bg-slate-50 p-4 rounded-2xl space-y-2 border border-slate-100">
                       <div className="flex justify-between items-start gap-2">
                         <div>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Item Details</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                            Item Details
+                          </p>
                           <p className="font-bold text-slate-800 text-sm mt-0.5">
                             {editingDonation.need_item_detail?.name}
                           </p>
@@ -1304,13 +1538,22 @@ export default function DonorDashboard() {
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 font-medium">
-                        Recipient: {needsMap.get(editingDonation.need_item)?.section_detail?.organization_name || "Hospital"} • {needsMap.get(editingDonation.need_item)?.section_detail?.name || "OPD"}
+                        Recipient:{" "}
+                        {needsMap.get(editingDonation.need_item)?.section_detail
+                          ?.organization_name || "Hospital"}{" "}
+                        •{" "}
+                        {needsMap.get(editingDonation.need_item)?.section_detail
+                          ?.name || "OPD"}
                       </p>
                     </div>
 
                     <div>
-                      <label htmlFor="edit-pledge-quantity" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Quantity ({currentUnit}) <span className="text-red-500">*</span>
+                      <label
+                        htmlFor="edit-pledge-quantity"
+                        className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2"
+                      >
+                        Quantity ({currentUnit}){" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <div className="flex items-center gap-3 sm:gap-4">
                         <div className="relative flex-1">
@@ -1330,7 +1573,10 @@ export default function DonorDashboard() {
                               }
                               const parsed = parseInt(val, 10);
                               if (!isNaN(parsed)) {
-                                if (realTimeRequired && parsed > realTimeRequired) {
+                                if (
+                                  realTimeRequired &&
+                                  parsed > realTimeRequired
+                                ) {
                                   setEditQuantity(realTimeRequired);
                                 } else {
                                   setEditQuantity(parsed);
@@ -1338,10 +1584,16 @@ export default function DonorDashboard() {
                               }
                             }}
                             onBlur={() => {
-                              const num = typeof editQuantity === "number" ? editQuantity : parseInt(String(editQuantity), 10);
+                              const num =
+                                typeof editQuantity === "number"
+                                  ? editQuantity
+                                  : parseInt(String(editQuantity), 10);
                               if (isNaN(num) || num < 1) {
                                 setEditQuantity(1);
-                              } else if (realTimeRequired && num > realTimeRequired) {
+                              } else if (
+                                realTimeRequired &&
+                                num > realTimeRequired
+                              ) {
                                 setEditQuantity(realTimeRequired);
                               } else {
                                 setEditQuantity(num);
@@ -1355,8 +1607,15 @@ export default function DonorDashboard() {
                             <button
                               type="button"
                               onClick={() => {
-                                const curr = typeof editQuantity === "number" ? editQuantity : parseInt(String(editQuantity), 10) || 0;
-                                setEditQuantity(realTimeRequired ? Math.min(realTimeRequired, curr + 1) : curr + 1);
+                                const curr =
+                                  typeof editQuantity === "number"
+                                    ? editQuantity
+                                    : parseInt(String(editQuantity), 10) || 0;
+                                setEditQuantity(
+                                  realTimeRequired
+                                    ? Math.min(realTimeRequired, curr + 1)
+                                    : curr + 1,
+                                );
                               }}
                               className="h-4 w-5 flex items-center justify-center text-gray-400 hover:text-blue-600 active:text-blue-700 active:scale-90 transition cursor-pointer"
                               aria-label="Increase quantity"
@@ -1366,7 +1625,10 @@ export default function DonorDashboard() {
                             <button
                               type="button"
                               onClick={() => {
-                                const curr = typeof editQuantity === "number" ? editQuantity : parseInt(String(editQuantity), 10) || 1;
+                                const curr =
+                                  typeof editQuantity === "number"
+                                    ? editQuantity
+                                    : parseInt(String(editQuantity), 10) || 1;
                                 setEditQuantity(Math.max(1, curr - 1));
                               }}
                               className="h-4 w-5 flex items-center justify-center text-gray-400 hover:text-blue-600 active:text-blue-700 active:scale-90 transition cursor-pointer"
@@ -1383,7 +1645,10 @@ export default function DonorDashboard() {
                     </div>
 
                     <div>
-                      <label htmlFor="edit-pledge-delivery-date" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label
+                        htmlFor="edit-pledge-delivery-date"
+                        className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2"
+                      >
                         Estimated Delivery Date
                       </label>
                       <input
@@ -1399,10 +1664,15 @@ export default function DonorDashboard() {
 
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <label htmlFor="edit-pledge-message" className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        <label
+                          htmlFor="edit-pledge-message"
+                          className="block text-xs font-bold text-slate-500 uppercase tracking-wider"
+                        >
                           Message / Notes
                         </label>
-                        <span className={`text-[11px] font-medium ${editMessage.length >= 500 ? "text-red-500" : editMessage.length >= 450 ? "text-amber-500" : "text-slate-400"}`}>
+                        <span
+                          className={`text-[11px] font-medium ${editMessage.length >= 500 ? "text-red-500" : editMessage.length >= 450 ? "text-amber-500" : "text-slate-400"}`}
+                        >
                           {editMessage.length}/500
                         </span>
                       </div>
@@ -1432,8 +1702,12 @@ export default function DonorDashboard() {
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                              <label htmlFor="edit-org-name" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Organization Name <span className="text-red-500">*</span>
+                              <label
+                                htmlFor="edit-org-name"
+                                className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                              >
+                                Organization Name{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <input
                                 id="edit-org-name"
@@ -1447,7 +1721,10 @@ export default function DonorDashboard() {
                               />
                             </div>
                             <div>
-                              <label htmlFor="edit-org-program" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label
+                                htmlFor="edit-org-program"
+                                className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                              >
                                 Program Name
                               </label>
                               <input
@@ -1456,13 +1733,19 @@ export default function DonorDashboard() {
                                 autoComplete="off"
                                 type="text"
                                 value={editOrgProgram}
-                                onChange={(e) => setEditOrgProgram(e.target.value)}
+                                onChange={(e) =>
+                                  setEditOrgProgram(e.target.value)
+                                }
                                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white text-gray-900 font-medium"
                               />
                             </div>
                             <div>
-                              <label htmlFor="edit-officer-phone" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Organization's Contact Number <span className="text-red-500">*</span>
+                              <label
+                                htmlFor="edit-officer-phone"
+                                className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                              >
+                                Organization&apos;s Contact Number{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <input
                                 id="edit-officer-phone"
@@ -1470,14 +1753,20 @@ export default function DonorDashboard() {
                                 autoComplete="tel"
                                 type="text"
                                 value={editOfficerPhone}
-                                onChange={(e) => setEditOfficerPhone(e.target.value)}
+                                onChange={(e) =>
+                                  setEditOfficerPhone(e.target.value)
+                                }
                                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white text-gray-900 font-medium"
                                 required
                               />
                             </div>
                             <div>
-                              <label htmlFor="edit-officer-name" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Contact Person's Full Name <span className="text-red-500">*</span>
+                              <label
+                                htmlFor="edit-officer-name"
+                                className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                              >
+                                Contact Person&apos;s Full Name{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <input
                                 id="edit-officer-name"
@@ -1485,14 +1774,20 @@ export default function DonorDashboard() {
                                 autoComplete="name"
                                 type="text"
                                 value={editOfficerName}
-                                onChange={(e) => setEditOfficerName(e.target.value)}
+                                onChange={(e) =>
+                                  setEditOfficerName(e.target.value)
+                                }
                                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white text-gray-900 font-medium"
                                 required
                               />
                             </div>
                             <div>
-                              <label htmlFor="edit-officer-designation" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Contact Person's Designation <span className="text-red-500">*</span>
+                              <label
+                                htmlFor="edit-officer-designation"
+                                className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                              >
+                                Contact Person&apos;s Designation{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <input
                                 id="edit-officer-designation"
@@ -1500,14 +1795,20 @@ export default function DonorDashboard() {
                                 autoComplete="organization-title"
                                 type="text"
                                 value={editOfficerDesignation}
-                                onChange={(e) => setEditOfficerDesignation(e.target.value)}
+                                onChange={(e) =>
+                                  setEditOfficerDesignation(e.target.value)
+                                }
                                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white text-gray-900 font-medium"
                                 required
                               />
                             </div>
                             <div>
-                              <label htmlFor="edit-org-email" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Organization's Email Address <span className="text-red-500">*</span>
+                              <label
+                                htmlFor="edit-org-email"
+                                className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                              >
+                                Organization&apos;s Email Address{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <input
                                 id="edit-org-email"
@@ -1515,7 +1816,9 @@ export default function DonorDashboard() {
                                 autoComplete="email"
                                 type="email"
                                 value={editOrgEmail}
-                                onChange={(e) => setEditOrgEmail(e.target.value)}
+                                onChange={(e) =>
+                                  setEditOrgEmail(e.target.value)
+                                }
                                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white text-gray-900 font-medium"
                                 required
                               />
@@ -1534,8 +1837,12 @@ export default function DonorDashboard() {
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                              <label htmlFor="edit-donor-name" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Full Name <span className="text-red-500">*</span>
+                              <label
+                                htmlFor="edit-donor-name"
+                                className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                              >
+                                Full Name{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <input
                                 id="edit-donor-name"
@@ -1543,14 +1850,20 @@ export default function DonorDashboard() {
                                 autoComplete="name"
                                 type="text"
                                 value={editDonorName}
-                                onChange={(e) => setEditDonorName(e.target.value)}
+                                onChange={(e) =>
+                                  setEditDonorName(e.target.value)
+                                }
                                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white text-gray-900 font-medium"
                                 required
                               />
                             </div>
                             <div>
-                              <label htmlFor="edit-donor-phone" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Contact Number <span className="text-red-500">*</span>
+                              <label
+                                htmlFor="edit-donor-phone"
+                                className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                              >
+                                Contact Number{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <input
                                 id="edit-donor-phone"
@@ -1558,14 +1871,20 @@ export default function DonorDashboard() {
                                 autoComplete="tel"
                                 type="text"
                                 value={editDonorPhone}
-                                onChange={(e) => setEditDonorPhone(e.target.value)}
+                                onChange={(e) =>
+                                  setEditDonorPhone(e.target.value)
+                                }
                                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white text-gray-900 font-medium"
                                 required
                               />
                             </div>
                             <div className="sm:col-span-2">
-                              <label htmlFor="edit-donor-email" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                                Email Address <span className="text-red-500">*</span>
+                              <label
+                                htmlFor="edit-donor-email"
+                                className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                              >
+                                Email Address{" "}
+                                <span className="text-red-500">*</span>
                               </label>
                               <input
                                 id="edit-donor-email"
@@ -1573,13 +1892,18 @@ export default function DonorDashboard() {
                                 autoComplete="email"
                                 type="email"
                                 value={editDonorEmail}
-                                onChange={(e) => setEditDonorEmail(e.target.value)}
+                                onChange={(e) =>
+                                  setEditDonorEmail(e.target.value)
+                                }
                                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white text-gray-900 font-medium"
                                 required
                               />
                             </div>
                             <div className="sm:col-span-2">
-                              <label htmlFor="edit-donor-address" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                              <label
+                                htmlFor="edit-donor-address"
+                                className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                              >
                                 Address <span className="text-red-500">*</span>
                               </label>
                               <textarea
@@ -1588,7 +1912,9 @@ export default function DonorDashboard() {
                                 autoComplete="street-address"
                                 rows={2}
                                 value={editDonorAddress}
-                                onChange={(e) => setEditDonorAddress(e.target.value)}
+                                onChange={(e) =>
+                                  setEditDonorAddress(e.target.value)
+                                }
                                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white text-gray-900 font-medium resize-y"
                                 required
                               />
@@ -1645,7 +1971,8 @@ export default function DonorDashboard() {
                     Are you sure?
                   </h4>
                   <p className="text-sm text-slate-500 max-w-sm leading-relaxed mb-4">
-                    All unsaved edits made to this pledge will be discarded and reverted back to original values.
+                    All unsaved edits made to this pledge will be discarded and
+                    reverted back to original values.
                   </p>
                 </div>
 
@@ -1685,119 +2012,165 @@ export default function DonorDashboard() {
                     Save Changes?
                   </h4>
                   <p className="text-sm text-slate-500 max-w-sm leading-relaxed mb-5">
-                    Are you sure you want to update this donation pledge with the new details?
+                    Are you sure you want to update this donation pledge with
+                    the new details?
                   </p>
 
                   <div className="bg-slate-50 rounded-2xl p-4 text-left w-full max-w-sm space-y-2.5 border border-slate-100 text-xs shadow-xs">
-                    {initialEditValues && parsedEditQty !== initialEditValues.quantity && (
-                      <div className="flex justify-between items-start gap-2">
-                        <span className="text-slate-500 shrink-0">Updated Quantity:</span>
-                        <span className="font-bold text-slate-800 text-right">
-                          {editQuantity} {editingDonation.need_item_detail?.unit || "units"}
-                        </span>
-                      </div>
-                    )}
-                    {initialEditValues && editDeliveryDate !== initialEditValues.deliveryDate && (
-                      <div className="flex justify-between items-start gap-2">
-                        <span className="text-slate-500 shrink-0">Updated Est. Delivery:</span>
-                        <span className="font-bold text-slate-800 text-right">
-                          {editDeliveryDate ? new Date(editDeliveryDate).toLocaleDateString() : "Not specified"}
-                        </span>
-                      </div>
-                    )}
-                    {initialEditValues && editMessage !== initialEditValues.message && (
-                      <div className="flex justify-between items-start gap-2">
-                        <span className="text-slate-500 shrink-0">Updated Notes:</span>
-                        <span className="font-bold text-slate-800 text-right break-words">
-                          {editMessage || "None"}
-                        </span>
-                      </div>
-                    )}
+                    {initialEditValues &&
+                      parsedEditQty !== initialEditValues.quantity && (
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="text-slate-500 shrink-0">
+                            Updated Quantity:
+                          </span>
+                          <span className="font-bold text-slate-800 text-right">
+                            {editQuantity}{" "}
+                            {editingDonation.need_item_detail?.unit || "units"}
+                          </span>
+                        </div>
+                      )}
+                    {initialEditValues &&
+                      editDeliveryDate !== initialEditValues.deliveryDate && (
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="text-slate-500 shrink-0">
+                            Updated Est. Delivery:
+                          </span>
+                          <span className="font-bold text-slate-800 text-right">
+                            {editDeliveryDate
+                              ? new Date(editDeliveryDate).toLocaleDateString()
+                              : "Not specified"}
+                          </span>
+                        </div>
+                      )}
+                    {initialEditValues &&
+                      editMessage !== initialEditValues.message && (
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="text-slate-500 shrink-0">
+                            Updated Notes:
+                          </span>
+                          <span className="font-bold text-slate-800 text-right break-words">
+                            {editMessage || "None"}
+                          </span>
+                        </div>
+                      )}
                     {!isEditOrg ? (
                       <>
-                        {initialEditValues && editDonorName !== initialEditValues.donorName && (
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Name:</span>
-                            <span className="font-bold text-slate-800 text-right break-words">
-                              {editDonorName}
-                            </span>
-                          </div>
-                        )}
-                        {initialEditValues && editDonorPhone !== initialEditValues.donorPhone && (
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Contact:</span>
-                            <span className="font-bold text-slate-800 text-right break-words">
-                              {editDonorPhone}
-                            </span>
-                          </div>
-                        )}
-                        {initialEditValues && editDonorEmail !== initialEditValues.donorEmail && (
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Email:</span>
-                            <span className="font-bold text-slate-800 text-right break-all">
-                              {editDonorEmail}
-                            </span>
-                          </div>
-                        )}
-                        {initialEditValues && editDonorAddress !== initialEditValues.donorAddress && (
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Address:</span>
-                            <span className="font-bold text-slate-800 text-right break-words">
-                              {editDonorAddress}
-                            </span>
-                          </div>
-                        )}
+                        {initialEditValues &&
+                          editDonorName !== initialEditValues.donorName && (
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="text-slate-500 shrink-0">
+                                Updated Name:
+                              </span>
+                              <span className="font-bold text-slate-800 text-right break-words">
+                                {editDonorName}
+                              </span>
+                            </div>
+                          )}
+                        {initialEditValues &&
+                          editDonorPhone !== initialEditValues.donorPhone && (
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="text-slate-500 shrink-0">
+                                Updated Contact:
+                              </span>
+                              <span className="font-bold text-slate-800 text-right break-words">
+                                {editDonorPhone}
+                              </span>
+                            </div>
+                          )}
+                        {initialEditValues &&
+                          editDonorEmail !== initialEditValues.donorEmail && (
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="text-slate-500 shrink-0">
+                                Updated Email:
+                              </span>
+                              <span className="font-bold text-slate-800 text-right break-all">
+                                {editDonorEmail}
+                              </span>
+                            </div>
+                          )}
+                        {initialEditValues &&
+                          editDonorAddress !==
+                            initialEditValues.donorAddress && (
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="text-slate-500 shrink-0">
+                                Updated Address:
+                              </span>
+                              <span className="font-bold text-slate-800 text-right break-words">
+                                {editDonorAddress}
+                              </span>
+                            </div>
+                          )}
                       </>
                     ) : (
                       <>
-                        {initialEditValues && editOrgName !== initialEditValues.orgName && (
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Org Name:</span>
-                            <span className="font-bold text-slate-800 text-right break-words">
-                              {editOrgName}
-                            </span>
-                          </div>
-                        )}
-                        {initialEditValues && editOrgProgram !== initialEditValues.orgProgram && (
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Program:</span>
-                            <span className="font-bold text-slate-800 text-right break-words">
-                              {editOrgProgram}
-                            </span>
-                          </div>
-                        )}
-                        {initialEditValues && editOfficerName !== initialEditValues.officerName && (
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Contact Person:</span>
-                            <span className="font-bold text-slate-800 text-right break-words">
-                              {editOfficerName}
-                            </span>
-                          </div>
-                        )}
-                        {initialEditValues && editOfficerDesignation !== initialEditValues.officerDesignation && (
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Designation:</span>
-                            <span className="font-bold text-slate-800 text-right break-words">
-                              {editOfficerDesignation}
-                            </span>
-                          </div>
-                        )}
-                        {initialEditValues && editOfficerPhone !== initialEditValues.officerPhone && (
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Contact Number:</span>
-                            <span className="font-bold text-slate-800 text-right break-words">
-                              {editOfficerPhone}
-                            </span>
-                          </div>
-                        )}
-                        {initialEditValues && editOrgEmail !== initialEditValues.orgEmail && (
-                          <div className="flex justify-between items-start gap-2">
-                            <span className="text-slate-500 shrink-0">Updated Org Email:</span>
-                            <span className="font-bold text-slate-800 text-right break-all">
-                              {editOrgEmail}
-                            </span>
-                          </div>
-                        )}
+                        {initialEditValues &&
+                          editOrgName !== initialEditValues.orgName && (
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="text-slate-500 shrink-0">
+                                Updated Org Name:
+                              </span>
+                              <span className="font-bold text-slate-800 text-right break-words">
+                                {editOrgName}
+                              </span>
+                            </div>
+                          )}
+                        {initialEditValues &&
+                          editOrgProgram !== initialEditValues.orgProgram && (
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="text-slate-500 shrink-0">
+                                Updated Program:
+                              </span>
+                              <span className="font-bold text-slate-800 text-right break-words">
+                                {editOrgProgram}
+                              </span>
+                            </div>
+                          )}
+                        {initialEditValues &&
+                          editOfficerName !== initialEditValues.officerName && (
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="text-slate-500 shrink-0">
+                                Updated Contact Person:
+                              </span>
+                              <span className="font-bold text-slate-800 text-right break-words">
+                                {editOfficerName}
+                              </span>
+                            </div>
+                          )}
+                        {initialEditValues &&
+                          editOfficerDesignation !==
+                            initialEditValues.officerDesignation && (
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="text-slate-500 shrink-0">
+                                Updated Designation:
+                              </span>
+                              <span className="font-bold text-slate-800 text-right break-words">
+                                {editOfficerDesignation}
+                              </span>
+                            </div>
+                          )}
+                        {initialEditValues &&
+                          editOfficerPhone !==
+                            initialEditValues.officerPhone && (
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="text-slate-500 shrink-0">
+                                Updated Contact Number:
+                              </span>
+                              <span className="font-bold text-slate-800 text-right break-words">
+                                {editOfficerPhone}
+                              </span>
+                            </div>
+                          )}
+                        {initialEditValues &&
+                          editOrgEmail !== initialEditValues.orgEmail && (
+                            <div className="flex justify-between items-start gap-2">
+                              <span className="text-slate-500 shrink-0">
+                                Updated Org Email:
+                              </span>
+                              <span className="font-bold text-slate-800 text-right break-all">
+                                {editOrgEmail}
+                              </span>
+                            </div>
+                          )}
                       </>
                     )}
                   </div>
@@ -1836,11 +2209,15 @@ export default function DonorDashboard() {
               Cancel Donation Pledge?
             </h3>
             <p className="text-xs text-slate-500 text-center mb-6 leading-relaxed">
-              Are you sure you want to cancel this pledge? Please select a reason below to inform the hospital.
+              Are you sure you want to cancel this pledge? Please select a
+              reason below to inform the hospital.
             </p>
-            
+
             <div className="mb-4">
-              <label htmlFor="donor-cancel-reason" className="block text-xs font-bold text-slate-450 uppercase tracking-wider mb-2">
+              <label
+                htmlFor="donor-cancel-reason"
+                className="block text-xs font-bold text-slate-450 uppercase tracking-wider mb-2"
+              >
                 Cancellation Reason
               </label>
               <select
@@ -1860,18 +2237,31 @@ export default function DonorDashboard() {
                 className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white text-gray-900 font-medium transition"
                 required
               >
-                <option value="" disabled>Select a reason...</option>
-                <option value="No longer have supply of this item / Out of stock">No longer have supply / Out of stock</option>
-                <option value="Unable to transport or deliver the items to the hospital">Unable to transport or deliver the items</option>
-                <option value="Made a mistake in the pledge details (quantity, item, etc.)">Made a mistake in the pledge details</option>
-                <option value="Accidental submission of the pledge">Accidental submission of the pledge</option>
+                <option value="" disabled>
+                  Select a reason...
+                </option>
+                <option value="No longer have supply of this item / Out of stock">
+                  No longer have supply / Out of stock
+                </option>
+                <option value="Unable to transport or deliver the items to the hospital">
+                  Unable to transport or deliver the items
+                </option>
+                <option value="Made a mistake in the pledge details (quantity, item, etc.)">
+                  Made a mistake in the pledge details
+                </option>
+                <option value="Accidental submission of the pledge">
+                  Accidental submission of the pledge
+                </option>
                 <option value="Other">Other</option>
               </select>
             </div>
 
             {cancelReasonOption === "Other" && (
               <div className="mb-6 animate-fade-in">
-                <label htmlFor="donor-cancel-other" className="block text-xs font-bold text-slate-450 uppercase tracking-wider mb-2">
+                <label
+                  htmlFor="donor-cancel-other"
+                  className="block text-xs font-bold text-slate-450 uppercase tracking-wider mb-2"
+                >
                   Please specify
                 </label>
                 <textarea
@@ -1902,7 +2292,11 @@ export default function DonorDashboard() {
               <button
                 onClick={handleCancelSubmit}
                 className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-xl text-sm font-bold transition"
-                disabled={isCancelling || !cancelReasonOption || (cancelReasonOption === "Other" && !cancelReason.trim())}
+                disabled={
+                  isCancelling ||
+                  !cancelReasonOption ||
+                  (cancelReasonOption === "Other" && !cancelReason.trim())
+                }
               >
                 {isCancelling ? "Cancelling..." : "Cancel Pledge"}
               </button>
@@ -1936,69 +2330,95 @@ export default function DonorDashboard() {
             <div className="p-4 sm:p-6 space-y-4 text-sm overflow-y-auto flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl">
                 <div>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Item Pledges</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                    Item Pledges
+                  </p>
                   <p className="font-bold text-slate-800 text-base mt-1 break-words">
                     {selectedViewingDonation.need_item_detail?.name}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Quantity</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                    Quantity
+                  </p>
                   <p className="font-bold text-slate-800 text-base mt-1 break-words">
-                    {selectedViewingDonation.quantity} {selectedViewingDonation.need_item_detail?.unit || "units"}
+                    {selectedViewingDonation.quantity}{" "}
+                    {selectedViewingDonation.need_item_detail?.unit || "units"}
                   </p>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Recipient Organization</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                    Recipient Organization
+                  </p>
                   <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                    {needsMap.get(selectedViewingDonation.need_item)?.section_detail?.organization_name || "Colombo South Teaching Hospital"}
+                    {needsMap.get(selectedViewingDonation.need_item)
+                      ?.section_detail?.organization_name ||
+                      "Colombo South Teaching Hospital"}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Section</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                    Section
+                  </p>
                   <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                    {needsMap.get(selectedViewingDonation.need_item)?.section_detail?.name || "-"}
+                    {needsMap.get(selectedViewingDonation.need_item)
+                      ?.section_detail?.name || "-"}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pledge Status</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Pledge Status
+                    </p>
                     <span
-                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 ${selectedViewingDonation.status === "FULFILLED"
-                        ? "bg-purple-100 text-purple-800"
-                        : selectedViewingDonation.status === "CONFIRMED"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : selectedViewingDonation.status === "CANCELLED"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 ${
+                        selectedViewingDonation.status === "FULFILLED"
+                          ? "bg-purple-100 text-purple-800"
+                          : selectedViewingDonation.status === "CONFIRMED"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : selectedViewingDonation.status === "CANCELLED"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-amber-100 text-amber-800"
+                      }`}
                     >
-                      {selectedViewingDonation.status === "FULFILLED" ? "Delivered" : selectedViewingDonation.status}
+                      {selectedViewingDonation.status === "FULFILLED"
+                        ? "Delivered"
+                        : selectedViewingDonation.status}
                     </span>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pledged On</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Pledged On
+                    </p>
                     <p className="font-medium text-slate-800 mt-1">
-                      {new Date(selectedViewingDonation.created_at).toLocaleDateString()}
+                      {new Date(
+                        selectedViewingDonation.created_at,
+                      ).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
 
                 {selectedViewingDonation.estimated_delivery_date && (
                   <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Estimated Delivery Date</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Estimated Delivery Date
+                    </p>
                     <p className="font-semibold text-slate-800 mt-0.5">
-                      {new Date(selectedViewingDonation.estimated_delivery_date).toLocaleDateString()}
+                      {new Date(
+                        selectedViewingDonation.estimated_delivery_date,
+                      ).toLocaleDateString()}
                     </p>
                   </div>
                 )}
 
                 {/* Donor Information based on Donor Type */}
-                {selectedViewingDonation.donor_type === "organization" || Boolean(selectedViewingDonation.organization_name) ? (
+                {selectedViewingDonation.donor_type === "organization" ||
+                Boolean(selectedViewingDonation.organization_name) ? (
                   <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100/80 space-y-2.5">
                     <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
                       <p className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider">
@@ -2010,39 +2430,66 @@ export default function DonorDashboard() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Organization Name</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          Organization Name
+                        </p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                          {selectedViewingDonation.organization_name || selectedViewingDonation.donor_organization || "-"}
+                          {selectedViewingDonation.organization_name ||
+                            selectedViewingDonation.donor_organization ||
+                            "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Program Name</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          Program Name
+                        </p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                          {selectedViewingDonation.organization_program || selectedViewingDonation.government_program || "Not specified"}
+                          {selectedViewingDonation.organization_program ||
+                            selectedViewingDonation.government_program ||
+                            "Not specified"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Organization's Contact Number</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          Organization&apos;s Contact Number
+                        </p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                          {selectedViewingDonation.organization_officer_contact || selectedViewingDonation.government_officer_contact || selectedViewingDonation.donor_phone || "-"}
+                          {selectedViewingDonation.organization_officer_contact ||
+                            selectedViewingDonation.government_officer_contact ||
+                            selectedViewingDonation.donor_phone ||
+                            "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contact Person's Full Name</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          Contact Person&apos;s Full Name
+                        </p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                          {selectedViewingDonation.organization_officer_name || selectedViewingDonation.government_officer_name || selectedViewingDonation.donor_name || "-"}
+                          {selectedViewingDonation.organization_officer_name ||
+                            selectedViewingDonation.government_officer_name ||
+                            selectedViewingDonation.donor_name ||
+                            "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contact Person's Designation</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          Contact Person&apos;s Designation
+                        </p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                          {selectedViewingDonation.organization_officer_designation || selectedViewingDonation.government_officer_designation || "-"}
+                          {selectedViewingDonation.organization_officer_designation ||
+                            selectedViewingDonation.government_officer_designation ||
+                            "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Organization's Email Address</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          Organization&apos;s Email Address
+                        </p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-all">
-                          {selectedViewingDonation.organization_email || selectedViewingDonation.government_email || selectedViewingDonation.donor_email || "-"}
+                          {selectedViewingDonation.organization_email ||
+                            selectedViewingDonation.government_email ||
+                            selectedViewingDonation.donor_email ||
+                            "-"}
                         </p>
                       </div>
                     </div>
@@ -2059,25 +2506,37 @@ export default function DonorDashboard() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Full Name</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          Full Name
+                        </p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                          {selectedViewingDonation.donor_name || selectedViewingDonation.donor_contact || "-"}
+                          {selectedViewingDonation.donor_name ||
+                            selectedViewingDonation.donor_contact ||
+                            "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contact Number</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          Contact Number
+                        </p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-words">
-                          {selectedViewingDonation.donor_phone || selectedViewingDonation.donor_contact || "-"}
+                          {selectedViewingDonation.donor_phone ||
+                            selectedViewingDonation.donor_contact ||
+                            "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Email Address</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          Email Address
+                        </p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-all">
                           {selectedViewingDonation.donor_email || "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Address</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          Address
+                        </p>
                         <p className="font-semibold text-slate-800 mt-0.5 break-words">
                           {selectedViewingDonation.donor_address || "-"}
                         </p>
@@ -2088,7 +2547,9 @@ export default function DonorDashboard() {
 
                 {selectedViewingDonation.message && (
                   <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Your Message</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Your Message
+                    </p>
                     <p className="text-slate-600 italic bg-slate-50 p-3 rounded-xl mt-1 border border-slate-100 break-words">
                       &quot;{selectedViewingDonation.message}&quot;
                     </p>
@@ -2097,30 +2558,41 @@ export default function DonorDashboard() {
 
                 {selectedViewingDonation.confirmed_by_name && (
                   <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Confirmed By</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Confirmed By
+                    </p>
                     <p className="font-semibold text-green-700 mt-0.5 break-words">
                       {selectedViewingDonation.confirmed_by_name}
-                      {selectedViewingDonation.confirmed_by_role && ` (${selectedViewingDonation.confirmed_by_role.replace("_", " ")})`}
+                      {selectedViewingDonation.confirmed_by_role &&
+                        ` (${selectedViewingDonation.confirmed_by_role.replace("_", " ")})`}
                     </p>
                   </div>
                 )}
 
                 {selectedViewingDonation.received_by_name && (
                   <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Received By</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Received By
+                    </p>
                     <p className="font-semibold text-purple-700 mt-0.5 break-words">
                       {selectedViewingDonation.received_by_name}
-                      {selectedViewingDonation.received_by_role && ` (${selectedViewingDonation.received_by_role.replace("_", " ")})`}
+                      {selectedViewingDonation.received_by_role &&
+                        ` (${selectedViewingDonation.received_by_role.replace("_", " ")})`}
                     </p>
                   </div>
                 )}
 
-                {(selectedViewingDonation.status === "FULFILLED" || selectedViewingDonation.received_at) && (
+                {(selectedViewingDonation.status === "FULFILLED" ||
+                  selectedViewingDonation.received_at) && (
                   <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Received Date</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Received Date
+                    </p>
                     <p className="font-semibold text-purple-700 mt-0.5 break-words">
                       {selectedViewingDonation.received_at
-                        ? new Date(selectedViewingDonation.received_at).toLocaleDateString()
+                        ? new Date(
+                            selectedViewingDonation.received_at,
+                          ).toLocaleDateString()
                         : "N/A"}
                     </p>
                   </div>
@@ -2128,20 +2600,28 @@ export default function DonorDashboard() {
 
                 {selectedViewingDonation.status === "CANCELLED" && (
                   <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl">
-                    <p className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">Cancellation Details</p>
+                    <p className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">
+                      Cancellation Details
+                    </p>
                     <p className="text-slate-700 text-xs mt-1 leading-relaxed break-words">
                       <strong>Cancelled By:</strong>{" "}
-                      {selectedViewingDonation.cancelled_by_name || "System/Admin"}
-                      {selectedViewingDonation.cancelled_by_role && ` (${selectedViewingDonation.cancelled_by_role.replace("_", " ")})`}
+                      {selectedViewingDonation.cancelled_by_name ||
+                        "System/Admin"}
+                      {selectedViewingDonation.cancelled_by_role &&
+                        ` (${selectedViewingDonation.cancelled_by_role.replace("_", " ")})`}
                     </p>
                     {selectedViewingDonation.cancellation_reason && (
                       <p className="text-slate-700 text-xs mt-1 leading-relaxed break-words">
-                        <strong>Reason:</strong> {selectedViewingDonation.cancellation_reason}
+                        <strong>Reason:</strong>{" "}
+                        {selectedViewingDonation.cancellation_reason}
                       </p>
                     )}
                     {selectedViewingDonation.cancelled_at && (
                       <p className="text-[10px] text-slate-400 mt-1.5 font-semibold">
-                        Cancelled on: {new Date(selectedViewingDonation.cancelled_at).toLocaleString()}
+                        Cancelled on:{" "}
+                        {new Date(
+                          selectedViewingDonation.cancelled_at,
+                        ).toLocaleString()}
                       </p>
                     )}
                   </div>

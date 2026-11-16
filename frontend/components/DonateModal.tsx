@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { Donation, NeedItem } from "@/lib/api";
-import { Loader2, AlertCircle, CheckCircle2, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import SuccessCheckmark from "@/components/SuccessCheckmark";
 
 export interface DonationFormData {
@@ -62,12 +68,15 @@ export default function DonateModal({
   const [organizationOfficerName, setOrganizationOfficerName] = useState("");
   const [organizationOfficerDesignation, setOrganizationOfficerDesignation] =
     useState("");
-  const [organizationOfficerContact, setOrganizationOfficerContact] = useState("");
+  const [organizationOfficerContact, setOrganizationOfficerContact] =
+    useState("");
   const [organizationEmail, setOrganizationEmail] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<"donate" | "cancel" | null>(null);
+  const [confirmAction, setConfirmAction] = useState<
+    "donate" | "cancel" | null
+  >(null);
 
   if (!isOpen) return null;
 
@@ -89,7 +98,9 @@ export default function DonateModal({
   };
 
   const hasEnteredData =
-    (typeof quantity === "number" ? quantity > 1 : (parseInt(String(quantity), 10) || 0) > 1) ||
+    (typeof quantity === "number"
+      ? quantity > 1
+      : (parseInt(String(quantity), 10) || 0) > 1) ||
     message.trim() !== "" ||
     estimatedDeliveryDate !== "" ||
     donorName.trim() !== "" ||
@@ -136,7 +147,8 @@ export default function DonateModal({
   const handlePromptDonate = (e: React.FormEvent) => {
     e.preventDefault();
     const maxVal = needItem.quantity_required - needItem.quantity_confirmed;
-    const num = typeof quantity === "number" ? quantity : parseInt(String(quantity), 10);
+    const num =
+      typeof quantity === "number" ? quantity : parseInt(String(quantity), 10);
     const validQty = isNaN(num) || num < 1 ? 1 : Math.min(maxVal, num);
     setQuantity(validQty);
     setConfirmAction("donate");
@@ -157,7 +169,10 @@ export default function DonateModal({
       const { createDonation } = await import("@/lib/api");
 
       const maxVal = needItem.quantity_required - needItem.quantity_confirmed;
-      const num = typeof quantity === "number" ? quantity : parseInt(String(quantity), 10);
+      const num =
+        typeof quantity === "number"
+          ? quantity
+          : parseInt(String(quantity), 10);
       const finalQuantity = isNaN(num) || num < 1 ? 1 : Math.min(maxVal, num);
 
       const donationData: Partial<Donation> = {
@@ -246,7 +261,9 @@ export default function DonateModal({
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Cancel Donation?
               </h2>
-              <p className="text-gray-800 font-semibold mt-0.5">{needItem.name}</p>
+              <p className="text-gray-800 font-semibold mt-0.5">
+                {needItem.name}
+              </p>
               {needItem.section_detail && (
                 <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
                   {needItem.section_detail.organization_name}{" "}
@@ -266,7 +283,8 @@ export default function DonateModal({
                 Are you sure you want to cancel?
               </h4>
               <p className="text-sm text-gray-600 max-w-md leading-relaxed mb-2">
-                Any information you have filled in this donation form will be lost and your pledge will not be submitted.
+                Any information you have filled in this donation form will be
+                lost and your pledge will not be submitted.
               </p>
             </div>
 
@@ -296,7 +314,9 @@ export default function DonateModal({
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Confirm Donation Pledge
               </h2>
-              <p className="text-gray-800 font-semibold mt-0.5">{needItem.name}</p>
+              <p className="text-gray-800 font-semibold mt-0.5">
+                {needItem.name}
+              </p>
               {needItem.section_detail && (
                 <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
                   {needItem.section_detail.organization_name}{" "}
@@ -317,64 +337,91 @@ export default function DonateModal({
                   Ready to confirm your donation?
                 </h4>
                 <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
-                  Please review your pledge details before final submission. The recipient hospital will be notified immediately.
+                  Please review your pledge details before final submission. The
+                  recipient hospital will be notified immediately.
                 </p>
               </div>
 
               {/* Summary Details Card */}
               <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 text-left w-full space-y-2.5 border border-slate-200/80 text-xs sm:text-sm shadow-xs">
                 <div className="flex justify-between items-start py-1 border-b border-slate-200/50 gap-3">
-                  <span className="text-slate-500 font-medium shrink-0">Need Item:</span>
-                  <span className="font-bold text-slate-900 text-right">{needItem.name}</span>
+                  <span className="text-slate-500 font-medium shrink-0">
+                    Need Item:
+                  </span>
+                  <span className="font-bold text-slate-900 text-right">
+                    {needItem.name}
+                  </span>
                 </div>
                 <div className="flex justify-between items-start py-1 border-b border-slate-200/50 gap-3">
-                  <span className="text-slate-500 font-medium shrink-0">Recipient Organization:</span>
+                  <span className="text-slate-500 font-medium shrink-0">
+                    Recipient Organization:
+                  </span>
                   <span className="font-semibold text-slate-800 text-right">
                     {needItem.section_detail?.organization_name || "Hospital"}
-                    {needItem.section_detail?.name ? ` • ${needItem.section_detail.name}` : ""}
+                    {needItem.section_detail?.name
+                      ? ` • ${needItem.section_detail.name}`
+                      : ""}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-slate-200/50 gap-3">
-                  <span className="text-slate-500 font-medium shrink-0">Pledged Quantity:</span>
+                  <span className="text-slate-500 font-medium shrink-0">
+                    Pledged Quantity:
+                  </span>
                   <span className="font-bold text-blue-700 text-right">
                     {quantity} {needItem.unit}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-slate-200/50 gap-3">
-                  <span className="text-slate-500 font-medium shrink-0">Estimated Delivery:</span>
+                  <span className="text-slate-500 font-medium shrink-0">
+                    Estimated Delivery:
+                  </span>
                   <span className="font-semibold text-slate-800 text-right">
-                    {estimatedDeliveryDate ? new Date(estimatedDeliveryDate).toLocaleDateString() : "Not specified"}
+                    {estimatedDeliveryDate
+                      ? new Date(estimatedDeliveryDate).toLocaleDateString()
+                      : "Not specified"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-slate-200/50 gap-3">
-                  <span className="text-slate-500 font-medium shrink-0">Donor Type:</span>
+                  <span className="text-slate-500 font-medium shrink-0">
+                    Donor Type:
+                  </span>
                   <span className="font-semibold text-slate-800 text-right capitalize">
                     {donorType === "private" ? "Private Donor" : "Organization"}
                   </span>
                 </div>
                 <div className="flex justify-between items-start py-1 border-b border-slate-200/50 gap-3">
                   <span className="text-slate-500 font-medium shrink-0">
-                    {donorType === "private" ? "Donor Name:" : "Organization Name:"}
+                    {donorType === "private"
+                      ? "Donor Name:"
+                      : "Organization Name:"}
                   </span>
                   <span className="font-semibold text-slate-800 text-right">
                     {donorType === "private" ? donorName : organizationName}
                   </span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-slate-200/50 gap-3">
-                  <span className="text-slate-500 font-medium shrink-0">Contact Number:</span>
+                  <span className="text-slate-500 font-medium shrink-0">
+                    Contact Number:
+                  </span>
                   <span className="font-semibold text-slate-800 text-right">
-                    {donorType === "private" ? donorPhone : organizationOfficerContact}
+                    {donorType === "private"
+                      ? donorPhone
+                      : organizationOfficerContact}
                   </span>
                 </div>
                 <div className="flex justify-between items-start py-1 border-b border-slate-200/50 gap-3">
-                  <span className="text-slate-500 font-medium shrink-0">Email Address:</span>
+                  <span className="text-slate-500 font-medium shrink-0">
+                    Email Address:
+                  </span>
                   <span className="font-semibold text-slate-800 text-right break-all">
                     {donorType === "private" ? donorEmail : organizationEmail}
                   </span>
                 </div>
                 {donorType === "private" && donorAddress && (
                   <div className="flex justify-between items-start py-1 border-b border-slate-200/50 gap-3">
-                    <span className="text-slate-500 font-medium shrink-0">Address:</span>
+                    <span className="text-slate-500 font-medium shrink-0">
+                      Address:
+                    </span>
                     <span className="font-semibold text-slate-800 text-right">
                       {donorAddress}
                     </span>
@@ -382,7 +429,9 @@ export default function DonateModal({
                 )}
                 {donorType === "organization" && organizationProgram && (
                   <div className="flex justify-between items-start py-1 border-b border-slate-200/50 gap-3">
-                    <span className="text-slate-500 font-medium shrink-0">Program:</span>
+                    <span className="text-slate-500 font-medium shrink-0">
+                      Program:
+                    </span>
                     <span className="font-semibold text-slate-800 text-right">
                       {organizationProgram}
                     </span>
@@ -390,7 +439,9 @@ export default function DonateModal({
                 )}
                 {message && (
                   <div className="flex justify-between items-start pt-1 gap-3">
-                    <span className="text-slate-500 font-medium shrink-0">Message:</span>
+                    <span className="text-slate-500 font-medium shrink-0">
+                      Message:
+                    </span>
                     <span className="text-slate-700 text-right italic">
                       &ldquo;{message}&rdquo;
                     </span>
@@ -428,7 +479,9 @@ export default function DonateModal({
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Make a Donation
               </h2>
-              <p className="text-gray-800 font-semibold mt-0.5">{needItem.name}</p>
+              <p className="text-gray-800 font-semibold mt-0.5">
+                {needItem.name}
+              </p>
               {needItem.section_detail && (
                 <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
                   {needItem.section_detail.organization_name}{" "}
@@ -440,13 +493,17 @@ export default function DonateModal({
             </div>
 
             {/* Form wrapping scrollable middle content & sticky footer */}
-            <form onSubmit={handlePromptDonate} className="flex flex-col flex-1 overflow-hidden min-h-0">
+            <form
+              onSubmit={handlePromptDonate}
+              className="flex flex-col flex-1 overflow-hidden min-h-0"
+            >
               {/* Scrollable Form Body */}
               <div className="overflow-y-auto p-5 sm:p-6 space-y-5 flex-1 overscroll-contain">
                 {/* Quantity Section */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Quantity to Donate ({needItem.unit}) <span className="text-red-500">*</span>
+                    Quantity to Donate ({needItem.unit}){" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div className="relative flex-1">
@@ -456,7 +513,10 @@ export default function DonateModal({
                         autoComplete="off"
                         type="number"
                         min="1"
-                        max={needItem.quantity_required - needItem.quantity_confirmed}
+                        max={
+                          needItem.quantity_required -
+                          needItem.quantity_confirmed
+                        }
                         required
                         value={quantity}
                         onChange={(e) => {
@@ -467,7 +527,9 @@ export default function DonateModal({
                           }
                           const parsed = parseInt(raw, 10);
                           if (!isNaN(parsed)) {
-                            const maxVal = needItem.quantity_required - needItem.quantity_confirmed;
+                            const maxVal =
+                              needItem.quantity_required -
+                              needItem.quantity_confirmed;
                             if (parsed > maxVal) {
                               setQuantity(maxVal);
                             } else {
@@ -476,8 +538,13 @@ export default function DonateModal({
                           }
                         }}
                         onBlur={() => {
-                          const maxVal = needItem.quantity_required - needItem.quantity_confirmed;
-                          const num = typeof quantity === "number" ? quantity : parseInt(String(quantity), 10);
+                          const maxVal =
+                            needItem.quantity_required -
+                            needItem.quantity_confirmed;
+                          const num =
+                            typeof quantity === "number"
+                              ? quantity
+                              : parseInt(String(quantity), 10);
                           if (isNaN(num) || num < 1) {
                             setQuantity(1);
                           } else if (num > maxVal) {
@@ -495,9 +562,16 @@ export default function DonateModal({
                         <button
                           type="button"
                           onClick={() => {
-                            const maxVal = needItem.quantity_required - needItem.quantity_confirmed;
-                            const current = typeof quantity === "number" ? quantity : parseInt(String(quantity), 10) || 0;
-                            setQuantity(Math.min(maxVal, Math.max(1, current + 1)));
+                            const maxVal =
+                              needItem.quantity_required -
+                              needItem.quantity_confirmed;
+                            const current =
+                              typeof quantity === "number"
+                                ? quantity
+                                : parseInt(String(quantity), 10) || 0;
+                            setQuantity(
+                              Math.min(maxVal, Math.max(1, current + 1)),
+                            );
                           }}
                           className="h-4 w-5 flex items-center justify-center text-gray-500 hover:text-blue-600 active:text-blue-700 active:scale-90 transition cursor-pointer"
                           aria-label="Increase quantity"
@@ -507,7 +581,10 @@ export default function DonateModal({
                         <button
                           type="button"
                           onClick={() => {
-                            const current = typeof quantity === "number" ? quantity : parseInt(String(quantity), 10) || 1;
+                            const current =
+                              typeof quantity === "number"
+                                ? quantity
+                                : parseInt(String(quantity), 10) || 1;
                             setQuantity(Math.max(1, current - 1));
                           }}
                           className="h-4 w-5 flex items-center justify-center text-gray-500 hover:text-blue-600 active:text-blue-700 active:scale-90 transition cursor-pointer"
@@ -518,7 +595,9 @@ export default function DonateModal({
                       </div>
                     </div>
                     <span className="text-xs sm:text-sm text-gray-500 font-medium bg-gray-50 px-3 py-2.5 rounded-xl border border-gray-200 shrink-0">
-                      Required: {needItem.quantity_required - needItem.quantity_confirmed} {needItem.unit}
+                      Required:{" "}
+                      {needItem.quantity_required - needItem.quantity_confirmed}{" "}
+                      {needItem.unit}
                     </span>
                   </div>
                 </div>
@@ -526,10 +605,15 @@ export default function DonateModal({
                 {/* Message */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label htmlFor="donate-message" className="block text-sm font-semibold text-gray-700">
+                    <label
+                      htmlFor="donate-message"
+                      className="block text-sm font-semibold text-gray-700"
+                    >
                       Message
                     </label>
-                    <span className={`text-xs font-medium ${message.length >= 500 ? "text-red-500" : message.length >= 450 ? "text-amber-500" : "text-gray-400"}`}>
+                    <span
+                      className={`text-xs font-medium ${message.length >= 500 ? "text-red-500" : message.length >= 450 ? "text-amber-500" : "text-gray-400"}`}
+                    >
                       {message.length}/500
                     </span>
                   </div>
@@ -549,8 +633,12 @@ export default function DonateModal({
 
                 {/* Delivery Date */}
                 <div>
-                  <label htmlFor="donate-delivery-date" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Estimated Delivery Date <span className="text-red-500">*</span>
+                  <label
+                    htmlFor="donate-delivery-date"
+                    className="block text-sm font-semibold text-gray-700 mb-2"
+                  >
+                    Estimated Delivery Date{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="donate-delivery-date"
@@ -571,7 +659,10 @@ export default function DonateModal({
                     Donor Type
                   </label>
                   <div className="flex gap-6">
-                    <label htmlFor="donate-type-private" className="flex items-center cursor-pointer select-none">
+                    <label
+                      htmlFor="donate-type-private"
+                      className="flex items-center cursor-pointer select-none"
+                    >
                       <input
                         id="donate-type-private"
                         name="donor_type"
@@ -581,9 +672,14 @@ export default function DonateModal({
                         onChange={() => handleDonorTypeChange("private")}
                         className="mr-2 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm font-medium text-gray-800">Private Donor</span>
+                      <span className="text-sm font-medium text-gray-800">
+                        Private Donor
+                      </span>
                     </label>
-                    <label htmlFor="donate-type-org" className="flex items-center cursor-pointer select-none">
+                    <label
+                      htmlFor="donate-type-org"
+                      className="flex items-center cursor-pointer select-none"
+                    >
                       <input
                         id="donate-type-org"
                         name="donor_type"
@@ -593,7 +689,9 @@ export default function DonateModal({
                         onChange={() => handleDonorTypeChange("organization")}
                         className="mr-2 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm font-medium text-gray-800">Organization</span>
+                      <span className="text-sm font-medium text-gray-800">
+                        Organization
+                      </span>
                     </label>
                   </div>
                 </div>
@@ -694,7 +792,8 @@ export default function DonateModal({
                           htmlFor="donate-org-name"
                           className="block text-xs font-semibold text-gray-700 mb-1.5"
                         >
-                          Organization Name <span className="text-red-500">*</span>
+                          Organization Name{" "}
+                          <span className="text-red-500">*</span>
                         </label>
                         <input
                           id="donate-org-name"
@@ -722,7 +821,9 @@ export default function DonateModal({
                           type="text"
                           placeholder="e.g., Healthcare Aid Project"
                           value={organizationProgram}
-                          onChange={(e) => setOrganizationProgram(e.target.value)}
+                          onChange={(e) =>
+                            setOrganizationProgram(e.target.value)
+                          }
                           className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm font-medium placeholder:text-gray-400 placeholder:font-normal"
                         />
                       </div>
@@ -731,7 +832,8 @@ export default function DonateModal({
                           htmlFor="donate-officer-phone"
                           className="block text-xs font-semibold text-gray-700 mb-1.5"
                         >
-                          Organization's Contact Number <span className="text-red-500">*</span>
+                          Organization&apos;s Contact Number{" "}
+                          <span className="text-red-500">*</span>
                         </label>
                         <input
                           id="donate-officer-phone"
@@ -752,7 +854,8 @@ export default function DonateModal({
                           htmlFor="donate-officer-name"
                           className="block text-xs font-semibold text-gray-700 mb-1.5"
                         >
-                          Contact Person's Full Name <span className="text-red-500">*</span>
+                          Contact Person&apos;s Full Name{" "}
+                          <span className="text-red-500">*</span>
                         </label>
                         <input
                           id="donate-officer-name"
@@ -762,7 +865,9 @@ export default function DonateModal({
                           required
                           placeholder="e.g., Dr. Kamal Perera"
                           value={organizationOfficerName}
-                          onChange={(e) => setOrganizationOfficerName(e.target.value)}
+                          onChange={(e) =>
+                            setOrganizationOfficerName(e.target.value)
+                          }
                           className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-sm font-medium placeholder:text-gray-400 placeholder:font-normal"
                         />
                       </div>
@@ -772,7 +877,8 @@ export default function DonateModal({
                         htmlFor="donate-officer-designation"
                         className="block text-xs font-semibold text-gray-700 mb-1.5"
                       >
-                        Contact Person's Designation <span className="text-red-500">*</span>
+                        Contact Person&apos;s Designation{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <input
                         id="donate-officer-designation"
@@ -793,7 +899,8 @@ export default function DonateModal({
                         htmlFor="donate-org-email"
                         className="block text-xs font-semibold text-gray-700 mb-1.5"
                       >
-                        Organization's Email Address <span className="text-red-500">*</span>
+                        Organization&apos;s Email Address{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <input
                         id="donate-org-email"
