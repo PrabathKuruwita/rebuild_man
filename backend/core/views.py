@@ -1714,6 +1714,7 @@ class DonationViewSet(viewsets.ModelViewSet):
         if donation.status == 'CONFIRMED':
             donation.status = 'FULFILLED'
             donation.received_by = request.user
+            donation.received_at = timezone.now()
             donation.save()
             
             # Refresh need_item to get updated quantity_received value from the signal

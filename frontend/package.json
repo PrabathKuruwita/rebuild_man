@@ -6,8 +6,8 @@
     "node": "22.23.4"
   },
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS='--max-old-space-size=8192' next dev",
-    "build": "cross-env NODE_OPTIONS='--max-old-space-size=8192' next build",
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next dev --webpack",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
     "lint": "eslint"
   },

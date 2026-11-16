@@ -85,6 +85,8 @@ export default function OrgAdminSidebar({
               alt="Parithyaga Logo" 
               width={40} 
               height={40}
+              priority
+              loading="eager"
               className="w-10 h-10 object-contain shrink-0"
             />
             {!isCollapsed && (

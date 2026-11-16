@@ -86,7 +86,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!user || user.role !== "ADMIN") return;
+      if (authLoading || !user || user.role !== "ADMIN") return;
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
+      if (!token && !refreshToken) return;
 
       try {
         setIsLoading(true);
@@ -301,6 +305,10 @@ export default function AdminDashboard() {
 
         setCriticalNeeds(unfulfilledCritical.slice(0, 2)); // Show top 2 critical unfulfilled
       } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "";
+        if (msg.includes("Authentication required") || msg.includes("Session expired")) {
+          return;
+        }
         setError(
           err instanceof Error ? err.message : "Failed to fetch dashboard data",
         );
@@ -311,7 +319,7 @@ export default function AdminDashboard() {
     };
 
     fetchDashboardData();
-  }, [user]);
+  }, [user, authLoading]);
 
   if (authLoading || isLoading) {
     return (
@@ -357,26 +365,26 @@ export default function AdminDashboard() {
 
       {/* Critical Needs Alert Strip */}
       {stats.criticalNeeds > 0 && (
-        <div className="mb-8 bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+        <div className="mb-8 bg-rose-50 border border-rose-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
               <span className="flex h-3 w-3 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-status-critical"></span>
               </span>
             </div>
-            <div>
-              <h2 className="text-status-critical font-bold text-lg">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-status-critical font-bold text-base sm:text-lg leading-snug">
                 Critical Needs Requiring Attention
               </h2>
-              <p className="text-rose-700/80 text-sm font-medium">
+              <p className="text-rose-700/80 text-xs sm:text-sm font-medium leading-relaxed mt-0.5">
                 Urgent attention required. {stats.unfulfilledCriticalNeeds} unfulfilled items remain.
               </p>
             </div>
           </div>
           <Link
             href="/needs?priority=CRITICAL"
-            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 w-full sm:w-auto shrink-0 touch-manipulation"
           >
             Review Critical Needs <ArrowRight size={16} />
           </Link>
@@ -414,9 +422,9 @@ export default function AdminDashboard() {
         {/* Critical Needs Column */}
         <div className="lg:col-span-8">
           <ElevatedCard className="overflow-hidden h-full flex flex-col" isDominant={true}>
-            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center relative">
+            <div className="p-6 sm:p-8 border-b border-slate-100 bg-white">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center relative shrink-0">
                   {stats.unfulfilledCriticalNeeds > 0 && (
                     <AlertTriangle
                       className="text-rose-400 absolute animate-ping opacity-75"
@@ -428,26 +436,28 @@ export default function AdminDashboard() {
                     size={20}
                   />
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-900">
-                    Critical Needs Requiring Attention
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="font-bold text-slate-900 leading-snug break-words">
+                      Critical Needs Requiring Attention
+                    </h3>
+                    <Link
+                      href="/needs?priority=CRITICAL"
+                      className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-0.5 shrink-0 whitespace-nowrap pt-0.5"
+                    >
+                      View All ({stats.unfulfilledCriticalNeeds}){" "}
+                      <ArrowRight
+                        size={14}
+                        className="group-hover:translate-x-0.5 transition-transform"
+                      />
+                    </Link>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium mt-1">
                     {stats.unfulfilledCriticalNeeds} urgent items • Immediate
                     assistance needed
                   </p>
                 </div>
               </div>
-              <Link
-                href="/needs?priority=CRITICAL"
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-0.5"
-              >
-                View All ({stats.unfulfilledCriticalNeeds}){" "}
-                <ArrowRight
-                  size={14}
-                  className="group-hover:translate-x-0.5 transition-transform"
-                />
-              </Link>
             </div>
             <div className="p-6">
               {criticalNeeds.length === 0 ? (
@@ -800,7 +810,7 @@ export default function AdminDashboard() {
 
       {/* Platform Needs Coverage & Allocation Section */}
       <div className="card-container mb-12 animate-fade-in">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+        <div className="mb-6 space-y-3">
           <div>
             <h3 className="font-bold text-slate-900 text-base">
               Overall Platform Needs Coverage
@@ -809,24 +819,24 @@ export default function AdminDashboard() {
               Real-time balance between requested items and physically received donations
             </p>
           </div>
-          <div className="flex items-center gap-4 text-xs font-semibold">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-emerald-500 rounded-sm"></span>
-              <span className="text-slate-600">Received ({impactStats.baseReceived.toLocaleString()})</span>
+          <div className="flex flex-wrap items-center gap-x-6 sm:gap-x-8 gap-y-2 text-xs font-semibold pt-1">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-500 shrink-0 aspect-square"></span>
+              <span className="text-slate-600 whitespace-nowrap">Received ({impactStats.baseReceived.toLocaleString()})</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-slate-200 rounded-sm"></span>
-              <span className="text-slate-600">Remaining ({impactStats.totalRemaining.toLocaleString()})</span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-slate-300 shrink-0 aspect-square"></span>
+              <span className="text-slate-600 whitespace-nowrap">Remaining ({impactStats.totalRemaining.toLocaleString()})</span>
             </div>
             {impactStats.totalOverAllocated > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 bg-rose-500 rounded-sm"></span>
-                <span className="text-slate-600">Over Allocated ({impactStats.totalOverAllocated.toLocaleString()})</span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-rose-500 shrink-0 aspect-square"></span>
+                <span className="text-slate-600 whitespace-nowrap">Over Allocated ({impactStats.totalOverAllocated.toLocaleString()})</span>
               </div>
             )}
           </div>
         </div>
- 
+
         {impactStats.totalRequired === 0 ? (
           <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 flex flex-col items-center justify-center mt-4">
             <ClipboardList className="w-10 h-10 text-slate-300 mb-2" />
@@ -837,14 +847,14 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex flex-wrap justify-between items-center text-sm gap-1">
               <span className="font-semibold text-slate-700">
                 Current needs coverage is at{" "}
                 <span className={impactStats.totalReceived > impactStats.totalRequired ? "text-rose-600 font-bold" : "text-emerald-600 font-bold"}>
                   {impactStats.totalRequired > 0 ? Math.round((impactStats.totalReceived / impactStats.totalRequired) * 100) : 0}%
                 </span>
               </span>
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
                 Requested: {impactStats.totalRequired.toLocaleString()} units
               </span>
             </div>
@@ -893,7 +903,7 @@ export default function AdminDashboard() {
 
 function CriticalNeedRow({ need }: { need: NeedItem }) {
   const percent = Math.round(
-    (need.quantity_confirmed / need.quantity_required) * 100,
+    (((need.quantity_received || 0) / need.quantity_required) * 100),
   );
 
   return (
@@ -915,7 +925,7 @@ function CriticalNeedRow({ need }: { need: NeedItem }) {
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            Progress
+            Fulfillment Progress
           </span>
           <span className="text-[10px] font-bold text-slate-700">
             {percent}%

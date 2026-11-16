@@ -20,7 +20,7 @@ import ManualNeedEntryForm from "@/components/ManualNeedEntryForm";
 import EditNeedModal from "@/components/EditNeedModal";
 import EditSectionModal from "@/components/EditSectionModal";
 import { useSearchParams } from "next/navigation";
-import { Search, Filter, ChevronDown, X } from "lucide-react";
+import { Search, Filter, ChevronDown, X, Phone, Mail, Globe, ExternalLink } from "lucide-react";
 
 function OrganizationsContent() {
   const { authorized, isLoading: authLoading } = useAdminGuard();
@@ -581,48 +581,57 @@ function OrganizationsContent() {
               </div>
 
               {/* Contact Information Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 pb-6 border-b border-gray-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-6 pb-6 border-b border-gray-100">
                 {organization.phone && (
-                  <div>
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                      <Phone size={13} className="text-slate-400 shrink-0" />
                       Phone
                     </h3>
                     <a
                       href={`tel:${organization.phone}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="text-blue-600 hover:text-blue-700 font-medium"
+                      className="text-blue-600 hover:text-blue-700 font-medium block truncate text-sm"
+                      title={organization.phone}
                     >
                       {organization.phone}
                     </a>
                   </div>
                 )}
                 {organization.email_contact && (
-                  <div>
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                      <Mail size={13} className="text-slate-400 shrink-0" />
                       Email
                     </h3>
                     <a
                       href={`mailto:${organization.email_contact}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="text-blue-600 hover:text-blue-700 font-medium"
+                      className="text-blue-600 hover:text-blue-700 font-medium block truncate text-sm"
+                      title={organization.email_contact}
                     >
                       {organization.email_contact}
                     </a>
                   </div>
                 )}
                 {organization.website && (
-                  <div>
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  <div className="min-w-0 sm:col-span-2 lg:col-span-1">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                      <Globe size={13} className="text-slate-400 shrink-0" />
                       Website
                     </h3>
                     <a
-                      href={organization.website}
+                      href={organization.website.startsWith("http") ? organization.website : `https://${organization.website}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="text-blue-600 hover:text-blue-700 font-medium truncate"
+                      className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1.5 max-w-full text-sm group"
+                      title={organization.website}
                     >
-                      {organization.website}
+                      <span className="truncate">
+                        {organization.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+                      </span>
+                      <ExternalLink size={12} className="shrink-0 text-slate-400 group-hover:text-blue-600 transition-colors" />
                     </a>
                   </div>
                 )}

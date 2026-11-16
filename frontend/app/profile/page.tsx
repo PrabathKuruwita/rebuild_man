@@ -31,12 +31,12 @@ export default function ProfilePage() {
       {/* Teal Header Section - Matches Theme */}
       <div className="bg-gradient-to-r from-primary to-teal-800 text-white pt-16 pb-32">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <div className="inline-block px-3 py-1 bg-white/10 rounded-lg text-[10px] font-bold tracking-widest uppercase mb-3 sm:mb-4">
                 User Profile
               </div>
-              <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight break-words">
                 {user.username}
               </h1>
               <p className="text-teal-100 mt-2 text-xs sm:text-sm max-w-xl leading-relaxed">
@@ -52,9 +52,9 @@ export default function ProfilePage() {
                     ? "/org-admin"
                     : "/"
               }
-              className="bg-white text-primary px-3 py-1.5 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold sm:font-bold shadow-md hover:bg-slate-50 transition-all whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 self-start sm:self-auto mt-1 sm:mt-0"
+              className="bg-white text-primary px-3.5 py-2 sm:px-6 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold sm:font-bold shadow-md hover:bg-slate-50 transition-all whitespace-nowrap shrink-0 inline-flex items-center gap-2 self-start sm:self-auto"
             >
-              <ArrowLeft size={13} className="shrink-0 sm:w-4 sm:h-4" />
+              <ArrowLeft size={14} className="shrink-0 sm:w-4 sm:h-4" />
               <span>
                 {user.role === "ADMIN" || user.role === "ORG_ADMIN"
                   ? "Back to Dashboard"
@@ -161,13 +161,13 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Profile Details Section */}
-        <div className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
+          <div className="flex items-center gap-4 mb-6 sm:mb-8">
+            <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center shrink-0">
               <User className="text-primary" size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900">
                 Profile details
               </h2>
               <p className="text-xs text-slate-500 font-medium">
@@ -177,7 +177,7 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
           </div>
 
           <form onSubmit={handleProfileSave} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label
                   htmlFor="first_name"
@@ -288,13 +288,13 @@ function ProfileFormContent({ user, setUser }: ProfileFormContentProps) {
         </div>
 
         {/* Change Password Section */}
-        <div className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
+          <div className="flex items-center gap-4 mb-6 sm:mb-8">
+            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center shrink-0">
               <Lock className="text-rose-600" size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900">
                 Change password
               </h2>
               <p className="text-xs text-slate-500 font-medium">

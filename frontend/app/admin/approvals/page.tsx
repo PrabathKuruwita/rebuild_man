@@ -550,40 +550,50 @@ function RequestCard({
   showReason = false,
 }: RequestCardProps) {
   return (
-    <div className="card-container">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900">
+    <div className="card-container overflow-hidden">
+      <div className="flex items-start justify-between mb-4 gap-2.5 sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate" title={`${req.first_name} ${req.last_name}`}>
             {req.first_name} {req.last_name}
           </h3>
-          <p className="text-gray-600">{req.email}</p>
-          <p className="text-sm text-gray-500 mt-1">@{req.username}</p>
+          <p className="text-xs sm:text-sm text-gray-600 truncate mt-0.5" title={req.email}>
+            {req.email}
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5 truncate font-medium">
+            @{req.username}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 ml-1">
           <span
-            className={`px-3 py-1 rounded-full text-sm font-semibold ${
+            className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider shrink-0 border ${
               req.approval_status === "PENDING"
-                ? "bg-yellow-100 text-yellow-800"
+                ? "bg-amber-50 text-amber-800 border-amber-200"
                 : req.approval_status === "APPROVED"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  : "bg-rose-50 text-rose-800 border-rose-200"
             }`}
           >
             {req.approval_status}
           </span>
           <button
             onClick={onToggleExpand}
-            className="text-gray-500 hover:text-gray-700 transition"
-            title={isExpanded ? "Minimize" : "Expand"}
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors shrink-0 cursor-pointer touch-manipulation"
+            title={isExpanded ? "Collapse" : "Expand"}
+            aria-label={isExpanded ? "Collapse" : "Expand"}
           >
-            {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+            <ChevronDown
+              size={18}
+              className={`transition-transform duration-200 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+            />
           </button>
         </div>
       </div>
 
       {isExpanded && (
         <>
-          <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-200">
             <div>
               <label className="form-label mb-1">
                 Organization Name
