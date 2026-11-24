@@ -13,6 +13,7 @@ import {
   receiveDonation,
 } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useInView, AnimatedCounter } from "@/components/animations";
 import {
   CheckCircle2,
   XCircle,
@@ -61,6 +62,160 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   return null;
 };
 
+/**
+ * Checks whether a given date value matches a user search query,
+ * supporting diverse formats, ISO/timestamp strings, full/short month names,
+ * normalized slashes/dashes/dots, and partial day/month/year components.
+ */
+function matchesDateFilter(
+  dateVal: string | Date | undefined | null,
+  rawQuery: string,
+): boolean {
+  if (!dateVal || !rawQuery) return false;
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return false;
+
+  const query = rawQuery.toLowerCase().trim();
+  if (!query) return false;
+
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1; // 1-12
+  const day = d.getDate(); // 1-31
+
+  const yearStr = String(year);
+  const monthStr = String(month);
+  const month2Str = month < 10 ? `0${month}` : monthStr;
+  const dayStr = String(day);
+  const day2Str = day < 10 ? `0${day}` : dayStr;
+
+  const monthNames = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+  ];
+  const monthShortNames = [
+    "jan",
+    "feb",
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct",
+    "nov",
+    "dec",
+  ];
+
+  const fullMonth = monthNames[d.getMonth()];
+  const shortMonth = monthShortNames[d.getMonth()];
+  const rawISO =
+    typeof dateVal === "string"
+      ? dateVal.toLowerCase()
+      : d.toISOString().toLowerCase();
+
+  // 1. Comprehensive array of formatted date representations
+  const dateFormats = [
+    rawISO,
+    d.toLocaleDateString().toLowerCase(),
+    d.toDateString().toLowerCase(),
+
+    // US numeric variations: M/D/YYYY, MM/DD/YYYY, M/D, MM/DD
+    `${monthStr}/${dayStr}/${yearStr}`,
+    `${month2Str}/${day2Str}/${yearStr}`,
+    `${monthStr}/${dayStr}`,
+    `${month2Str}/${day2Str}`,
+
+    // International numeric variations: D/M/YYYY, DD/MM/YYYY, D/M, DD/MM
+    `${dayStr}/${monthStr}/${yearStr}`,
+    `${day2Str}/${month2Str}/${yearStr}`,
+    `${dayStr}/${monthStr}`,
+    `${day2Str}/${month2Str}`,
+
+    // Hyphen variations: YYYY-MM-DD, YYYY-M-D, M-D-YYYY, D-M-YYYY
+    `${yearStr}-${month2Str}-${day2Str}`,
+    `${yearStr}-${monthStr}-${dayStr}`,
+    `${monthStr}-${dayStr}-${yearStr}`,
+    `${month2Str}-${day2Str}-${yearStr}`,
+    `${dayStr}-${monthStr}-${yearStr}`,
+    `${day2Str}-${month2Str}-${yearStr}`,
+    `${monthStr}-${dayStr}`,
+    `${month2Str}-${day2Str}`,
+    `${dayStr}-${monthStr}`,
+    `${day2Str}-${month2Str}`,
+
+    // Month text representations
+    `${fullMonth} ${dayStr}, ${yearStr}`,
+    `${fullMonth} ${dayStr} ${yearStr}`,
+    `${shortMonth} ${dayStr}, ${yearStr}`,
+    `${shortMonth} ${dayStr} ${yearStr}`,
+    `${dayStr} ${fullMonth} ${yearStr}`,
+    `${dayStr} ${shortMonth} ${yearStr}`,
+    `${fullMonth} ${dayStr}`,
+    `${shortMonth} ${dayStr}`,
+    `${dayStr} ${fullMonth}`,
+    `${dayStr} ${shortMonth}`,
+    `${fullMonth} ${yearStr}`,
+    `${shortMonth} ${yearStr}`,
+    fullMonth,
+    shortMonth,
+    yearStr,
+  ];
+
+  // Direct substring match
+  if (dateFormats.some((fmt) => fmt.includes(query))) {
+    return true;
+  }
+
+  // 2. Normalized separator check (slashes, hyphens, dots, spaces)
+  const normQuery = query.replace(/[-.\s]+/g, "/");
+  const normFormats = dateFormats.map((f) => f.replace(/[-.\s]+/g, "/"));
+  if (normFormats.some((f) => f.includes(normQuery))) {
+    return true;
+  }
+
+  // 3. Strip leading zeros: e.g. "06/14/2026" matches "6/14/2026"
+  const stripZeros = (s: string) => s.replace(/(^|\/)0+([1-9])/g, "$1$2");
+  const strippedQuery = stripZeros(normQuery);
+  if (normFormats.some((f) => stripZeros(f).includes(strippedQuery))) {
+    return true;
+  }
+
+  // 4. Component-wise date part matching for multi-segment queries
+  const parts = normQuery
+    .split("/")
+    .map((p) => p.replace(/^0+/, ""))
+    .filter(Boolean);
+
+  if (parts.length === 3) {
+    const isYMD =
+      parts[0] === yearStr && parts[1] === monthStr && parts[2] === dayStr;
+    const isMDY =
+      parts[0] === monthStr && parts[1] === dayStr && parts[2] === yearStr;
+    const isDMY =
+      parts[0] === dayStr && parts[1] === monthStr && parts[2] === yearStr;
+    if (isYMD || isMDY || isDMY) return true;
+  } else if (parts.length === 2) {
+    const isMD = parts[0] === monthStr && parts[1] === dayStr;
+    const isDM = parts[0] === dayStr && parts[1] === monthStr;
+    const isMY = parts[0] === monthStr && parts[1] === yearStr;
+    const isYM = parts[0] === yearStr && parts[1] === monthStr;
+    if (isMD || isDM || isMY || isYM) return true;
+  }
+
+  return false;
+}
+
 function DonationsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -75,6 +230,15 @@ function DonationsContent() {
     const t = setTimeout(() => setIsMounted(true), 0);
     return () => clearTimeout(t);
   }, []);
+
+  const {
+    ref: analyticsRef,
+    isInView: isAnalyticsInView,
+    prefersReducedMotion,
+  } = useInView<HTMLDivElement>({
+    threshold: 0.15,
+    once: true,
+  });
   const [filter, setFilter] = useState<string>("PENDING");
   const [confirming, setConfirming] = useState<number | null>(null);
   const [cancelling, setCancelling] = useState<number | null>(null);
@@ -371,7 +535,7 @@ function DonationsContent() {
       });
     }
 
-    // Apply Search Query filter
+    // Apply Search Query filter (matches need item name, donor name/email, need posted date, and pledge date)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter((d) => {
@@ -382,13 +546,7 @@ function DonationsContent() {
           ""
         ).toLowerCase();
 
-        // 2. Created Date (need item's created_at)
-        const needObj = needsMap.get(d.need_item);
-        const createdDateStr = needObj?.created_at
-          ? new Date(needObj.created_at).toLocaleDateString().toLowerCase()
-          : "";
-
-        // 3. Donor Info (Name, Email)
+        // 2. Donor Info (Name, Email)
         const donorName = (
           d.donor_type === "private"
             ? d.donor_name
@@ -400,17 +558,19 @@ function DonationsContent() {
             : d.organization_email || d.government_email || ""
         ).toLowerCase();
 
-        // 4. Requested Date (donation created_at)
-        const requestedDateStr = d.created_at
-          ? new Date(d.created_at).toLocaleDateString().toLowerCase()
-          : "";
+        // 3. Need Posted Date (need item's created_at)
+        const needObj = needsMap.get(d.need_item);
+        const needPostedDate = needObj?.created_at;
+
+        // 4. Pledged Date (donation created_at)
+        const pledgedDate = d.created_at;
 
         return (
           needItemName.includes(query) ||
-          createdDateStr.includes(query) ||
           donorName.includes(query) ||
           donorEmail.includes(query) ||
-          requestedDateStr.includes(query)
+          matchesDateFilter(needPostedDate, query) ||
+          matchesDateFilter(pledgedDate, query)
         );
       });
     }
@@ -1271,11 +1431,14 @@ function DonationsContent() {
       {/* Filter Controls Row: Search bar & dropdown filters */}
       <div className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
         {/* Search bar */}
-        <div className="search-bar-container max-w-full lg:max-w-md flex-1">
+        <div
+          className="search-bar-container w-full flex-1"
+          style={{ maxWidth: "38rem" }}
+        >
           <Search className="search-bar-icon" />
           <input
             type="text"
-            placeholder="Search by need, donor name/email, date..."
+            placeholder="Search by need, donor name/email, need posted/pledge date..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="search-bar-input"
@@ -1283,7 +1446,7 @@ function DonationsContent() {
         </div>
 
         {/* Filter dropdowns toolbar */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto shrink-0">
           <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 shrink-0">
             <Filter size={14} className="text-slate-400" />
             <span>Filter by:</span>
@@ -1795,8 +1958,28 @@ function DonationsContent() {
       </div>
 
       {/* Visual Analytics Section */}
-      <div className="mt-12 bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-4 sm:p-6 lg:p-8 shadow-sm animate-in fade-in duration-500">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-6">
+      <div
+        ref={analyticsRef}
+        className="mt-12 bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-4 sm:p-6 lg:p-8 shadow-sm"
+        style={{
+          opacity: prefersReducedMotion || isAnalyticsInView ? 1 : 0,
+          transform: prefersReducedMotion || isAnalyticsInView ? "translate3d(0, 0, 0)" : "translate3d(0, 24px, 0)",
+          transition: prefersReducedMotion
+            ? "none"
+            : "opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1)",
+          willChange: isAnalyticsInView ? "auto" : "opacity, transform",
+        }}
+      >
+        <div
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-6"
+          style={{
+            opacity: prefersReducedMotion || isAnalyticsInView ? 1 : 0,
+            transform: prefersReducedMotion || isAnalyticsInView ? "translate3d(0, 0, 0)" : "translate3d(0, 16px, 0)",
+            transition: prefersReducedMotion
+              ? "none"
+              : "opacity 600ms cubic-bezier(0.16, 1, 0.3, 1) 100ms, transform 600ms cubic-bezier(0.16, 1, 0.3, 1) 100ms",
+          }}
+        >
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-slate-900">
               Visual Analytics Overview
@@ -1835,7 +2018,16 @@ function DonationsContent() {
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
           {/* Chart 1: Needs Fulfillment Status */}
-          <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-4 sm:p-6 flex flex-col justify-between min-h-[360px] sm:min-h-[320px] h-full min-w-0 overflow-hidden">
+          <div
+            className="bg-slate-50 rounded-2xl border border-slate-200/50 p-4 sm:p-6 flex flex-col justify-between min-h-[360px] sm:min-h-[320px] h-full min-w-0 overflow-hidden"
+            style={{
+              opacity: prefersReducedMotion || isAnalyticsInView ? 1 : 0,
+              transform: prefersReducedMotion || isAnalyticsInView ? "translate3d(0, 0, 0)" : "translate3d(0, 20px, 0)",
+              transition: prefersReducedMotion
+                ? "none"
+                : "opacity 650ms cubic-bezier(0.16, 1, 0.3, 1) 150ms, transform 650ms cubic-bezier(0.16, 1, 0.3, 1) 150ms",
+            }}
+          >
             <div className="flex flex-col items-start gap-1.5">
               <h3 className="text-sm sm:text-base font-bold text-slate-800">
                 Needs Fulfillment Overview
@@ -1852,10 +2044,23 @@ function DonationsContent() {
 
             {totalNeedsCount > 0 ? (
               <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between flex-1 mt-4 gap-4 sm:gap-6 min-w-0">
-                <div className="w-[170px] h-[170px] shrink-0 mx-auto sm:mx-0 flex items-center justify-center">
+                <div className="w-[170px] h-[170px] shrink-0 mx-auto sm:mx-0 flex items-center justify-center relative">
+                  {/* Subtle Background Donut Track */}
+                  <svg className="absolute inset-0 pointer-events-none" width={170} height={170} viewBox="0 0 170 170">
+                    <circle
+                      cx={85}
+                      cy={85}
+                      r={63}
+                      fill="none"
+                      stroke="#e2e8f0"
+                      strokeWidth={22}
+                      opacity={0.6}
+                    />
+                  </svg>
                   {isMounted && (
                     <PieChart width={170} height={170}>
                       <Pie
+                        key={isAnalyticsInView ? "pie1-active" : "pie1-idle"}
                         data={chart1Data}
                         cx="50%"
                         cy="50%"
@@ -1863,6 +2068,10 @@ function DonationsContent() {
                         outerRadius={74}
                         paddingAngle={3}
                         dataKey="value"
+                        isAnimationActive={!prefersReducedMotion && isAnalyticsInView}
+                        animationBegin={150}
+                        animationDuration={900}
+                        animationEasing="ease-out"
                       >
                         {chart1Data.map((entry, index) => (
                           <Cell
@@ -1874,14 +2083,35 @@ function DonationsContent() {
                       <Tooltip content={<CustomTooltip />} />
                     </PieChart>
                   )}
+                  {/* Center Donut Statistic */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-base sm:text-lg font-black text-slate-800 font-heading tracking-tight leading-none">
+                      <AnimatedCounter
+                        value={totalNeedsCount > 0 ? Number(chart1Data[0].percentage) : 0}
+                        suffix="%"
+                        inView={isAnalyticsInView}
+                        duration={900}
+                      />
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                      Fulfilled
+                    </span>
+                  </div>
                 </div>
 
-                {/* Custom Legend */}
+                {/* Custom Legend with Staggered Entrance */}
                 <div className="w-full sm:flex-1 min-w-0 flex flex-col justify-center space-y-2.5">
                   {chart1Data.map((entry, index) => (
                     <div
                       key={index}
                       className="flex items-start gap-2.5 bg-white/80 p-2.5 rounded-xl border border-slate-100/80 shadow-2xs"
+                      style={{
+                        opacity: prefersReducedMotion || isAnalyticsInView ? 1 : 0,
+                        transform: prefersReducedMotion || isAnalyticsInView ? "translate3d(0, 0, 0)" : "translate3d(0, 10px, 0)",
+                        transition: prefersReducedMotion
+                          ? "none"
+                          : `opacity 500ms cubic-bezier(0.16, 1, 0.3, 1) ${250 + index * 80}ms, transform 500ms cubic-bezier(0.16, 1, 0.3, 1) ${250 + index * 80}ms`,
+                      }}
                     >
                       <span
                         className="w-2.5 h-2.5 rounded-full mt-1 shrink-0"
@@ -1892,18 +2122,40 @@ function DonationsContent() {
                           {entry.name}
                         </p>
                         <p className="text-[11px] text-slate-500 font-bold mt-0.5">
-                          {entry.value} {entry.value === 1 ? "need" : "needs"} (
-                          {entry.percentage}%)
+                          <AnimatedCounter
+                            value={entry.value}
+                            inView={isAnalyticsInView}
+                            duration={900}
+                          />{" "}
+                          {entry.value === 1 ? "need" : "needs"} (
+                          <AnimatedCounter
+                            value={Number(entry.percentage)}
+                            suffix="%"
+                            inView={isAnalyticsInView}
+                            duration={900}
+                          />)
                         </p>
                       </div>
                     </div>
                   ))}
-                  <div className="pt-2 px-1 border-t border-slate-200/60 flex items-center justify-between">
+                  <div
+                    className="pt-2 px-1 border-t border-slate-200/60 flex items-center justify-between"
+                    style={{
+                      opacity: prefersReducedMotion || isAnalyticsInView ? 1 : 0,
+                      transition: prefersReducedMotion
+                        ? "none"
+                        : "opacity 500ms cubic-bezier(0.16, 1, 0.3, 1) 420ms",
+                    }}
+                  >
                     <span className="text-[11px] text-slate-500 font-medium">
                       Total Created Needs
                     </span>
                     <span className="text-xs font-bold text-slate-800">
-                      {totalNeedsCount}
+                      <AnimatedCounter
+                        value={totalNeedsCount}
+                        inView={isAnalyticsInView}
+                        duration={900}
+                      />
                     </span>
                   </div>
                 </div>
@@ -1922,7 +2174,16 @@ function DonationsContent() {
           </div>
 
           {/* Chart 2: Quantity Fulfillment Status */}
-          <div className="bg-slate-50 rounded-2xl border border-slate-200/50 p-4 sm:p-6 flex flex-col justify-between min-h-[360px] sm:min-h-[320px] h-full min-w-0 overflow-hidden">
+          <div
+            className="bg-slate-50 rounded-2xl border border-slate-200/50 p-4 sm:p-6 flex flex-col justify-between min-h-[360px] sm:min-h-[320px] h-full min-w-0 overflow-hidden"
+            style={{
+              opacity: prefersReducedMotion || isAnalyticsInView ? 1 : 0,
+              transform: prefersReducedMotion || isAnalyticsInView ? "translate3d(0, 0, 0)" : "translate3d(0, 20px, 0)",
+              transition: prefersReducedMotion
+                ? "none"
+                : "opacity 650ms cubic-bezier(0.16, 1, 0.3, 1) 250ms, transform 650ms cubic-bezier(0.16, 1, 0.3, 1) 250ms",
+            }}
+          >
             <div className="flex flex-col items-start gap-1.5">
               <h3 className="text-sm sm:text-base font-bold text-slate-800">
                 Quantity Fulfillment Overview
@@ -1939,10 +2200,23 @@ function DonationsContent() {
 
             {totalRequiredQuantity > 0 ? (
               <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between flex-1 mt-4 gap-4 sm:gap-6 min-w-0">
-                <div className="w-[170px] h-[170px] shrink-0 mx-auto sm:mx-0 flex items-center justify-center">
+                <div className="w-[170px] h-[170px] shrink-0 mx-auto sm:mx-0 flex items-center justify-center relative">
+                  {/* Subtle Background Donut Track */}
+                  <svg className="absolute inset-0 pointer-events-none" width={170} height={170} viewBox="0 0 170 170">
+                    <circle
+                      cx={85}
+                      cy={85}
+                      r={63}
+                      fill="none"
+                      stroke="#e2e8f0"
+                      strokeWidth={22}
+                      opacity={0.6}
+                    />
+                  </svg>
                   {isMounted && (
                     <PieChart width={170} height={170}>
                       <Pie
+                        key={isAnalyticsInView ? "pie2-active" : "pie2-idle"}
                         data={chart2Data}
                         cx="50%"
                         cy="50%"
@@ -1950,6 +2224,10 @@ function DonationsContent() {
                         outerRadius={74}
                         paddingAngle={3}
                         dataKey="value"
+                        isAnimationActive={!prefersReducedMotion && isAnalyticsInView}
+                        animationBegin={200}
+                        animationDuration={900}
+                        animationEasing="ease-out"
                       >
                         {chart2Data.map((entry, index) => (
                           <Cell
@@ -1961,14 +2239,35 @@ function DonationsContent() {
                       <Tooltip content={<CustomTooltip />} />
                     </PieChart>
                   )}
+                  {/* Center Donut Statistic */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-base sm:text-lg font-black text-slate-800 font-heading tracking-tight leading-none">
+                      <AnimatedCounter
+                        value={totalRequiredQuantity > 0 ? Number(chart2Data[0].percentage) : 0}
+                        suffix="%"
+                        inView={isAnalyticsInView}
+                        duration={900}
+                      />
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                      Received
+                    </span>
+                  </div>
                 </div>
 
-                {/* Custom Legend */}
+                {/* Custom Legend with Staggered Entrance */}
                 <div className="w-full sm:flex-1 min-w-0 flex flex-col justify-center space-y-2.5">
                   {chart2Data.map((entry, index) => (
                     <div
                       key={index}
                       className="flex items-start gap-2.5 bg-white/80 p-2.5 rounded-xl border border-slate-100/80 shadow-2xs"
+                      style={{
+                        opacity: prefersReducedMotion || isAnalyticsInView ? 1 : 0,
+                        transform: prefersReducedMotion || isAnalyticsInView ? "translate3d(0, 0, 0)" : "translate3d(0, 10px, 0)",
+                        transition: prefersReducedMotion
+                          ? "none"
+                          : `opacity 500ms cubic-bezier(0.16, 1, 0.3, 1) ${320 + index * 80}ms, transform 500ms cubic-bezier(0.16, 1, 0.3, 1) ${320 + index * 80}ms`,
+                      }}
                     >
                       <span
                         className="w-2.5 h-2.5 rounded-full mt-1 shrink-0"
@@ -1979,18 +2278,41 @@ function DonationsContent() {
                           {entry.name}
                         </p>
                         <p className="text-[11px] text-slate-500 font-bold mt-0.5">
-                          {entry.value.toLocaleString()} units (
-                          {entry.percentage}%)
+                          <AnimatedCounter
+                            value={entry.value}
+                            inView={isAnalyticsInView}
+                            duration={900}
+                          />{" "}
+                          units (
+                          <AnimatedCounter
+                            value={Number(entry.percentage)}
+                            suffix="%"
+                            inView={isAnalyticsInView}
+                            duration={900}
+                          />)
                         </p>
                       </div>
                     </div>
                   ))}
-                  <div className="pt-2 px-1 border-t border-slate-200/60 flex items-center justify-between">
+                  <div
+                    className="pt-2 px-1 border-t border-slate-200/60 flex items-center justify-between"
+                    style={{
+                      opacity: prefersReducedMotion || isAnalyticsInView ? 1 : 0,
+                      transition: prefersReducedMotion
+                        ? "none"
+                        : "opacity 500ms cubic-bezier(0.16, 1, 0.3, 1) 500ms",
+                    }}
+                  >
                     <span className="text-[11px] text-slate-500 font-medium">
                       Total Required Qty
                     </span>
                     <span className="text-xs font-bold text-slate-800">
-                      {totalRequiredQuantity.toLocaleString()} units
+                      <AnimatedCounter
+                        value={totalRequiredQuantity}
+                        suffix=" units"
+                        inView={isAnalyticsInView}
+                        duration={900}
+                      />
                     </span>
                   </div>
                 </div>

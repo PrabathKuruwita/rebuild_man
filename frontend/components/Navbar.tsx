@@ -281,25 +281,36 @@ export default function Navbar() {
                   </button>
 
                   {showNotifications && (
-                    <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-scale-up">
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-slate-50">
-                        <span className="font-bold text-sm text-slate-900">
-                          Notifications
-                        </span>
+                    <div className="absolute right-0 top-12 w-[380px] sm:w-[420px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-200/80 z-50 overflow-hidden animate-scale-up">
+                      {/* Header Row */}
+                      <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-slate-100 bg-slate-50/90">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-slate-900">
+                            Notifications
+                          </span>
+                          {unreadCount > 0 && (
+                            <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-bold text-teal-700 bg-teal-100/70 rounded-full border border-teal-200/60">
+                              {unreadCount} new
+                            </span>
+                          )}
+                        </div>
                         {unreadCount > 0 && (
                           <button
                             onClick={markAllAsRead}
-                            className="text-xs font-semibold text-primary hover:text-teal-700 transition-colors"
+                            className="text-xs font-semibold text-primary hover:text-teal-700 transition-colors touch-manipulation hover:underline underline-offset-2"
                           >
                             Mark all as read
                           </button>
                         )}
                       </div>
 
-                      <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                      {/* Notification Items List */}
+                      <div className="max-h-80 sm:max-h-96 overflow-y-auto divide-y divide-slate-100">
                         {notifications.length === 0 ? (
-                          <div className="p-6 text-center text-slate-400">
-                            <p className="text-sm">No notifications yet</p>
+                          <div className="px-6 py-10 text-center text-slate-400">
+                            <Bell className="w-8 h-8 mx-auto text-slate-300 mb-2 stroke-[1.5]" />
+                            <p className="text-sm font-medium text-slate-500">No notifications yet</p>
+                            <p className="text-xs text-slate-400 mt-0.5">We&apos;ll alert you when updates arrive.</p>
                           </div>
                         ) : (
                           notifications.slice(0, 5).map((n) => (
@@ -312,34 +323,36 @@ export default function Navbar() {
                                 setShowNotifications(false);
                                 router.push(`/notifications?id=${n.id}`);
                               }}
-                              className={`p-3.5 flex items-start gap-2.5 cursor-pointer transition-colors hover:bg-slate-50 relative ${
-                                !n.is_read ? "bg-teal-50/30" : ""
+                              className={`px-4 sm:px-5 py-3 sm:py-3.5 flex items-start gap-3 cursor-pointer transition-colors relative ${
+                                !n.is_read
+                                  ? "bg-teal-50/40 hover:bg-teal-50/70"
+                                  : "hover:bg-slate-50/90"
                               }`}
                             >
-                              <div className="pt-1 shrink-0">
+                              <div className="pt-1.5 shrink-0">
                                 {!n.is_read ? (
-                                  <span className="block w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20" />
+                                  <span className="block w-2 h-2 rounded-full bg-primary ring-4 ring-primary/20" />
                                 ) : (
                                   <span className="block w-2 h-2 rounded-full bg-transparent" />
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-baseline gap-2">
+                                <div className="flex items-baseline justify-between gap-3">
                                   <p
-                                    className={`text-xs text-slate-900 truncate ${
+                                    className={`text-sm text-slate-900 truncate ${
                                       !n.is_read
-                                        ? "font-semibold"
-                                        : "font-medium"
+                                        ? "font-semibold text-slate-900"
+                                        : "font-medium text-slate-800"
                                     }`}
                                     title={n.title}
                                   >
                                     {n.title}
                                   </p>
-                                  <span className="text-[10px] text-slate-400 shrink-0 whitespace-nowrap">
+                                  <span className="text-xs text-slate-400 font-medium shrink-0 whitespace-nowrap">
                                     {formatTimeAgo(n.created_at)}
                                   </span>
                                 </div>
-                                <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-relaxed">
+                                <p className="text-xs sm:text-[13px] text-slate-600 line-clamp-2 mt-1 leading-relaxed">
                                   {n.message}
                                 </p>
                               </div>
@@ -348,13 +361,15 @@ export default function Navbar() {
                         )}
                       </div>
 
-                      <div className="p-2 border-t border-gray-100 bg-slate-50">
+                      {/* Footer */}
+                      <div className="p-2.5 sm:p-3 border-t border-slate-100 bg-slate-50/90 text-center">
                         <Link
                           href="/notifications"
                           onClick={() => setShowNotifications(false)}
-                          className="block text-center text-xs font-bold text-primary hover:text-teal-700 py-1.5 transition-colors"
+                          className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-primary hover:text-teal-700 py-1.5 px-3 rounded-lg hover:bg-teal-50/80 transition-colors w-full"
                         >
-                          View all notifications
+                          <span>View all notifications</span>
+                          <span aria-hidden="true" className="text-sm font-semibold leading-none">&rarr;</span>
                         </Link>
                       </div>
                     </div>

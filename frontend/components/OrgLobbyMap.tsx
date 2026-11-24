@@ -3,6 +3,7 @@ import { Organization, NeedItem, Donation, Section } from "@/lib/api";
 import { Building2, Layers, CheckCircle2, Flame, PlayCircle, ClipboardList, Users, AlertTriangle, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AnimatedCounter, AnimatedProgressBar, RevealItem } from "./animations";
 
 interface OrgLobbyMapProps {
   organization: Organization;
@@ -82,10 +83,11 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
     };
 
     return (
-      <div
+      <RevealItem
         key={sec.id}
-        className="flex flex-col items-center lobby-animate-child w-full"
-        style={{ animationDelay: `${idx * 0.08 + 0.3}s` }}
+        index={idx}
+        staggerDelay={0.08}
+        className="flex flex-col items-center w-full"
       >
         {/* Card container */}
         <div
@@ -147,7 +149,7 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
                 Created Needs
               </span>
               <span className="px-2 py-0.5 bg-slate-200/60 text-slate-700 font-bold rounded">
-                {totalCreated}
+                <AnimatedCounter value={totalCreated} />
               </span>
             </div>
 
@@ -158,7 +160,7 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
                 100% Fulfilled
               </span>
               <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded">
-                {fulfilled}
+                <AnimatedCounter value={fulfilled} />
               </span>
             </div>
 
@@ -169,7 +171,7 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
                 In Progress Fulfilling
               </span>
               <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold rounded">
-                {fulfilling}
+                <AnimatedCounter value={fulfilling} />
               </span>
             </div>
 
@@ -180,7 +182,7 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
                 Not Fulfilled Yet
               </span>
               <span className="px-2 py-0.5 bg-slate-100 text-slate-500 font-bold rounded">
-                {notStarted}
+                <AnimatedCounter value={notStarted} />
               </span>
             </div>
 
@@ -188,25 +190,24 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
             <div className="mt-3 pt-2 border-t border-slate-100">
               <div className="flex justify-between items-center text-[10px] text-slate-500 mb-1 font-semibold">
                 <span>Fulfillment Progress</span>
-                <span>{sectionProgress}%</span>
+                <span><AnimatedCounter value={sectionProgress} suffix="%" /></span>
               </div>
-              <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden relative">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 lobby-animate-progress relative overflow-hidden ${sectionProgress >= 100
+              <AnimatedProgressBar
+                percentage={sectionProgress}
+                duration={800}
+                delay={idx * 60}
+                containerClassName="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden relative"
+                barClassName={`h-full rounded-full ${
+                  sectionProgress >= 100
                     ? "bg-emerald-500"
                     : sectionProgress >= 50
                       ? "bg-blue-500"
                       : sectionProgress > 0
                         ? "bg-amber-500"
                         : "bg-slate-300"
-                    }`}
-                  style={{ width: `${sectionProgress}%` }}
-                >
-                  {sectionProgress > 0 && sectionProgress < 100 && (
-                    <div className="absolute inset-0 lobby-progress-shimmer pointer-events-none" />
-                  )}
-                </div>
-              </div>
+                }`}
+                showShimmer={true}
+              />
             </div>
 
             {/* Direct Action Buttons */}
@@ -228,7 +229,7 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
             </div>
           </div>
         </div>
-      </div>
+      </RevealItem>
     );
   };
 
@@ -384,37 +385,34 @@ export default function OrgLobbyMap({ organization, needs, donations = [] }: Org
             <div className="mb-4 text-left">
               <div className="flex justify-between items-center text-[10px] text-indigo-200 mb-1 font-semibold">
                 <span>Overall Need Fulfilling</span>
-                <span>{overallProgress}%</span>
+                <span><AnimatedCounter value={overallProgress} suffix="%" /></span>
               </div>
-              <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden relative">
-                <div
-                  className="h-full bg-white rounded-full transition-all duration-500 lobby-animate-progress relative overflow-hidden"
-                  style={{ width: `${overallProgress}%` }}
-                >
-                  {overallProgress > 0 && overallProgress < 100 && (
-                    <div className="absolute inset-0 lobby-progress-shimmer pointer-events-none" />
-                  )}
-                </div>
-              </div>
+              <AnimatedProgressBar
+                percentage={overallProgress}
+                duration={900}
+                containerClassName="w-full bg-white/20 h-1.5 rounded-full overflow-hidden relative"
+                barClassName="h-full bg-white rounded-full"
+                showShimmer={true}
+              />
             </div>
 
             {/* Key Global Stats */}
             <div className="flex justify-around items-center pt-3 border-t border-white/10 text-xs">
               <div className="flex items-center gap-1.5 text-indigo-100" title="Total Sections">
                 <Layers size={13} className="text-indigo-200" />
-                <span className="font-bold text-white">{totalSections}</span>
+                <span className="font-bold text-white"><AnimatedCounter value={totalSections} /></span>
                 <span className="text-[10px] text-indigo-200/80">Sections</span>
               </div>
               <div className="w-px h-4 bg-white/10" />
               <div className="flex items-center gap-1.5 text-indigo-100" title="Total Needs">
                 <ClipboardList size={13} className="text-indigo-200" />
-                <span className="font-bold text-white">{needs.length}</span>
+                <span className="font-bold text-white"><AnimatedCounter value={needs.length} /></span>
                 <span className="text-[10px] text-indigo-200/80">Needs</span>
               </div>
               <div className="w-px h-4 bg-white/10" />
               <div className="flex items-center gap-1.5 text-indigo-100" title="Active Donors">
                 <Users size={13} className="text-indigo-200" />
-                <span className="font-bold text-white">{totalActiveDonors}</span>
+                <span className="font-bold text-white"><AnimatedCounter value={totalActiveDonors} /></span>
                 <span className="text-[10px] text-indigo-200/80">Active Donors</span>
               </div>
             </div>

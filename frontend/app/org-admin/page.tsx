@@ -16,6 +16,12 @@ import AnalyticsView from "@/components/AnalyticsView";
 import GraphsView from "@/components/GraphsView";
 import OrgLobbyMap from "@/components/OrgLobbyMap";
 import {
+  AnimatedCounter,
+  AnimatedProgressBar,
+  RevealSection,
+  RevealItem,
+} from "@/components/animations";
+import {
   Building2,
   Layers,
   ClipboardList,
@@ -397,42 +403,52 @@ export default function OrgAdminDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <StatsCard
-            label="SECTIONS"
-            value={stats.sections}
-            subtext="Internal sections"
-            icon={<Layers size={20} />}
-            color="purple"
-          />
-          <StatsCard
-            label="TOTAL NEEDS"
-            value={stats.totalNeeds}
-            subtext="Items registered"
-            icon={<ClipboardList size={20} />}
-            color="blue"
-          />
-          <StatsCard
-            label="CRITICAL NEEDS"
-            value={stats.criticalNeeds}
-            subtext="Urgent items"
-            icon={<AlertTriangle size={20} />}
-            status="critical"
-          />
-          <StatsCard
-            label="TOTAL DONATIONS"
-            value={stats.donations}
-            subtext="Total contributions"
-            icon={<HeartHandshake size={20} />}
-            color="emerald"
-          />
+          <RevealItem index={0} className="h-full">
+            <StatsCard
+              label="SECTIONS"
+              value={stats.sections}
+              subtext="Internal sections"
+              icon={<Layers size={20} />}
+              color="purple"
+            />
+          </RevealItem>
+          <RevealItem index={1} className="h-full">
+            <StatsCard
+              label="TOTAL NEEDS"
+              value={stats.totalNeeds}
+              subtext="Items registered"
+              icon={<ClipboardList size={20} />}
+              color="blue"
+            />
+          </RevealItem>
+          <RevealItem index={2} className="h-full">
+            <StatsCard
+              label="CRITICAL NEEDS"
+              value={stats.criticalNeeds}
+              subtext="Urgent items"
+              icon={<AlertTriangle size={20} />}
+              status="critical"
+            />
+          </RevealItem>
+          <RevealItem index={3} className="h-full">
+            <StatsCard
+              label="TOTAL DONATIONS"
+              value={stats.donations}
+              subtext="Total contributions"
+              icon={<HeartHandshake size={20} />}
+              color="emerald"
+            />
+          </RevealItem>
         </div>
 
         {/* Lobby Map */}
-        <OrgLobbyMap
-          organization={organization}
-          needs={orgNeeds}
-          donations={orgDonations}
-        />
+        <RevealSection threshold={0.1}>
+          <OrgLobbyMap
+            organization={organization}
+            needs={orgNeeds}
+            donations={orgDonations}
+          />
+        </RevealSection>
 
         {/* Analytics & Graphs */}
         <div id="analytics-section" className="mb-12">
@@ -468,90 +484,108 @@ export default function OrgAdminDashboard() {
 
         <div className="grid lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8">
-            <div className="card-container">
-              <h3 className="font-bold text-slate-900 mb-6">
-                Recent Critical Needs
-              </h3>
-              {criticalNeeds.length === 0 ? (
-                <div className="py-12 px-6 flex flex-col items-center justify-center text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
-                  <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-3 shadow-xs">
-                    <Inbox size={24} />
-                  </div>
-                  <h4 className="font-heading font-bold text-slate-900 text-base mb-1">
-                    No Critical Needs at This Time
-                  </h4>
-                  <p className="text-sm text-slate-500 max-w-md">
-                    All critical needs are currently fulfilled, or no urgent requirements are presently active.
-                  </p>
-                  <Link
-                    href="/organizations#sections-needs"
-                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200/80 rounded-lg transition-colors shadow-xs"
-                  >
-                    + Post New Need
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {criticalNeeds.map((need) => (
-                    <div
-                      key={need.id}
-                      className="p-3.5 sm:p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center gap-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-slate-900 text-sm sm:text-base truncate">{need.name}</p>
-                        <p className="text-xs text-slate-500 truncate">
-                          {need.section_detail?.name}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs sm:text-sm font-bold text-rose-600">
-                          {need.quantity_required - need.quantity_confirmed} left
-                        </p>
-                        <progress
-                          className="w-20 sm:w-24 h-1.5 mt-1 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-rose-500 [&::-moz-progress-bar]:bg-rose-500 bg-slate-200 text-rose-500"
-                          value={need.quantity_received || 0}
-                          max={need.quantity_required}
-                        />
-                      </div>
+            <RevealSection threshold={0.15}>
+              <div className="card-container">
+                <h3 className="font-bold text-slate-900 mb-6">
+                  Recent Critical Needs
+                </h3>
+                {criticalNeeds.length === 0 ? (
+                  <div className="py-12 px-6 flex flex-col items-center justify-center text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-3 shadow-xs">
+                      <Inbox size={24} />
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <h4 className="font-heading font-bold text-slate-900 text-base mb-1">
+                      No Critical Needs at This Time
+                    </h4>
+                    <p className="text-sm text-slate-500 max-w-md">
+                      All critical needs are currently fulfilled, or no urgent requirements are presently active.
+                    </p>
+                    <Link
+                      href="/organizations#sections-needs"
+                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200/80 rounded-lg transition-colors shadow-xs"
+                    >
+                      + Post New Need
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {criticalNeeds.map((need, index) => (
+                      <RevealItem
+                        key={need.id}
+                        index={index}
+                        staggerDelay={0.08}
+                      >
+                        <div
+                          className="p-3.5 sm:p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center gap-3"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-slate-900 text-sm sm:text-base truncate">{need.name}</p>
+                            <p className="text-xs text-slate-500 truncate">
+                              {need.section_detail?.name}
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-xs sm:text-sm font-bold text-rose-600">
+                              <AnimatedCounter
+                                value={need.quantity_required - need.quantity_confirmed}
+                                suffix=" left"
+                              />
+                            </p>
+                            <AnimatedProgressBar
+                              percentage={
+                                need.quantity_required > 0
+                                  ? Math.round(((need.quantity_received || 0) / need.quantity_required) * 100)
+                                  : 0
+                              }
+                              duration={800}
+                              delay={index * 80}
+                              containerClassName="w-20 sm:w-24 h-1.5 mt-1 rounded-full overflow-hidden bg-slate-200"
+                              barClassName="h-full bg-rose-500 rounded-full"
+                            />
+                          </div>
+                        </div>
+                      </RevealItem>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </RevealSection>
           </div>
           <div className="lg:col-span-4">
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 text-white h-full shadow-xl">
-              <h3 className="text-xl font-bold mb-6 text-teal-400">
-                Monthly Snapshot
-              </h3>
-              <div className="space-y-8">
-                <div>
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
-                    Total Received
-                  </p>
-                  <p className="text-3xl font-black">
-                    {analytics.fulfillmentRate}%
-                    <span
-                      className={`text-xs font-bold ml-2 ${analytics.monthlyGrowth >= 0 ? "text-emerald-400" : "text-rose-400"}`}
-                    >
-                      {analytics.monthlyGrowth >= 0 ? "↑" : "↓"}{" "}
-                      {Math.abs(analytics.monthlyGrowth)}%
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
-                    Successful Donations
-                  </p>
-                  <p className="text-3xl font-black">
-                    {stats.successfulDonationsThisMonth}{" "}
-                    <span className="text-xs text-teal-400 font-bold ml-2">
-                      Active
-                    </span>
-                  </p>
+            <RevealSection threshold={0.15} delay={0.12} className="h-full">
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 text-white h-full shadow-xl">
+                <h3 className="text-xl font-bold mb-6 text-teal-400">
+                  Monthly Snapshot
+                </h3>
+                <div className="space-y-8">
+                  <div>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
+                      Total Received
+                    </p>
+                    <p className="text-3xl font-black flex items-baseline">
+                      <AnimatedCounter value={analytics.fulfillmentRate} suffix="%" />
+                      <span
+                        className={`text-xs font-bold ml-2 ${analytics.monthlyGrowth >= 0 ? "text-emerald-400" : "text-rose-400"}`}
+                      >
+                        {analytics.monthlyGrowth >= 0 ? "↑" : "↓"}{" "}
+                        <AnimatedCounter value={Math.abs(analytics.monthlyGrowth)} suffix="%" />
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
+                      Successful Donations
+                    </p>
+                    <p className="text-3xl font-black flex items-baseline">
+                      <AnimatedCounter value={stats.successfulDonationsThisMonth} />
+                      <span className="text-xs text-teal-400 font-bold ml-2">
+                        Active
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            </RevealSection>
           </div>
         </div>
       </div>

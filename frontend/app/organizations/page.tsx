@@ -12,6 +12,7 @@ import {
   deleteSection,
 } from "@/lib/api";
 import { PageLoading } from "@/components/LoadingSpinner";
+import { scrollToTopInstant } from "@/lib/scrollUtils";
 import { useAdminGuard } from "@/lib/useAuthGuard";
 import { useAuth } from "@/lib/AuthContext";
 import SectionAccordion from "@/components/SectionAccordion";
@@ -115,7 +116,7 @@ function OrganizationsContent() {
           window.location.pathname + window.location.search
         );
       }
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollToTopInstant();
       return;
     }
 

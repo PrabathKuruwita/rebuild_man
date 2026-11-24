@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
+import { scrollToTopInstant } from "@/lib/scrollUtils";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -79,7 +80,11 @@ export default function OrgAdminSidebar({
       <div className="flex flex-col flex-1 overflow-y-auto">
         {/* Sidebar Header with Logo */}
         <div className={`h-16 sm:h-20 flex items-center px-6 border-b border-slate-200 mb-6 transition-all duration-300 ${isCollapsed ? "justify-center px-0" : ""}`}>
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1">
+          <Link
+            href="/"
+            onClick={() => scrollToTopInstant()}
+            className="flex items-center gap-2 sm:gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1"
+          >
             <Image 
               src="/images/Parithyaga_Logo.png" 
               alt="Parithyaga Logo" 
@@ -113,6 +118,25 @@ export default function OrgAdminSidebar({
               key={item.label}
               href={item.href}
               title={isCollapsed ? item.label : undefined}
+              onClick={() => {
+                if (item.label !== "Manage Needs") {
+                  if (typeof window !== "undefined" && window.location.hash) {
+                    window.history.replaceState(
+                      null,
+                      "",
+                      window.location.pathname + window.location.search
+                    );
+                  }
+                  scrollToTopInstant();
+                } else {
+                  if (typeof window !== "undefined") {
+                    const el = document.getElementById("sections-needs");
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                  }
+                }
+              }}
               className={`group flex items-center gap-3 rounded-xl transition-all duration-300 relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 isCollapsed ? "justify-center w-12 h-12 mx-auto px-0 py-0" : "px-4 py-3"
               } ${item.active
